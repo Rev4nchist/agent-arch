@@ -62,18 +62,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Create virtual environment and install dependencies
+      - name: Create deployment package
         working-directory: backend
         run: |
-          python -m venv antenv
-          source antenv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Zip artifact for deployment
-        working-directory: backend
-        run: |
-          zip -r ../deploy.zip . -x "venv/*" -x "antenv/*" -x "__pycache__/*" -x ".pytest_cache/*" -x "tests/*" -x "*.pyc"
+          zip -r ../deploy.zip . -x "venv/*" -x "antenv/*" -x "__pycache__/*" -x ".pytest_cache/*" -x "tests/*" -x "*.pyc" -x ".git/*"
+          echo "Created deploy.zip:"
+          ls -la ../deploy.zip
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -81,3 +75,4 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deploy.zip
+          type: zip
