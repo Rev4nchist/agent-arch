@@ -504,8 +504,8 @@ export default function AuditPage() {
 
                         {log.details && (
                           <p className="text-xs text-gray-500 mt-1">
-                            {log.details.path && `Path: ${log.details.path}`}
-                            {log.details.status_code && ` • Status: ${log.details.status_code}`}
+                            {log.details.path ? `Path: ${String(log.details.path)}` : null}
+                            {log.details.status_code ? ` • Status: ${String(log.details.status_code)}` : null}
                           </p>
                         )}
                       </div>
