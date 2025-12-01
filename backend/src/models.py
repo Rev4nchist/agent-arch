@@ -93,7 +93,7 @@ class ChecklistItem(BaseModel):
 class Meeting(BaseModel):
     """Meeting data model."""
 
-    id: str
+    id: Optional[str] = None
     title: str
     date: datetime
     type: MeetingType
@@ -123,7 +123,7 @@ class TaskComplexity(str, Enum):
 class Task(BaseModel):
     """Task data model."""
 
-    id: str
+    id: Optional[str] = None
     title: str
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
@@ -150,7 +150,7 @@ class Task(BaseModel):
 class Agent(BaseModel):
     """Agent data model."""
 
-    id: str
+    id: Optional[str] = None
     name: str
     description: str
     tier: AgentTier
@@ -195,7 +195,7 @@ class ProposalCategory(str, Enum):
 class Proposal(BaseModel):
     """Proposal data model."""
 
-    id: str
+    id: Optional[str] = None
     title: str
     description: str
     category: ProposalCategory
@@ -222,7 +222,7 @@ class DecisionCategory(str, Enum):
 class Decision(BaseModel):
     """Decision data model."""
 
-    id: str
+    id: Optional[str] = None
     title: str
     description: str
     category: DecisionCategory
@@ -261,7 +261,7 @@ class ResourceCategory(str, Enum):
 class Resource(BaseModel):
     """Educational resource data model."""
 
-    id: str
+    id: Optional[str] = None
     type: ResourceType
     title: str
     description: Optional[str] = None
@@ -302,7 +302,7 @@ class TechRadarCategory(str, Enum):
 class TechRadarItem(BaseModel):
     """Tech radar item data model."""
 
-    id: str
+    id: Optional[str] = None
     tool_name: str
     category: TechRadarCategory
     description: str
@@ -322,7 +322,7 @@ class PatternType(str, Enum):
 class CodePattern(BaseModel):
     """Code pattern data model."""
 
-    id: str
+    id: Optional[str] = None
     title: str
     pattern_type: PatternType
     language: Optional[str] = None
@@ -335,7 +335,7 @@ class CodePattern(BaseModel):
 class AzureResource(BaseModel):
     """Azure resource data model."""
 
-    id: str
+    id: Optional[str] = None
     name: str
     type: str
     location: str
@@ -442,7 +442,7 @@ class AuditEntityType(str, Enum):
 class AuditLog(BaseModel):
     """Audit log entry data model."""
 
-    id: str
+    id: Optional[str] = None
     user_id: str
     user_name: Optional[str] = None
     action: AuditAction

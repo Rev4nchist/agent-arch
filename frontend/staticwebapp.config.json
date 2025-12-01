@@ -1,18 +1,12 @@
 {
-  "routes": [
-    {
-      "route": "/api/*",
-      "allowedRoles": ["anonymous"],
-      "rewrite": "https://agent-arch-api-prod.azurewebsites.net/api/*"
-    }
-  ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/_next/*", "/api/*"]
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/_next/static/*", "/favicon.ico"]
   },
   "responseOverrides": {
     "404": {
-      "rewrite": "/404.html"
+      "rewrite": "/index.html",
+      "statusCode": 200
     }
   },
   "globalHeaders": {
