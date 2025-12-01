@@ -1,0 +1,83 @@
+name: Backend Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: agent-arch-api-prod
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+        env:
+          COSMOS_ENDPOINT: https://test.documents.azure.com:443/
+          COSMOS_KEY: test-key
+          COSMOS_DATABASE_NAME: test-db
+          AZURE_OPENAI_ENDPOINT: https://test.openai.azure.com/
+          AZURE_OPENAI_API_KEY: test-key
+          AZURE_OPENAI_DEPLOYMENT: gpt-4o
+          API_ACCESS_KEY: test-key
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Zip artifact for deployment
+        run: |
+          cd ..
+          zip -r backend.zip backend -x "backend/venv/*" -x "backend/__pycache__/*" -x "backend/.pytest_cache/*" -x "backend/tests/*"
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: backend.zip

@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Architecture Guide | Fourth Enterprise Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0F172A',
+                            primary: '#3B82F6',
+                            accent: '#8B5CF6',
+                            success: '#10B981',
+                            warning: '#F59E0B',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0F172A;
+            color: #E2E8F0;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(20px, -20px) scale(1.1); }
+            50% { transform: translate(-20px, 20px) scale(0.9); }
+            75% { transform: translate(20px, 20px) scale(1.05); }
+        }
+        .animate-blob {
+            animation: blob 20s infinite;
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+
+        /* Expand/Collapse Styles for Get Oriented Section */
+        .orientation-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(2, 1fr);
+            transition: all 0.4s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            .orientation-grid.expanded {
+                grid-template-columns: 65% 35%;
+                grid-template-rows: repeat(5, auto);
+            }
+
+            .orientation-card {
+                transition: all 0.4s ease-in-out;
+                position: relative;
+            }
+
+            .orientation-card.card-expanded {
+                grid-column: 1;
+                grid-row: 1 / span 5;
+                max-height: none;
+                height: fit-content;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .orientation-card.card-expanded .card-full-content {
+                padding-right: 2.5rem;
+            }
+
+            .orientation-card.card-collapsed {
+                grid-column: 2;
+            }
+
+            .orientation-card .card-full-content {
+                display: block;
+            }
+
+            .orientation-card .card-mini-content {
+                display: none;
+            }
+
+            .orientation-card.card-collapsed .card-full-content {
+                display: none;
+            }
+
+            .orientation-card.card-collapsed .card-mini-content {
+                display: block;
+            }
+
+            .close-btn {
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease-in-out;
+            }
+
+            .orientation-card.card-expanded .close-btn {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            /* Hide expanded sections by default, show only when card is expanded */
+            .orientation-card .expanded-sections {
+                display: none;
+            }
+
+            .orientation-card.card-expanded .expanded-sections {
+                display: block;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .mobile-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(15, 23, 42, 0.95);
+                -webkit-backdrop-filter: blur(10px);
+                backdrop-filter: blur(10px);
+                z-index: 100;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.3s ease-in-out;
+                overflow-y: auto;
+                padding: 2rem 1rem;
+            }
+
+            .mobile-overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .mobile-overlay-content {
+                max-width: 600px;
+                margin: 0 auto;
+                transform: translateY(20px);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            .mobile-overlay.active .mobile-overlay-content {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="border-b border-slate-700 bg-slate-900/80 backdrop-blur-md fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <img src="frontend/components/Fourth_teal_White_icon.png" alt="Fourth Logo" class="h-8 w-8">
+                    <span class="text-xl font-bold tracking-tight text-white">Fourth <span class="text-blue-400">Agent Architecture</span></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="http://localhost:8080" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition">Launch Platform</a>
+                    <a href="#features" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition">Features</a>
+                    <a href="#benefits" class="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition">Benefits</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative pt-32 pb-20 sm:pt-40 sm:pb-24 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6">
+                Govern, Scale & Optimize <br/>
+                <span class="gradient-text">Enterprise AI Agent Ecosystems</span>
+            </h1>
+            <p class="mt-4 text-xl text-slate-400 max-w-3xl mx-auto mb-10">
+                <span class="text-white font-semibold">Microsoft Ignite 2025 rearchitected the agent ecosystem.</span>
+                This is your unified command center for managing adoption and rollout across
+                <span class="text-purple-400 font-semibold">Microsoft Foundry</span>,
+                <span class="text-blue-400 font-semibold">Agent Framework</span>,
+                <span class="text-cyan-400 font-semibold">Foundry IQ</span>,
+                <span class="text-amber-400 font-semibold">Model Router</span>,
+                <span class="text-emerald-400 font-semibold">M365 SDK</span>, and
+                <span class="text-orange-400 font-semibold">Agent 365</span>.
+                From governance policies to budget tracking, agent portfolio to meeting transcripts.
+                <span class="text-white font-semibold block mt-2">All in one place.</span>
+            </p>
+            <div class="flex justify-center gap-4">
+                <a href="http://localhost:8080" class="px-8 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5">
+                    Open Platform
+                </a>
+                <a href="#capabilities" class="px-8 py-3 rounded-lg glass-panel hover:bg-slate-800 text-white font-semibold transition transform hover:-translate-y-0.5">
+                    Explore Capabilities
+                </a>
+            </div>
+        </div>
+
+        <!-- Background Decor -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden -z-10 opacity-20 pointer-events-none">
+            <div class="absolute top-[20%] left-[20%] w-96 h-96 bg-blue-500 rounded-full blur-3xl mix-blend-screen animate-blob"></div>
+            <div class="absolute top-[20%] right-[20%] w-96 h-96 bg-purple-500 rounded-full blur-3xl mix-blend-screen animate-blob animation-delay-2000"></div>
+        </div>
+    </div>
+
+    <!-- Get Oriented Section -->
+    <div id="get-oriented" class="bg-slate-900/50 py-20 border-y border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-white mb-4">Get Oriented</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">
+                    Understanding the Microsoft agent ecosystem: the tools to build agents and the platform to manage them.
+                </p>
+            </div>
+
+            <div class="orientation-grid">
+
+                <!-- Microsoft Agent Framework -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-blue-500/50 transition-all" data-card="framework">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content (shown by default and when expanded) -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-blue-400">Microsoft Agent Framework</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-500/20 text-blue-400">BUILD</span>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            Open-source framework (.NET/Python) for building AI agents with autonomous decision-making.
+                            Built on Foundry Agent Service runtime with native MCP support. Successor to Semantic
+                            Kernel and AutoGen—created by the same Microsoft teams.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-blue-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Single & multi-agent workflows with graph-based routing</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-blue-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Native MCP support for tool/data connections</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-blue-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent-native execution on Foundry Agent Service</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: What It Is -->
+                            <div>
+                                <h4 class="text-md font-bold text-blue-300 mb-2">What It Is - "The Engine Room"</h4>
+                                <p class="text-slate-300 mb-2">
+                                    The <strong>Microsoft Agent Framework</strong> is the open-source code-first framework that defines
+                                    how agents think and act. It's the successor to Semantic Kernel and AutoGen, created
+                                    by the same Microsoft teams.
+                                </p>
+                                <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs">
+                                    <p class="text-slate-300 mb-1"><strong>Runtime:</strong> Built on the <strong>Foundry Agent Service</strong></p>
+                                    <p class="text-slate-400 mb-1">A serverless runtime optimized for long-running, stateful agent processes (not just stateless API calls)</p>
+                                    <p class="text-slate-400"><strong>Languages:</strong> .NET (C#) and Python</p>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Key Capabilities -->
+                            <div>
+                                <h4 class="text-md font-bold text-blue-300 mb-2">Key Capabilities</h4>
+
+                                <p class="text-slate-300 text-xs font-semibold mb-1">Single Agents</p>
+                                <ul class="text-slate-400 space-y-0.5 text-xs mb-3">
+                                    <li>• Autonomous decision-making with tool calling</li>
+                                    <li>• Context-aware reasoning with memory systems</li>
+                                    <li>• Built-in support for prompt engineering patterns</li>
+                                </ul>
+
+                                <p class="text-slate-300 text-xs font-semibold mb-1">Multi-Agent Orchestration</p>
+                                <ul class="text-slate-400 space-y-0.5 text-xs mb-3">
+                                    <li>• <strong>Router Pattern:</strong> Route tasks to specialized agents</li>
+                                    <li>• <strong>Crew Pattern:</strong> Agents collaborate as a team</li>
+                                    <li>• <strong>Manager-Worker Pattern:</strong> Hierarchical agent structures</li>
+                                    <li>• Graph-based workflows with conditional routing</li>
+                                </ul>
+
+                                <p class="text-slate-300 text-xs font-semibold mb-1">Memory & State Management</p>
+                                <ul class="text-slate-400 space-y-0.5 text-xs">
+                                    <li>• Short-term memory: Conversation history</li>
+                                    <li>• Long-term memory: Entity extraction and storage</li>
+                                    <li>• Built-in handling without external databases</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 3: MCP Integration -->
+                            <div>
+                                <h4 class="text-md font-bold text-blue-300 mb-2">MCP Integration 🔗</h4>
+                                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                    <p class="text-yellow-300 font-semibold text-xs mb-1">Native Model Context Protocol Support</p>
+                                    <ul class="text-slate-400 space-y-0.5 text-xs">
+                                        <li>• Dynamic discovery of tools and data sources</li>
+                                        <li>• No custom connectors required for MCP-enabled services</li>
+                                        <li>• Shared ecosystem of capabilities across agents</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Code-First & Low-Code -->
+                            <div>
+                                <h4 class="text-md font-bold text-blue-300 mb-2">Code-First & Low-Code</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Pure Code:</strong> Full Python/C# control for complex logic</li>
+                                    <li>• <strong>Low-Code:</strong> Visual configuration via Foundry portal</li>
+                                    <li>• <strong>Hybrid:</strong> Combine both approaches in same agent</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 5: Quick Start -->
+                            <div>
+                                <h4 class="text-md font-bold text-blue-300 mb-2">Quick Start</h4>
+                                <ol class="text-slate-400 space-y-0.5 text-xs">
+                                    <li>1. Install: <code class="bg-slate-800 px-1 rounded text-blue-300">pip install microsoft-agent-framework</code> or NuGet</li>
+                                    <li>2. Prototype with Agent Loop in Foundry</li>
+                                    <li>3. Deploy to Foundry Agent Service</li>
+                                    <li>4. Monitor via Agent 365 control plane</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                                    Framework Overview <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/foundry-agent-service-at-ignite-2025"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                                    Agent Service <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://github.com/microsoft/agent-framework"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                                    GitHub <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content (shown when collapsed) -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-blue-400">Microsoft Agent Framework</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-500/20 text-blue-400">BUILD</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-blue-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Multi-agent workflows</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-blue-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Native MCP support</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-blue-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Foundry Agent Service</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Microsoft Foundry -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-purple-500/50 transition-all" data-card="foundry">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-purple-400">Microsoft Foundry</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">BUILD STUDIO</span>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            The unified IDE for building AI agents. Access 1,800+ models including Claude 4.5 Sonnet,
+                            GPT-5, and o1. Design with Prompt Flow, test with Evaluation Studio, deploy to Foundry
+                            Agent Service. Native MCP support for instant data connectivity.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-purple-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>1,800+ models: Claude 4.5 Sonnet, GPT-5, o1, Gemini 2.0</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-purple-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Native MCP protocol for zero-code tool integration</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-purple-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Foundry Agent Service runtime for production deployment</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: The Rebrand -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">The Rebrand - "The Workshop"</h4>
+                                <p class="text-slate-300 mb-2">
+                                    <strong>Formerly:</strong> Azure AI Foundry / Azure AI Studio<br/>
+                                    <strong>Now:</strong> Microsoft Foundry
+                                </p>
+                                <p class="text-slate-400 text-xs">
+                                    Microsoft Foundry is the unified IDE where agents are designed, prototyped, and built.
+                                    It's the "Workshop" for AI developers—a single place to access models, design prompts,
+                                    test agent behavior, and deploy to production.
+                                </p>
+                            </div>
+
+                            <!-- Section 2: Model Catalog -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">Unified Model Catalog</h4>
+                                <p class="text-slate-300 text-xs mb-2"><strong>1,800+ Models Available</strong></p>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Claude 4.5 Sonnet</strong> 🆕 (NEW at Ignite 2025)</li>
+                                    <li>• GPT-5, o1, o3-mini (OpenAI reasoning models)</li>
+                                    <li>• Gemini 2.0, Llama 3.3, Phi-4</li>
+                                    <li>• Specialized: Vision, embeddings, speech, code</li>
+                                </ul>
+                                <p class="text-slate-400 text-xs mt-2">
+                                    <strong>Model Types:</strong> Foundational (base reasoning), Open Source (Llama, Mistral),
+                                    Reasoning (o1, o3), Multimodal (vision, audio, documents)
+                                </p>
+                            </div>
+
+                            <!-- Section 3: Foundry Agent Service -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">Foundry Agent Service (The Runtime)</h4>
+                                <div class="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                    <p class="text-slate-300 text-xs mb-1">
+                                        <strong>What It Is:</strong> Serverless execution environment for agents
+                                    </p>
+                                    <ul class="text-slate-400 space-y-0.5 text-xs">
+                                        <li>• Agent-native (optimized for stateful, long-running processes)</li>
+                                        <li>• Auto-scaling based on agent load</li>
+                                        <li>• Built-in memory and state management</li>
+                                    </ul>
+                                </div>
+                                <p class="text-slate-400 text-xs mt-2">
+                                    <strong>Why It Matters:</strong> Traditional APIs are stateless (request/response).
+                                    Agents need to "think" across multiple turns. Foundry Agent Service handles this complexity.
+                                </p>
+                            </div>
+
+                            <!-- Section 4: Design & Test Tools -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">Design & Test Tools</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Prompt Flow:</strong> Drag-and-drop agent logic design, visual debugging</li>
+                                    <li>• <strong>Evaluation Studio:</strong> Test against "Golden Datasets", compare model versions</li>
+                                    <li>• <strong>Agent Loop:</strong> Rapid prototyping in Teams-like environment</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 5: MCP Native Support -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">MCP Native Support 🔗</h4>
+                                <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                    <p class="text-yellow-300 font-semibold text-xs mb-1">The Universal Connector</p>
+                                    <p class="text-slate-400 text-xs mb-2">
+                                        <strong>Problem Solved:</strong> Previously, connecting to Salesforce, GitHub, SQL required 3 custom connectors.
+                                    </p>
+                                    <p class="text-slate-400 text-xs">
+                                        <strong>MCP Solution:</strong> If a tool/data source exposes an MCP server, agents can discover and use it instantly.
+                                        No custom connectors required for MCP-enabled services.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Section 6: Why Foundry vs Others -->
+                            <div>
+                                <h4 class="text-md font-bold text-purple-300 mb-2">Why Foundry vs Others</h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="border-b border-slate-700">
+                                                <th class="text-left text-slate-400 pb-2 pr-2">Feature</th>
+                                                <th class="text-left text-purple-400 pb-2 pr-2">Microsoft Foundry</th>
+                                                <th class="text-left text-slate-400 pb-2 pr-2">Vertex AI</th>
+                                                <th class="text-left text-slate-400 pb-2">Bedrock</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="text-slate-400">
+                                            <tr class="border-b border-slate-700/50">
+                                                <td class="py-2 pr-2">Multi-vendor models</td>
+                                                <td class="py-2 pr-2 text-emerald-400">✅ 1,800+</td>
+                                                <td class="py-2 pr-2">Limited</td>
+                                                <td class="py-2">AWS only</td>
+                                            </tr>
+                                            <tr class="border-b border-slate-700/50">
+                                                <td class="py-2 pr-2">Agent-native runtime</td>
+                                                <td class="py-2 pr-2 text-emerald-400">✅</td>
+                                                <td class="py-2 pr-2 text-red-400">❌</td>
+                                                <td class="py-2 text-red-400">❌</td>
+                                            </tr>
+                                            <tr class="border-b border-slate-700/50">
+                                                <td class="py-2 pr-2">MCP support</td>
+                                                <td class="py-2 pr-2 text-emerald-400">✅ Native</td>
+                                                <td class="py-2 pr-2 text-red-400">❌</td>
+                                                <td class="py-2 text-red-400">❌</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-2 pr-2">M365 integration</td>
+                                                <td class="py-2 pr-2 text-emerald-400">✅ Seamless</td>
+                                                <td class="py-2 pr-2 text-red-400">❌</td>
+                                                <td class="py-2 text-red-400">❌</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://azure.microsoft.com/en-us/blog/microsoft-foundry-scale-innovation"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-purple-400 hover:text-purple-300 text-xs">
+                                    Foundry Overview <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/foundry-agent-service-at-ignite-2025"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-purple-400 hover:text-purple-300 text-xs">
+                                    Agent Service <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/foundry-tools-mcp"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-purple-400 hover:text-purple-300 text-xs">
+                                    MCP Guide <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-purple-400">Microsoft Foundry</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">BUILD STUDIO</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-purple-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>1,800+ models (Claude, GPT-4o, o1)</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-purple-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Native MCP support</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-purple-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent Service runtime</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- M365 Agent SDK -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-emerald-500/50 transition-all" data-card="m365sdk">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-emerald-400">M365 Agent SDK</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">PACKAGING</span>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            The <strong>Shipping Container</strong>. Wraps agents built with Framework/Foundry into deployable packages
+                            for M365 Copilot, Teams, and Web. Required for Agent Store publishing. Emits telemetry
+                            for Agent 365 observability. Includes Agent Loop for rapid prototyping.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-emerald-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent Store requirement + Agent 365 telemetry emission</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-emerald-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent Loop: Test in Teams-like environment instantly</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-emerald-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Deploy to M365 Copilot, Teams, Web (C#/JS/Python)</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: What It Is -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">What It Is - "The Shipping Container"</h4>
+                                <p class="text-slate-300 mb-2">
+                                    The <strong>M365 Agent SDK</strong> is the bridge that turns a raw AI agent into a deployable "app"
+                                    that can live inside Microsoft Teams, Copilot, or Outlook. It ensures agents are
+                                    "Agent 365 Compliant."
+                                </p>
+                                <p class="text-slate-400 text-xs">
+                                    <strong>Think of it as:</strong> The packaging that makes your agent fit onto the Microsoft 365
+                                    truck and ensures it can be tracked by IT.
+                                </p>
+                            </div>
+
+                            <!-- Section 2: Standardized Packaging -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">Standardized Packaging</h4>
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <p class="text-slate-300 font-semibold mb-1">What Gets Packaged</p>
+                                        <ul class="text-slate-400 space-y-0.5">
+                                            <li>• Agent logic (from Framework/Foundry)</li>
+                                            <li>• Manifest file (capabilities, permissions)</li>
+                                            <li>• Configuration (channel-specific settings)</li>
+                                            <li>• Dependencies and resources</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-300 font-semibold mb-1">Output</p>
+                                        <ul class="text-slate-400 space-y-0.5">
+                                            <li>• .zip file ready for deployment</li>
+                                            <li>• Agent Store submission package</li>
+                                            <li>• Custom app installation bundle</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Telemetry Emission -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">Telemetry Emission (Agent 365 Requirement)</h4>
+                                <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                                    <p class="text-emerald-300 font-semibold text-xs mb-1">Automatic Signals</p>
+                                    <ul class="text-slate-400 space-y-0.5 text-xs">
+                                        <li>• <strong>User ID:</strong> Who used the agent</li>
+                                        <li>• <strong>Token usage:</strong> Cost tracking</li>
+                                        <li>• <strong>Latency:</strong> Performance monitoring</li>
+                                        <li>• <strong>Tool calls:</strong> What the agent accessed</li>
+                                        <li>• <strong>Error rates:</strong> Reliability metrics</li>
+                                    </ul>
+                                    <p class="text-slate-400 text-xs mt-2">
+                                        <strong>Why This Matters:</strong> Agent 365 requires this data for fleet observability.
+                                        Without SDK telemetry, agents are "invisible" to IT.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Agent Loop -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">Agent Loop (Rapid Prototyping)</h4>
+                                <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                                    <p class="text-blue-300 font-semibold text-xs mb-1">Lightweight testing environment</p>
+                                    <p class="text-slate-400 text-xs mb-2">
+                                        Mimics Teams/Copilot experience. No deployment required.
+                                    </p>
+                                    <ol class="text-slate-400 space-y-0.5 text-xs">
+                                        <li>1. Build agent in Framework/Foundry</li>
+                                        <li>2. Test in Agent Loop (instant feedback)</li>
+                                        <li>3. Iterate on prompts and tools</li>
+                                        <li>4. Package with SDK when ready</li>
+                                        <li>5. Deploy to production</li>
+                                    </ol>
+                                    <p class="text-blue-300 text-xs mt-2">
+                                        <strong>Speed:</strong> Reduces feedback cycle from hours to minutes
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Channel Customization -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">Channel Customization</h4>
+                                <p class="text-slate-300 text-xs mb-2"><strong>Same Agent, Different Experiences</strong></p>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-slate-800/50 rounded p-2">
+                                        <p class="text-emerald-300 font-semibold mb-1">M365 Copilot</p>
+                                        <p class="text-slate-400">Appears as skill in Copilot sidebar. Microsoft Graph integration.</p>
+                                    </div>
+                                    <div class="bg-slate-800/50 rounded p-2">
+                                        <p class="text-emerald-300 font-semibold mb-1">Teams</p>
+                                        <p class="text-slate-400">Shows as bot in chat. Adaptive cards, team collaboration.</p>
+                                    </div>
+                                    <div class="bg-slate-800/50 rounded p-2">
+                                        <p class="text-emerald-300 font-semibold mb-1">Web</p>
+                                        <p class="text-slate-400">Standalone interface. Custom branding, public or authenticated.</p>
+                                    </div>
+                                    <div class="bg-slate-800/50 rounded p-2">
+                                        <p class="text-emerald-300 font-semibold mb-1">Custom Apps</p>
+                                        <p class="text-slate-400">Embed in LOB applications. Custom UI, enterprise SSO.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 6: Technology Agnostic -->
+                            <div>
+                                <h4 class="text-md font-bold text-emerald-300 mb-2">Technology Agnostic</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>C#:</strong> .NET SDK for enterprise applications</li>
+                                    <li>• <strong>JavaScript/TypeScript:</strong> Node.js SDK for web developers</li>
+                                    <li>• <strong>Python:</strong> Python SDK for data science teams</li>
+                                    <li>• <strong>No Framework Lock-in:</strong> Works with any agent built in Foundry</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/m365-agents-sdk"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-emerald-400 hover:text-emerald-300 text-xs">
+                                    SDK Docs <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/agent-store"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-emerald-400 hover:text-emerald-300 text-xs">
+                                    Agent Store <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://github.com/microsoft/m365-agents-sdk-samples"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-emerald-400 hover:text-emerald-300 text-xs">
+                                    GitHub Samples <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-emerald-400">M365 Agent SDK</h3>
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">PACKAGING</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-emerald-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent Store ready</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-emerald-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agent Loop prototyping</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-emerald-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Multi-platform deployment</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Microsoft Agent 365 -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-orange-500/50 transition-all" data-card="agent365">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-orange-400">Microsoft Agent 365</h3>
+                            <div class="flex gap-2">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">NEW</span>
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-500/20 text-orange-400">CONTROL PLANE</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            <strong>🆕 NEW: Air Traffic Control for your agent fleet.</strong> Centralized observability, security,
+                            and governance in M365 Admin Center. Detects rogue agents, prevents data leakage,
+                            tracks token usage. Requires SDK telemetry. Available via Frontier Program.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-orange-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Fleet observability: All agents, users, token usage (NEW 2025)</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-orange-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Security: Rogue agent detection & data leakage prevention</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-orange-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Governance: Compliance, audit trails, lifecycle management</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: What Is Agent 365 -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">What Is Agent 365?</h4>
+                                <p class="text-slate-300 mb-2">
+                                    <strong>Announced at Ignite 2025.</strong> Microsoft Agent 365 is the centralized management console
+                                    designed for IT Administrators and CIOs. It provides the "Air Traffic Control" view of all agents
+                                    operating within the corporate tenant.
+                                </p>
+                                <p class="text-slate-400 text-xs">
+                                    <strong>Strategic Purpose:</strong> Answer the CIO question: "What are all these AI agents doing on my network?"<br/>
+                                    <strong>Designed For:</strong> "Frontier Firm" scale (1000+ agents across enterprise)
+                                </p>
+                            </div>
+
+                            <!-- Section 2: Fleet Observability -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">Fleet Observability</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• See every agent running in the organization</li>
+                                    <li>• Who is using each agent and token consumption</li>
+                                    <li>• Success/failure rates and response time performance</li>
+                                    <li>• Real-time monitoring of active sessions and API quota</li>
+                                    <li>• Usage analytics: Most/least used agents, peak times, cost attribution</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 3: Security & Compliance -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">Security & Compliance</h4>
+                                <div class="space-y-2">
+                                    <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                                        <p class="text-red-300 font-semibold text-xs mb-1">🚨 Rogue Agent Prevention</p>
+                                        <p class="text-slate-400 text-xs">
+                                            Agent 365 detects agents behaving anomalously and auto-blocks them. Examples:
+                                            Agent accessing HR data when unauthorized, making 1000x normal API calls,
+                                            or sending data to external endpoints.
+                                        </p>
+                                    </div>
+                                    <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                                        <p class="text-yellow-300 font-semibold text-xs mb-1">🔒 Data Leakage Protection</p>
+                                        <p class="text-slate-400 text-xs">
+                                            Enforce policies on what data agents can read/write. Example: "Finance Agent cannot
+                                            read Engineering SharePoint" or "HR Agent cannot share salary data with non-HR users."
+                                        </p>
+                                    </div>
+                                    <ul class="text-slate-400 space-y-1 text-xs mt-2">
+                                        <li>• Zero Trust Architecture: Verify every agent interaction</li>
+                                        <li>• Oversharing Detection: Flag when sensitive data is returned</li>
+                                        <li>• Audit trail of all data accessed</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Governance Framework -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">Governance Framework</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Approval Workflows:</strong> IT admin gates for agent deployment</li>
+                                    <li>• <strong>Policy Repository:</strong> Define what agents can/cannot do (SOC2, GDPR, HIPAA)</li>
+                                    <li>• <strong>Audit Trails:</strong> Complete history for compliance, immutable logs</li>
+                                    <li>• <strong>Agent Inventory:</strong> Track from idea → production with ownership</li>
+                                    <li>• <strong>Lifecycle Management:</strong> Deploy, update, decommission agents centrally</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 5: Availability -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">Availability & Access</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Frontier Program:</strong> Early access for select enterprise customers</li>
+                                    <li>• <strong>Expected GA:</strong> H2 2025</li>
+                                    <li>• <strong>Licensing:</strong> Requires Microsoft 365 E5 (or equivalent)</li>
+                                    <li>• <strong>SDK Requirement:</strong> Agents MUST emit telemetry via M365 Agent SDK</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 6: Why This Matters -->
+                            <div>
+                                <h4 class="text-md font-bold text-orange-300 mb-2">Why This Matters</h4>
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <p class="text-red-300 font-semibold mb-1">Before Agent 365</p>
+                                        <ul class="text-slate-400 space-y-0.5">
+                                            <li>• Shadow AI sprawl</li>
+                                            <li>• No visibility</li>
+                                            <li>• Manual security reviews</li>
+                                            <li>• No cost tracking</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <p class="text-emerald-300 font-semibold mb-1">After Agent 365</p>
+                                        <ul class="text-slate-400 space-y-0.5">
+                                            <li>• Centralized control</li>
+                                            <li>• Real-time observability</li>
+                                            <li>• Automated security</li>
+                                            <li>• Granular cost attribution</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://m365admin.handsontek.net/microsoft-agent-365-available-frontier-program/"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-orange-400 hover:text-orange-300 text-xs">
+                                    Official Launch <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/blog/microsoft-security-blog/security-as-the-core-primitive-in-the-agentic-era"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-orange-400 hover:text-orange-300 text-xs">
+                                    Security <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://news.microsoft.com/ignite-2025-book-of-news/"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-orange-400 hover:text-orange-300 text-xs">
+                                    Ignite 2025 <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-orange-400">Microsoft Agent 365</h3>
+                            <div class="flex gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-red-500/20 text-red-400">NEW</span>
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-500/20 text-orange-400">CONTROL PLANE</span>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-orange-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Fleet observability (NEW 2025)</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-orange-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Rogue agent detection</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-orange-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Compliance & audit trails</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Foundry IQ -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-cyan-500/50 transition-all" data-card="foundryiq">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-cyan-400">Foundry IQ</h3>
+                            <div class="flex gap-2">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-500/20 text-yellow-400">PREVIEW</span>
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-cyan-500/20 text-cyan-400">KNOWLEDGE</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            The managed knowledge layer unifying M365 documents (Work IQ), Enterprise Data in Fabric (Fabric IQ),
+                            and public web data into a single knowledge graph. Agentic RAG with 36% higher relevance vs standard implementations.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>36% higher relevance vs standard RAG implementations</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agentic retrieval: Dynamic search strategy based on query type</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Work IQ (M365) + Fabric IQ (Enterprise data) connectors</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: What It Is -->
+                            <div>
+                                <h4 class="text-md font-bold text-cyan-300 mb-2">What It Is - "Agentic RAG Engine"</h4>
+                                <p class="text-slate-300 mb-2">
+                                    Foundry IQ is the managed knowledge layer that sits underneath your agent fleet. It unifies
+                                    disparate data sources into a single, normalized "knowledge graph" endpoint.
+                                </p>
+                                <p class="text-slate-400 text-xs">
+                                    Instead of building custom ETL pipelines, vector stores, and retrieval logic, Foundry IQ abstracts
+                                    this into a managed service that agents can query naturally.
+                                </p>
+                            </div>
+
+                            <!-- Section 2: Why It Matters -->
+                            <div>
+                                <h4 class="text-md font-bold text-cyan-300 mb-2">Why It Matters</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>36% Higher Relevance:</strong> Microsoft benchmarks claim 36% boost in response accuracy</li>
+                                    <li>• <strong>Agentic Retrieval:</strong> Dynamically decides how to search (Keyword, Vector, Hybrid) based on query</li>
+                                    <li>• <strong>Code Reduction:</strong> Eliminates ~40% of custom RAG boilerplate (chunking, embedding, re-ranking)</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 3: Architecture Components -->
+                            <div>
+                                <h4 class="text-md font-bold text-cyan-300 mb-2">Architecture Components</h4>
+                                <div class="space-y-2">
+                                    <div class="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                                        <p class="text-cyan-300 font-semibold text-xs mb-1">Work IQ</p>
+                                        <p class="text-slate-400 text-xs">
+                                            Native connector to M365 Graph (Teams, SharePoint, Outlook, OneDrive). Respects user permissions—agents
+                                            can't retrieve data users couldn't access manually.
+                                        </p>
+                                    </div>
+                                    <div class="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                                        <p class="text-cyan-300 font-semibold text-xs mb-1">Fabric IQ</p>
+                                        <p class="text-slate-400 text-xs">
+                                            Native connector to Microsoft Fabric (OneLake, SQL, Dataverse). Query structured enterprise data
+                                            without complex SQL wrappers.
+                                        </p>
+                                    </div>
+                                    <div class="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+                                        <p class="text-cyan-300 font-semibold text-xs mb-1">Automated Indexing</p>
+                                        <p class="text-slate-400 text-xs">
+                                            Handles chunking, embedding, and re-ranking automatically. Optimizes for specific data types
+                                            (sliding windows for documents, row-based for data).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Implementation Workflow -->
+                            <div>
+                                <h4 class="text-md font-bold text-cyan-300 mb-2">Implementation Workflow</h4>
+                                <div class="bg-slate-800/50 rounded-lg p-3">
+                                    <p class="text-slate-300 text-xs mb-2"><strong>Use Case:</strong> "What was the financial impact of Project X mentioned in last week's emails?"</p>
+                                    <ol class="text-slate-400 space-y-0.5 text-xs">
+                                        <li>1. Agent receives query</li>
+                                        <li>2. Agent delegates retrieval to Foundry IQ</li>
+                                        <li>3. Foundry IQ formulates search strategy ("Search Emails for Project X" + "Query SQL for Financials")</li>
+                                        <li>4. Foundry IQ retrieves, re-ranks, and synthesizes context</li>
+                                        <li>5. Agent generates response based on high-fidelity context</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Strategic Value -->
+                            <div>
+                                <h4 class="text-md font-bold text-cyan-300 mb-2">Strategic Value</h4>
+                                <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                                    <p class="text-blue-300 font-semibold text-xs mb-1">💡 Enterprise Impact</p>
+                                    <p class="text-slate-400 text-xs">
+                                        Solves the "fragmented context" problem that makes most enterprise agents ineffective.
+                                        Grounds agents in truth, dramatically reducing hallucinations when answering questions
+                                        based on internal company data.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-iq"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-xs">
+                                    Foundry IQ Docs <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/foundry-iq-preview"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-xs">
+                                    Preview Announcement <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-cyan-400">Foundry IQ</h3>
+                            <div class="flex gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-yellow-500/20 text-yellow-400">PREVIEW</span>
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-cyan-500/20 text-cyan-400">KNOWLEDGE</span>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-cyan-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>36% higher relevance</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-cyan-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Agentic retrieval</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-cyan-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Work & Fabric IQ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Router -->
+                <div class="glass-panel rounded-xl p-6 orientation-card cursor-pointer hover:border-amber-500/50 transition-all" data-card="modelrouter">
+                    <!-- Close Button (Desktop only) -->
+                    <button type="button" class="close-btn absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all flex items-center justify-center z-10" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <!-- Full Content -->
+                    <div class="card-full-content">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-amber-400">Model Router</h3>
+                            <div class="flex gap-2">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">GA</span>
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-amber-500/20 text-amber-400">ROUTING</span>
+                            </div>
+                        </div>
+                        <p class="text-slate-300 text-sm mb-4">
+                            Smart traffic controller that sits between your application and model providers. Optimizes token spend,
+                            prevents vendor lock-in, and provides automatic failover. Route to GPT-5, Claude 4.5 Sonnet, Llama 3, and more.
+                        </p>
+                        <div class="space-y-2 text-sm text-slate-400 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-amber-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Dynamic routing based on prompt complexity and rules</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-amber-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Automatic failover for resiliency and high availability</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-4 h-4 text-amber-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>3 optimization modes: Quality, Cost, Latency</span>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Content Sections -->
+                        <div class="mt-6 space-y-6 text-sm expanded-sections">
+                            <!-- Section 1: What It Is -->
+                            <div>
+                                <h4 class="text-md font-bold text-amber-300 mb-2">What It Is - "Smart Traffic Controller"</h4>
+                                <p class="text-slate-300 mb-2">
+                                    The Model Router is a unified API endpoint that sits between your agent application and raw model providers.
+                                    Instead of hard-coding calls to specific models, your application calls the Router.
+                                </p>
+                                <p class="text-slate-400 text-xs">
+                                    The Router analyzes prompt complexity and routing rules to select the optimal model in real-time.
+                                    Swapping models becomes a configuration change, not a code rewrite.
+                                </p>
+                            </div>
+
+                            <!-- Section 2: Why It Matters -->
+                            <div>
+                                <h4 class="text-md font-bold text-amber-300 mb-2">Why It Matters</h4>
+                                <ul class="text-slate-400 space-y-1 text-xs">
+                                    <li>• <strong>Dynamic Routing:</strong> Analyzes prompt complexity to select optimal model in real-time</li>
+                                    <li>• <strong>Lock-In Prevention:</strong> Decouples application logic from specific model versions</li>
+                                    <li>• <strong>Resiliency:</strong> Automatic failover if primary provider experiences latency or outages</li>
+                                </ul>
+                            </div>
+
+                            <!-- Section 3: Routing Modes -->
+                            <div>
+                                <h4 class="text-md font-bold text-amber-300 mb-2">Routing Modes</h4>
+                                <div class="grid grid-cols-1 gap-2 text-xs">
+                                    <div class="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                                        <p class="text-purple-300 font-semibold mb-1">🎯 Optimize for Quality</p>
+                                        <p class="text-slate-400 mb-1"><strong>Goal:</strong> Best possible answer, regardless of cost</p>
+                                        <p class="text-slate-400"><strong>Behavior:</strong> Routes complex reasoning to GPT-5 or Claude 4.5 Sonnet</p>
+                                    </div>
+                                    <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                                        <p class="text-emerald-300 font-semibold mb-1">💰 Optimize for Cost</p>
+                                        <p class="text-slate-400 mb-1"><strong>Goal:</strong> Lowest token spend for acceptable quality</p>
+                                        <p class="text-slate-400"><strong>Behavior:</strong> Routes simple tasks to GPT-4o-mini, Phi-4, or Llama 3</p>
+                                    </div>
+                                    <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                                        <p class="text-blue-300 font-semibold mb-1">⚡ Optimize for Latency</p>
+                                        <p class="text-slate-400 mb-1"><strong>Goal:</strong> Fastest Time-to-First-Token (TTFT)</p>
+                                        <p class="text-slate-400"><strong>Behavior:</strong> Prioritizes fastest available model endpoint</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: MaaS Catalog -->
+                            <div>
+                                <h4 class="text-md font-bold text-amber-300 mb-2">MaaS Catalog (Models as a Service)</h4>
+                                <p class="text-slate-300 text-xs mb-2">Route traffic to third-party models as first-class citizens:</p>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <ul class="text-slate-400 space-y-0.5">
+                                        <li>• <strong>OpenAI:</strong> GPT-5, o1</li>
+                                        <li>• <strong>Anthropic:</strong> Claude 4.5 Sonnet</li>
+                                        <li>• <strong>Meta:</strong> Llama 3</li>
+                                    </ul>
+                                    <ul class="text-slate-400 space-y-0.5">
+                                        <li>• <strong>Mistral:</strong> Large</li>
+                                        <li>• <strong>Cohere:</strong> Command R+</li>
+                                        <li>• <strong>Microsoft:</strong> Phi family</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Strategic Value -->
+                            <div>
+                                <h4 class="text-md font-bold text-amber-300 mb-2">Strategic Value</h4>
+                                <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                                    <p class="text-green-300 font-semibold text-xs mb-1">💡 Immediate Adoption</p>
+                                    <p class="text-slate-400 text-xs">
+                                        Adopt immediately for all production workloads. Easiest way to reduce costs (offload simple tasks
+                                        to cheaper models) and ensure reliability (failover protection). Configuration change vs code rewrite.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Resources -->
+                        <div class="mt-6 pt-4 border-t border-slate-700">
+                            <p class="text-xs font-semibold text-slate-400 mb-2">Technical Resources</p>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/model-router"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-amber-400 hover:text-amber-300 text-xs">
+                                    Model Router Docs <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                                <span class="text-slate-600">•</span>
+                                <a href="https://techcommunity.microsoft.com/model-router-ga"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center text-amber-400 hover:text-amber-300 text-xs">
+                                    GA Announcement <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Content -->
+                    <div class="card-mini-content">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="text-lg font-bold text-amber-400">Model Router</h3>
+                            <div class="flex gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">GA</span>
+                                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-400">ROUTING</span>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 text-xs text-slate-400">
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-amber-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Dynamic routing</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-amber-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Auto failover</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-3 h-3 text-amber-400 mr-1.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>3 optimization modes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-8 text-center">
+                <div class="glass-panel inline-block px-6 py-4 rounded-lg">
+                    <p class="text-sm text-slate-300 mb-2">
+                        <span class="text-purple-400 font-semibold">Foundry</span> = Design •
+                        <span class="text-blue-400 font-semibold">Framework</span> = Build •
+                        <span class="text-cyan-400 font-semibold">Foundry IQ</span> = Knowledge •
+                        <span class="text-amber-400 font-semibold">Model Router</span> = Routing •
+                        <span class="text-emerald-400 font-semibold">M365 SDK</span> = Package •
+                        <span class="text-orange-400 font-semibold">Agent 365</span> = Manage
+                    </p>
+                    <p class="text-xs text-slate-500 flex items-center justify-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                        All platforms use Model Context Protocol (MCP) for universal connectivity
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Value Prop Grid -->
+    <div id="benefits" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-white mb-4">Why Agent Architecture Guide?</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">
+                Three core capabilities that transform how enterprise teams manage their AI agent ecosystem.
+            </p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="glass-panel p-8 rounded-2xl hover:border-blue-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-500/30 transition-all">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-3">Centralized Governance</h3>
+                <p class="text-slate-400">Enforce security, compliance, and responsible AI principles across all agent initiatives. Policy repository with audit trails and decision tracking.</p>
+            </div>
+            <div class="glass-panel p-8 rounded-2xl hover:border-purple-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-purple-500/30 transition-all">
+                    <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-3">Agent Portfolio Management</h3>
+                <p class="text-slate-400">Track agents from ideation to production across Individual, Department, and Enterprise tiers. Unified registry with ownership and dependency tracking.</p>
+            </div>
+            <div class="glass-panel p-8 rounded-2xl hover:border-emerald-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6 group-hover:bg-emerald-500/30 transition-all">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-3">AI-Powered Intelligence</h3>
+                <p class="text-slate-400">Automatic extraction of tasks and decisions from meeting transcripts. Fourth AI Guide answers questions about your agent ecosystem using Azure AI.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Capabilities Section -->
+    <div id="capabilities" class="bg-slate-900/50 py-20 border-y border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-3xl font-bold text-white">Platform Capabilities</h2>
+                    <p class="text-slate-400 mt-2">Eight integrated modules for comprehensive agent lifecycle management.</p>
+                </div>
+                <a href="http://localhost:8080" class="text-blue-400 hover:text-blue-300 font-medium flex items-center">
+                    Launch Platform <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Dashboard -->
+                <div class="glass-panel rounded-xl p-6 hover:border-blue-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-500/20 text-blue-400">CORE</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition">Dashboard</h3>
+                    <p class="text-slate-400 text-sm mb-4">High-level KPIs, recent activity, and team progress at a glance. Real-time insights into agent adoption and task completion.</p>
+                </div>
+
+                <!-- Meetings Hub -->
+                <div class="glass-panel rounded-xl p-6 hover:border-purple-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-purple-500/20 text-purple-400">CORE</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition">Meetings Hub</h3>
+                    <p class="text-slate-400 text-sm mb-4">Schedule sessions, upload transcripts, extract action items and decisions automatically. Governance, technical, and review meeting types supported.</p>
+                </div>
+
+                <!-- Task Management -->
+                <div class="glass-panel rounded-xl p-6 hover:border-emerald-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400">CORE</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition">Task Management</h3>
+                    <p class="text-slate-400 text-sm mb-4">Kanban board with 5 status columns. Priority levels, dependencies, due dates, and assignment tracking. Auto-generated from meeting transcripts.</p>
+                </div>
+
+                <!-- Agent Portfolio -->
+                <div class="glass-panel rounded-xl p-6 hover:border-orange-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-500/20 text-orange-400">CORE</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-orange-400 transition">Agent Portfolio</h3>
+                    <p class="text-slate-400 text-sm mb-4">Track all organizational agents by tier (Individual/Department/Enterprise). Status pipeline from Idea to Production. Ownership and use case tracking.</p>
+                </div>
+
+                <!-- Governance Framework -->
+                <div class="glass-panel rounded-xl p-6 hover:border-red-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-red-500/20 text-red-400">CRITICAL</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-red-400 transition">Governance</h3>
+                    <p class="text-slate-400 text-sm mb-4">6-week implementation framework. Policy repository for Security, Development, and Operational standards. Semantic Kernel and Responsible AI enforcement.</p>
+                </div>
+
+                <!-- Decisions Log -->
+                <div class="glass-panel rounded-xl p-6 hover:border-yellow-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-500/20 text-yellow-400">AUDIT</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-yellow-400 transition">Decisions</h3>
+                    <p class="text-slate-400 text-sm mb-4">Decision log with rationale and impact analysis. Track architectural choices, policy updates, and governance approvals. Complete audit trail for compliance.</p>
+                </div>
+
+                <!-- Budget & Licensing -->
+                <div class="glass-panel rounded-xl p-6 hover:border-green-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-green-500/20 text-green-400">FINANCE</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-green-400 transition">Budget</h3>
+                    <p class="text-slate-400 text-sm mb-4">License inventory for ChatGPT, Claude, Copilot, and Azure OpenAI. Budget vs. actual spend tracking. 2026 forecasting and $150K+ optimization opportunities.</p>
+                </div>
+
+                <!-- Architecture Lab -->
+                <div class="glass-panel rounded-xl p-6 hover:border-indigo-500/50 transition group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-semibold bg-indigo-500/20 text-indigo-400">DEV</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition">Architecture Lab</h3>
+                    <p class="text-slate-400 text-sm mb-4">Technology radar (Adopt/Trial/Assess/Hold). Code pattern repository for Single Agent and Multi-Agent architectures. Deployment guides and documentation links.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Technical Features -->
+    <div id="features" class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-white mb-4">Built on Enterprise-Grade Technology</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">
+                    Modern stack combining Next.js, FastAPI, and Azure services for scalability, performance, and security.
+                </p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">N</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Next.js 16</div>
+                        <div class="text-xs text-slate-500">React 19 + TS</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-emerald-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">F</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">FastAPI</div>
+                        <div class="text-xs text-slate-500">Python 3.11</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-sky-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-sky-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">Az</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Cosmos DB</div>
+                        <div class="text-xs text-slate-500">NoSQL Storage</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-purple-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-purple-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">AI</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Azure AI</div>
+                        <div class="text-xs text-slate-500">Model Router</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-orange-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-orange-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">B</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Blob Storage</div>
+                        <div class="text-xs text-slate-500">Large Files</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-indigo-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">S</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">AI Search</div>
+                        <div class="text-xs text-slate-500">Transcripts</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-slate-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-slate-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">D</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Docker</div>
+                        <div class="text-xs text-slate-500">Compose Stack</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-lg flex items-center space-x-3 hover:bg-slate-800 hover:border-teal-500/50 transition-all duration-300 hover:transform hover:-translate-y-0.5 cursor-pointer group">
+                    <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center font-bold text-white text-xs group-hover:scale-110 transition-transform">UI</div>
+                    <div>
+                        <div class="font-semibold text-white text-sm">Shadcn UI</div>
+                        <div class="text-xs text-slate-500">Components</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Benefits Section -->
+    <div class="bg-slate-900/50 py-20 border-y border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-white mb-12 text-center">Why Enterprise Teams Choose Agent Architecture Guide</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-panel p-6 rounded-xl hover:border-blue-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                    <h4 class="text-lg font-bold text-white mb-3 flex items-center group-hover:text-blue-400 transition-colors">
+                        <svg class="w-5 h-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        For Leadership
+                    </h4>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Single dashboard for all agent initiatives across the organization</li>
+                        <li>• Real-time budget tracking vs. forecasts with optimization opportunities</li>
+                        <li>• Complete audit trails for compliance and policy enforcement</li>
+                        <li>• Risk management through framework adherence tracking</li>
+                    </ul>
+                </div>
+                <div class="glass-panel p-6 rounded-xl hover:border-purple-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                    <h4 class="text-lg font-bold text-white mb-3 flex items-center group-hover:text-purple-400 transition-colors">
+                        <svg class="w-5 h-5 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        For Architects
+                    </h4>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Technology radar for approved tools and patterns</li>
+                        <li>• Repository of proven Single Agent and Multi-Agent architectures</li>
+                        <li>• Shared governance decisions and architectural rationale</li>
+                        <li>• Dependency management across agent portfolio</li>
+                    </ul>
+                </div>
+                <div class="glass-panel p-6 rounded-xl hover:border-emerald-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                    <h4 class="text-lg font-bold text-white mb-3 flex items-center group-hover:text-emerald-400 transition-colors">
+                        <svg class="w-5 h-5 text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        For Development Teams
+                    </h4>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Clear requirements extracted from meetings automatically</li>
+                        <li>• Integrated task tracking with Kanban boards and dependencies</li>
+                        <li>• Knowledge base with resources, patterns, and best practices</li>
+                        <li>• Fourth AI Guide for instant context lookup</li>
+                    </ul>
+                </div>
+                <div class="glass-panel p-6 rounded-xl hover:border-orange-500/50 transition-all duration-300 hover:transform hover:-translate-y-1 group cursor-pointer">
+                    <h4 class="text-lg font-bold text-white mb-3 flex items-center group-hover:text-orange-400 transition-colors">
+                        <svg class="w-5 h-5 text-orange-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        For Operations
+                    </h4>
+                    <ul class="text-slate-400 text-sm space-y-2">
+                        <li>• Step-by-step deployment guides and procedures</li>
+                        <li>• Agent status tracking from Idea to Production</li>
+                        <li>• Change management with decision rationale documentation</li>
+                        <li>• Observability requirements defined in governance framework</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="py-20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-6">Ready to Scale Your AI Agent Ecosystem?</h2>
+            <p class="text-xl text-slate-400 mb-10">
+                Join Fourth's enterprise teams in building a governed, scalable foundation for Microsoft Agent Framework adoption.
+            </p>
+            <div class="flex justify-center gap-4">
+                <a href="http://localhost:8080" class="px-10 py-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-lg shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5">
+                    Launch Platform Now
+                </a>
+                <a href="README.md" class="px-10 py-4 rounded-lg glass-panel hover:bg-slate-800 text-white font-semibold text-lg transition transform hover:-translate-y-0.5">
+                    Read Documentation
+                </a>
+            </div>
+            <p class="text-slate-500 text-sm mt-8">
+                Currently in development • Version 1.0.0 MVP • Day 1 Complete (2025-11-20)
+            </p>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-800 mt-auto py-8 bg-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500 text-sm">
+            <p>Fourth AI Architect Team • Enterprise Agent Architecture Guide</p>
+            <p class="mt-2">Built with <span class="text-blue-500">Next.js</span>, <span class="text-emerald-500">FastAPI</span>, and <span class="text-purple-500">Azure AI Foundry</span></p>
+        </div>
+    </footer>
+
+    <!-- Mobile Overlay Container -->
+    <div id="mobile-overlay" class="mobile-overlay">
+        <div class="mobile-overlay-content">
+            <!-- Content will be cloned here for mobile -->
+        </div>
+    </div>
+
+    <script>
+        // Orientation Card Expand/Collapse Functionality
+        (function() {
+            const cards = document.querySelectorAll('.orientation-card');
+            const grid = document.querySelector('.orientation-grid');
+            const mobileOverlay = document.getElementById('mobile-overlay');
+            let expandedCard = null;
+            const isMobile = () => window.innerWidth < 768;
+
+            // Handle card click
+            cards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Don't trigger on link clicks or close button
+                    if (e.target.closest('a') || e.target.closest('.close-btn')) {
+                        return;
+                    }
+
+                    const cardId = this.dataset.card;
+
+                    if (isMobile()) {
+                        showMobileOverlay(this);
+                    } else {
+                        if (expandedCard === cardId) {
+                            collapseAll();
+                        } else {
+                            expandCard(cardId);
+                        }
+                    }
+                });
+
+                // Handle close button clicks (desktop)
+                const closeBtn = card.querySelector('.close-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        collapseAll();
+                    });
+                }
+            });
+
+            function expandCard(cardId) {
+                collapseAll();
+                expandedCard = cardId;
+
+                grid.classList.add('expanded');
+
+                let expandedCardElement = null;
+
+                cards.forEach(card => {
+                    if (card.dataset.card === cardId) {
+                        card.classList.add('card-expanded');
+                        card.classList.remove('card-collapsed');
+                        expandedCardElement = card;
+                    } else {
+                        card.classList.add('card-collapsed');
+                        card.classList.remove('card-expanded');
+                    }
+                });
+
+                // Scroll to the top of the expanded card with offset
+                if (expandedCardElement) {
+                    setTimeout(() => {
+                        const cardRect = expandedCardElement.getBoundingClientRect();
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        const cardTop = cardRect.top + scrollTop;
+                        const offset = 100; // Show 100px of background above the card
+
+                        window.scrollTo({
+                            top: cardTop - offset,
+                            behavior: 'smooth'
+                        });
+                    }, 100);
+                }
+            }
+
+            function collapseAll() {
+                expandedCard = null;
+                grid.classList.remove('expanded');
+                cards.forEach(card => {
+                    card.classList.remove('card-expanded', 'card-collapsed');
+                });
+            }
+
+            function showMobileOverlay(card) {
+                const overlayContent = mobileOverlay.querySelector('.mobile-overlay-content');
+                const clone = card.cloneNode(true);
+
+                // Remove the collapsed content and show full content
+                clone.classList.remove('card-collapsed');
+                clone.classList.add('card-expanded');
+
+                // Add close button handler to cloned card
+                const closeBtn = clone.querySelector('.close-btn');
+                if (closeBtn) {
+                    closeBtn.style.opacity = '1';
+                    closeBtn.style.pointerEvents = 'auto';
+                    closeBtn.addEventListener('click', hideMobileOverlay);
+                }
+
+                overlayContent.innerHTML = '';
+                overlayContent.appendChild(clone);
+
+                // Show overlay
+                mobileOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function hideMobileOverlay() {
+                mobileOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            // ESC key handler
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (isMobile() && mobileOverlay.classList.contains('active')) {
+                        hideMobileOverlay();
+                    } else if (!isMobile() && expandedCard) {
+                        collapseAll();
+                    }
+                }
+            });
+
+            // Click outside overlay to close (mobile)
+            mobileOverlay.addEventListener('click', function(e) {
+                if (e.target === mobileOverlay) {
+                    hideMobileOverlay();
+                }
+            });
+
+            // Handle window resize
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (!isMobile() && mobileOverlay.classList.contains('active')) {
+                        hideMobileOverlay();
+                        collapseAll();
+                    } else if (isMobile() && expandedCard) {
+                        collapseAll();
+                    }
+                }, 250);
+            });
+        })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1913 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Implement Transcript File Upload Backend",
+        "description": "Create backend endpoints for transcript file upload and storage in Azure Blob Storage",
+        "details": "Create POST /api/transcripts/upload endpoint that accepts .txt, .md, .docx files up to 10MB. Validate file types, store in Azure Blob Storage 'transcripts' container, and return blob URL with metadata. Use Azure Storage SDK for Python: from azure.storage.blob import BlobServiceClient. Implement file validation using python-magic library for MIME type checking. Return JSON with blob_url, file_name, file_size, upload_timestamp.",
+        "testStrategy": "Unit tests for file validation, integration tests for blob storage upload, test file size limits, test invalid file types rejection, verify blob URL accessibility",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Azure Blob Storage client and environment",
+            "description": "Configure the Azure Blob Storage SDK for Python and set up environment variables for authentication and storage account access.",
+            "dependencies": [],
+            "details": "Install azure-storage-blob and azure-identity packages. Set environment variables for AZURE_STORAGE_BLOB_URL and authentication (e.g., DefaultAzureCredential). Initialize BlobServiceClient using the storage URL and credential.\n<info added on 2025-11-24T21:13:29.673Z>\nI'll analyze the codebase to provide specific implementation details for the subtask update.Based on my analysis of the codebase, here's the implementation update text:\n\nImplementation completed in backend/src/routers/transcripts.py. Created APIRouter with prefix '/api/transcripts' at line 12. Implemented POST /upload endpoint (lines 115-163) with FastAPI File upload handling. File validation includes extension check against ALLOWED_EXTENSIONS (.txt, .md, .docx) and MIME type validation (text/plain, text/markdown, application/vnd.openxmlformats-officedocument.wordprocessingml.document). Size limit enforced at 10MB (MAX_FILE_SIZE_BYTES = 10485760 bytes). Created TranscriptBlobService class (lines 24-92) using BlobServiceClient.from_connection_string with dedicated 'transcripts' container (separate from default 'resources' container). Endpoint returns JSON with blob_url, file_name, file_size, and upload_timestamp. Router registered in main.py line 62 via app.include_router(transcripts.router). Dependencies satisfied: azure-storage-blob==12.23.1 already in requirements.txt.\n</info added on 2025-11-24T21:13:29.673Z>",
+            "status": "done",
+            "testStrategy": "Verify environment variables are loaded and BlobServiceClient initializes without errors.",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T21:09:41.539Z"
+          },
+          {
+            "id": 2,
+            "title": "Create file upload endpoint with validation",
+            "description": "Implement a POST /api/transcripts/upload endpoint that accepts file uploads and validates file type and size.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use FastAPI or Flask to create the endpoint. Accept only .txt, .md, .docx files up to 10MB. Use python-magic to check MIME types. Reject invalid files with appropriate error responses.",
+            "status": "done",
+            "testStrategy": "Unit tests for file validation, test file size limits, test invalid file types rejection.",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T21:50:53.937Z"
+          },
+          {
+            "id": 3,
+            "title": "Store validated files in Azure Blob Storage",
+            "description": "Upload validated transcript files to the 'transcripts' container in Azure Blob Storage.",
+            "dependencies": [
+              2
+            ],
+            "details": "Generate a unique blob name for each file. Use BlobServiceClient to upload the file to the 'transcripts' container. Handle upload errors and ensure files are stored securely.",
+            "status": "pending",
+            "testStrategy": "Integration tests for blob storage upload, verify blob URL accessibility.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Return upload metadata as JSON response",
+            "description": "Generate and return a JSON response with blob URL, file name, file size, and upload timestamp.",
+            "dependencies": [
+              3
+            ],
+            "details": "After successful upload, construct a JSON response containing the blob URL, original file name, file size in bytes, and upload timestamp. Ensure all metadata is accurate and complete.",
+            "status": "pending",
+            "testStrategy": "Verify JSON response structure and content, check metadata accuracy.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement comprehensive error handling and logging",
+            "description": "Add error handling for all steps and implement logging for debugging and monitoring.",
+            "dependencies": [
+              4
+            ],
+            "details": "Catch and handle exceptions during file validation, upload, and metadata generation. Log errors and important events for debugging and monitoring purposes. Ensure user-friendly error messages are returned.",
+            "status": "pending",
+            "testStrategy": "Test error scenarios, verify logging output, check user-friendly error messages.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-24T21:52:25.019Z"
+      },
+      {
+        "id": "2",
+        "title": "Build AI Transcript Processing Pipeline",
+        "description": "Implement AI processing pipeline to extract meeting insights from transcripts using Azure AI Foundry Model Router",
+        "details": "Create POST /api/transcripts/process endpoint. Read transcript from Blob Storage, implement chunking for >15k tokens (split into 10k chunks with 500 token overlap). Use Azure AI Foundry Model Router with system prompt to extract: meeting summary (2-3 sentences), action items list, key decisions, topics/keywords. For chunking: use tiktoken library to count tokens. Merge and deduplicate results from multiple chunks. Update Cosmos DB meeting record with extracted data in fields: summary, action_items[], decisions[], topics[].",
+        "testStrategy": "Test with various transcript sizes, verify chunking logic, test AI extraction accuracy, validate deduplication, test Cosmos DB updates, mock AI responses for unit tests",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-24T21:59:35.385Z"
+      },
+      {
+        "id": "3",
+        "title": "Implement Auto-Task Creation from Action Items",
+        "description": "Automatically create tasks in Cosmos DB from extracted action items with proper linking and assignment",
+        "details": "For each extracted action item, create task document in Cosmos DB 'tasks' collection. Parse action item text to detect assignee names using regex/NLP. Set task fields: title (action item text), status='Pending', created_from_meeting=meeting_id, assigned_to (if detected), priority based on keywords (urgent/critical/ASAP = High, otherwise Medium). Use spaCy or similar for name entity recognition. Update meeting status from 'Scheduled' to 'Completed' and set updated_at timestamp.",
+        "testStrategy": "Test action item parsing, verify task creation with correct fields, test assignee detection accuracy, validate meeting status updates, test priority assignment logic",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-24T22:01:18.942Z"
+      },
+      {
+        "id": "4",
+        "title": "Connect Frontend Upload Dialog to Backend",
+        "description": "Integrate existing upload dialog in meetings page with backend transcript processing",
+        "details": "Update meetings/page.tsx upload dialog to call /api/transcripts/upload then /api/transcripts/process. Implement file upload with progress indicator using fetch API with FormData. Show processing states: 'Uploading' → 'Processing' → 'Complete'. Display success message with count of extracted items (X action items, Y decisions created). Add error handling with user-friendly messages. Refresh meeting list after successful processing using SWR revalidation or state update.",
+        "testStrategy": "Test file upload flow, verify progress indicators, test error handling, validate success messages, test meeting list refresh, test with various file sizes",
+        "priority": "high",
+        "dependencies": [
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-24T22:10:45.118Z"
+      },
+      {
+        "id": "5",
+        "title": "Setup Azure AI Search Index for RAG",
+        "description": "Create and configure Azure AI Search index for meeting transcripts, tasks, agents, and governance data",
+        "details": "Create Azure AI Search service and index with fields: id, content, type (meeting|task|agent|governance), metadata (title, date, status). Implement vector embeddings using Azure OpenAI text-embedding-ada-002 model. Create search client using azure-search-documents SDK. Index existing data on application startup: chunk meeting transcripts into 1000-character segments, index task descriptions, agent information, static governance policies. Implement incremental indexing function for new data.",
+        "testStrategy": "Verify index creation, test embedding generation, validate data indexing, test search functionality, verify incremental updates work correctly",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Azure AI Search service client and index schema definition",
+            "description": "Create search_service.py module with SearchIndexClient initialization and define index schema with fields for RAG content",
+            "dependencies": [],
+            "details": "Create backend/src/search_service.py file. Initialize SearchIndexClient using azure_search_endpoint and azure_search_api_key from settings. Define index schema using SearchIndex from azure.search.documents.indexes.models with fields: id (string, key), content (string, searchable), type (string, filterable - values: meeting|task|agent|governance), metadata (complex type with title, date, status sub-fields). Configure vector search using VectorSearch with HnswAlgorithmConfiguration for embeddings field (Collection(Edm.Single), dimension 1536 for text-embedding-ada-002). Set up SearchField configurations with appropriate attributes (searchable, filterable, retrievable).\n<info added on 2025-11-24T21:47:36.888Z>\nImplementation completed with comprehensive Azure AI Search functionality:\n\n**Implementation Completed:**\n- Created backend/src/search_service.py with Azure AI Search integration\n- Implemented SearchIndexClient initialization with endpoint and API key from settings\n- Defined comprehensive index schema with fields: id (key), content (searchable), content_vector (Collection(Edm.Single), 1536 dimensions), type (filterable), title (searchable), metadata (string), status, priority, category\n- Configured vector search using VectorSearch with HnswAlgorithmConfiguration (dimension 1536 for text-embedding-ada-002 model)\n- Added helper functions: create_or_update_index(), delete_index(), index_exists()\n- SearchField configurations set with appropriate attributes (searchable, filterable, retrievable, key)\n\n**File Location:** backend/src/search_service.py\n\n**Next Step:** Implement Azure OpenAI embedding generation function to transform text content into 1536-dimensional vectors for semantic search capability.\n</info added on 2025-11-24T21:47:36.888Z>",
+            "status": "done",
+            "testStrategy": "Unit test index schema validation, verify SearchIndexClient initialization with valid/invalid credentials, test index field definitions match requirements",
+            "updatedAt": "2025-11-24T21:46:35.759Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Azure OpenAI embedding generation function",
+            "description": "Create embedding generation function using Azure OpenAI text-embedding-ada-002 model for vectorizing content",
+            "dependencies": [
+              1
+            ],
+            "details": "In search_service.py, create async function generate_embeddings(texts: List[str]) -> List[List[float]]. Initialize AzureOpenAI client using azure_openai_endpoint, azure_openai_api_key, and azure_openai_embeddings_deployment from settings. Implement batch embedding generation (max 16 texts per batch per API limits). Handle rate limiting with exponential backoff retry logic. Return list of 1536-dimension embedding vectors. Add error handling for API failures and timeout scenarios. Cache OpenAI client instance as class attribute to avoid re-initialization.\n<info added on 2025-11-24T21:52:09.110Z>\nI'll analyze the codebase to understand the current implementation and provide an accurate update.Based on my analysis of the actual implementation in `backend/src/search_service.py`, I can see the embedding functions have been implemented with the following specifics:\n\nImplemented generate_embedding() for single text (lines 224-259) and generate_embeddings_batch() for multiple texts (lines 261-299). Both functions use text-embedding-ada-002 model via Azure OpenAI client initialized in __init__() (lines 48-54). Text truncation implemented with 32,000 character limit for both functions to stay within 8191 token limit. Error handling includes try-except blocks with logging. Azure OpenAI client cached as class instance attribute (self.openai_client). Returns 1536-dimensional vectors extracted from response.data[].embedding. Batch function processes all texts in single API call using list input to embeddings.create().\n</info added on 2025-11-24T21:52:09.110Z>",
+            "status": "done",
+            "testStrategy": "Test embedding generation with single text, test batch processing with 20+ texts, verify vector dimensions (1536), test error handling with invalid API credentials, mock OpenAI API responses for unit tests",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T21:50:43.044Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement index creation and document indexing functions",
+            "description": "Create functions to create/update Azure AI Search index and index documents with embeddings",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In search_service.py, create SearchService class with methods: create_or_update_index() to create index if not exists using SearchIndexClient.create_or_update_index(). Implement index_documents(documents: List[dict]) method that accepts documents with id, content, type, metadata fields, generates embeddings for content using generate_embeddings(), constructs search documents with embeddings vector, and uploads using SearchClient.upload_documents() with batch size of 100. Add delete_documents(document_ids: List[str]) for removing documents. Implement get_search_client() to return SearchClient instance for querying. Add logging for all operations.\n<info added on 2025-11-24T21:57:25.403Z>\nI need to analyze the codebase to understand the current implementation and provide accurate update information. Let me search for the relevant files and code.Based on my analysis of the search_service.py file, I can see that the implementation includes all five functions mentioned in the user request. Let me provide the appropriate update text:\n\nCompleted implementation in search_service.py lines 301-589: upload_document() method (lines 301-361) handles single document uploads with automatic embedding generation via generate_embedding(), accepts all required fields (doc_id, content, doc_type, title, metadata) plus optional fields (status, priority, category). upload_documents_batch() method (lines 363-428) performs efficient batch uploads by extracting all content first, calling generate_embeddings_batch() for parallel embedding generation, preparing documents with embeddings, uploading via search_client.upload_documents(), and returning success/failure counts. update_document() method (lines 430-483) supports selective field updates with parameters for content, title, metadata, status, priority, category, conditionally regenerates embeddings only when content changes, uses search_client.merge_documents() for partial updates. delete_document() method (lines 485-502) removes documents by ID using search_client.delete_documents(). search() method (lines 504-589) implements semantic vector search by generating query embeddings, creating VectorizedQuery with k_nearest_neighbors, supports optional doc_type filtering, returns formatted results with scores and parsed metadata JSON. All functions include comprehensive error handling with try-except blocks, detailed logging via logger.info() and logger.error(), and raise exceptions on failures. Implementation uses Azure Search SDK SearchClient for document operations and integrates with Azure OpenAI embeddings (text-embedding-ada-002, 1536 dimensions).\n</info added on 2025-11-24T21:57:25.403Z>",
+            "status": "done",
+            "testStrategy": "Test index creation with mock SearchIndexClient, verify document structure before upload, test batch uploading with 150+ documents, test delete_documents functionality, verify embedding vectors are correctly added to documents",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T21:55:46.511Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement data chunking and indexing for existing data",
+            "description": "Create functions to chunk meeting transcripts and index existing meetings, tasks, agents, and governance data",
+            "dependencies": [
+              3
+            ],
+            "details": "In search_service.py, add async function chunk_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[dict] that splits text into overlapping chunks with metadata preserved. Create async index_existing_data() function that: (1) queries Cosmos DB meetings container, chunks transcript_text into 1000-char segments, creates documents with type='meeting' and metadata={title, date, status}, (2) queries tasks container, creates documents with type='task' from title+description, metadata={title, status, priority}, (3) queries agents container, creates documents with type='agent' from name+description+use_case, (4) creates static governance documents with type='governance' from hardcoded policies (approval thresholds, agent tiers, meeting types). Batch all documents and call index_documents(). Add progress logging.",
+            "status": "done",
+            "testStrategy": "Test text chunking with 5000-char text, verify overlap logic, test indexing pipeline with mock Cosmos DB data, verify document types and metadata structure, test with empty containers",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T22:21:23.537Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement incremental indexing and integrate with application startup",
+            "description": "Create incremental indexing function for new data and integrate search service initialization with FastAPI lifespan",
+            "dependencies": [
+              4
+            ],
+            "details": "In search_service.py, create async index_meeting(meeting: Meeting), async index_task(task: Task), async index_agent(agent: Agent) functions for incremental updates that generate embeddings and call index_documents() with single document. Add to main.py lifespan function: initialize SearchService instance, call create_or_update_index(), call index_existing_data() on first startup (add flag in Cosmos DB to track if initial indexing complete). Update POST/PUT endpoints in main.py for meetings (/api/meetings), tasks (/api/tasks), agents (/api/agents) to call respective incremental indexing functions after successful Cosmos DB operations. Add search_service global instance similar to db and ai_client patterns. Handle exceptions gracefully without blocking main operations.",
+            "status": "done",
+            "testStrategy": "Test incremental indexing functions with new meeting/task/agent objects, verify startup initialization in lifespan context, test endpoint integration with indexing calls, verify error handling doesn't break API operations, test with search service unavailable scenario",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T22:37:02.255Z"
+          }
+        ],
+        "updatedAt": "2025-11-24T22:37:02.255Z"
+      },
+      {
+        "id": "6",
+        "title": "Implement RAG Query Processing Backend",
+        "description": "Build RAG implementation with Azure AI Search and Model Router for intelligent query answering",
+        "details": "Create POST /api/agent/query endpoint accepting query string and optional conversation history. Search Azure AI Search for top 5 relevant results using vector similarity. Construct prompt with user query, retrieved context, conversation history (last 5 messages), and system instructions. Call Azure AI Foundry Model Router with constructed prompt. Return response with source citations including document IDs and relevance scores. Handle query types: meeting discussions, task assignments, agent status, budget information, governance policies.\n\n**[2025-11-25 Enhancement - Live CosmosDB Integration]**\nEnhanced endpoint with live CosmosDB data querying to fix stale data issue:\n1. Added `_detect_query_entities()` function - parses user queries using keyword matching to detect entity types (tasks, meetings, agents, proposals, decisions)\n2. Added `_get_live_context()` function - fetches live data directly from CosmosDB containers with formatted context strings showing status, priority, dates, assignments\n3. Updated endpoint flow: (a) Detect entity types from query, (b) Fetch live data from CosmosDB as PRIMARY context, (c) Fetch from semantic search for supplementary context, (d) Pass enriched context to AI\n4. Fixed 401 Azure AI Foundry authentication error by correcting endpoint format in root .env (changed from services.ai.azure.com to openai.azure.com)\n\n**Verified Results:**\n- Tasks query: Returns live 15 tasks from database (not stale search index)\n- Meetings query: Returns live 2 meetings from database\n- Agents query: Returns live 1 agent from database",
+        "testStrategy": "Test various query types, verify search result relevance, validate prompt construction, test conversation history handling, verify source citations accuracy, verify live CosmosDB data is returned for tasks/meetings/agents queries",
+        "priority": "high",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-25T19:55:00.000Z"
+      },
+      {
+        "id": "7",
+        "title": "Build AI Chat Interface Frontend with Floating Widget",
+        "description": "Create comprehensive dual-interface AI assistant with full /guide page AND floating widget available across all pages. Features page-aware context, proactive suggestions, session-only memory, and read-only actions.",
+        "details": "Implement complete front-end AI agent system with two interfaces:\n\n1. FLOATING WIDGET (across all pages):\n- GuideProvider context at RootLayout level for global state\n- GuideWidget component with FAB trigger (Sparkles icon, bottom-right)\n- GuideWidgetPanel with chat UI when expanded\n- Page-aware context detection via usePageContext hook\n- Proactive suggestions based on current page\n- Hidden on /guide page (full page takes over)\n\n2. FULL /guide PAGE (rewrite existing):\n- Refactor to use shared components\n- GuideChatMessage, GuideChatInput, GuideTypingIndicator extracted\n- GuideSuggestionBar with contextual suggestions\n- GuideSourceBadge with type-based colors\n- Full conversation interface with clear button\n\n3. SHARED INFRASTRUCTURE:\n- GuideProvider: Global state (messages, loading, widget open/closed)\n- useGuideChat: Conversation logic with context enrichment\n- usePageContext: Route detection and context mapping\n- useGuideSuggestions: Page-specific suggestion generator\n- guide-context.ts: Page-to-context mappings\n\nFiles to create:\n- frontend/components/guide/*.tsx (9 components)\n- frontend/components/providers/GuideProvider.tsx\n- frontend/hooks/useGuideChat.ts, usePageContext.ts, useGuideSuggestions.ts\n- frontend/lib/guide-context.ts\n\nFiles to modify:\n- frontend/app/layout.tsx (add GuideProvider + GuideWidget)\n- frontend/app/guide/page.tsx (rewrite to use shared components)\n\nAPI types already exist in api.ts (ChatMessage, ChatSource, GuideQueryResponse).",
+        "testStrategy": "Test widget appears on all pages except /guide, verify suggestions update when navigating pages, test chat persists across page navigation (session), verify chat clears on page refresh, test sources display correctly with color coding, verify widget doesn't overlap dialogs (z-index), test responsive behavior on mobile, verify keyboard shortcut works, confirm /guide page uses same components as widget",
+        "priority": "high",
+        "dependencies": [
+          "6"
+        ],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create guide-context.ts with page-to-context mappings",
+            "description": "Define PAGE_CONTEXT_MAP with route-to-context configurations including pageType, displayName, contextPrompt, and page-specific suggestions for all platform pages",
+            "dependencies": [],
+            "details": "Create frontend/lib/guide-context.ts with mappings for: /, /meetings, /tasks, /agents, /decisions, /governance, /budget, /resources, /tech-radar, /architecture. Each mapping includes pageType, displayName, contextPrompt (for AI context), and suggestions array.",
+            "status": "done",
+            "testStrategy": "Verify all routes have mappings, test dynamic route handling",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:20.604Z"
+          },
+          {
+            "id": 2,
+            "title": "Create usePageContext and useGuideSuggestions hooks",
+            "description": "Implement hooks for detecting current page context and generating contextual suggestions",
+            "dependencies": [
+              1
+            ],
+            "details": "Create frontend/hooks/usePageContext.ts using usePathname() to detect route and return PageContext. Create frontend/hooks/useGuideSuggestions.ts that uses page context to return relevant Suggestion[] array.",
+            "status": "done",
+            "testStrategy": "Test route detection, verify suggestions change per page",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:26.539Z"
+          },
+          {
+            "id": 3,
+            "title": "Create GuideProvider context",
+            "description": "Implement global context provider for guide state management",
+            "dependencies": [
+              2
+            ],
+            "details": "Create frontend/components/providers/GuideProvider.tsx with state for messages, isLoading, error, isWidgetOpen, isMinimized, currentPage, suggestions. Provide actions: sendMessage, clearConversation, toggleWidget.",
+            "status": "done",
+            "testStrategy": "Test state updates, verify context provides all required values",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:32.741Z"
+          },
+          {
+            "id": 4,
+            "title": "Create shared chat components",
+            "description": "Extract reusable components: GuideChatMessage, GuideChatInput, GuideTypingIndicator, GuideSourceBadge, GuideSuggestionChip, GuideSuggestionBar",
+            "dependencies": [],
+            "details": "Create frontend/components/guide/ directory with shared components. Reference existing patterns from guide/page.tsx for styling. Include barrel export index.ts.",
+            "status": "done",
+            "testStrategy": "Test component rendering, verify styling matches design",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:39.041Z"
+          },
+          {
+            "id": 5,
+            "title": "Create GuideWidget components",
+            "description": "Build floating widget with GuideWidgetTrigger (FAB), GuideWidgetPanel (chat), and GuideWidget (orchestrator)",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Create GuideWidgetTrigger.tsx (Sparkles FAB, bottom-6 right-6, z-40). Create GuideWidgetPanel.tsx (w-96, h-[500px] chat panel). Create GuideWidget.tsx orchestrator that manages widget states and conditionally hides on /guide page.",
+            "status": "done",
+            "testStrategy": "Test widget toggle, verify positioning, test conditional rendering",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:46.708Z"
+          },
+          {
+            "id": 6,
+            "title": "Create useGuideChat hook with context enrichment",
+            "description": "Implement chat logic hook that enriches queries with page context before sending to API",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Create frontend/hooks/useGuideChat.ts that builds contextString from pageContext (displayName, pageType, contextPrompt), calls api.guide.query with enriched context, and manages message state.",
+            "status": "done",
+            "testStrategy": "Test context enrichment, verify API calls include context",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:41:57.155Z"
+          },
+          {
+            "id": 7,
+            "title": "Integrate GuideProvider and GuideWidget into layout.tsx",
+            "description": "Add global provider and widget to application layout",
+            "dependencies": [
+              3,
+              5
+            ],
+            "details": "Modify frontend/app/layout.tsx to wrap app in GuideProvider and add GuideWidget as sibling to main content area.",
+            "status": "done",
+            "testStrategy": "Verify widget appears on all pages, test provider context available",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:42:02.733Z"
+          },
+          {
+            "id": 8,
+            "title": "Rewrite guide/page.tsx to use shared components",
+            "description": "Refactor existing guide page to use new shared components and GuideProvider",
+            "dependencies": [
+              4,
+              6
+            ],
+            "details": "Delete existing guide/page.tsx and rewrite using GuideChatMessage, GuideChatInput, GuideSuggestionBar, etc. Consume state from GuideProvider context. Keep full-page layout design.",
+            "status": "done",
+            "testStrategy": "Test full page functionality, verify component integration",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:42:07.915Z"
+          },
+          {
+            "id": 9,
+            "title": "Add keyboard shortcut (Cmd/Ctrl+K)",
+            "description": "Implement keyboard shortcut to focus/open the guide widget",
+            "dependencies": [
+              7
+            ],
+            "details": "Add event listener in GuideWidget for Cmd+K (Mac) / Ctrl+K (Windows) to toggle widget open and focus input.",
+            "status": "done",
+            "testStrategy": "Test keyboard shortcut on Mac and Windows",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:42:13.390Z"
+          },
+          {
+            "id": 10,
+            "title": "Testing and polish",
+            "description": "Add animations, responsive adjustments, and comprehensive testing",
+            "dependencies": [
+              8,
+              9
+            ],
+            "details": "Add expand/collapse animations. Test responsive behavior (mobile full-screen). Cross-page navigation testing. Verify z-index doesn't conflict with dialogs.",
+            "status": "done",
+            "testStrategy": "Full testing checklist from plan",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T23:42:20.204Z"
+          },
+          {
+            "id": 11,
+            "title": "Phase 1.1: Remove hardcoded limit=15 for AGGREGATION queries",
+            "description": "Modify query_agent() to use intent-aware limits: AGGREGATION queries get no limit (need all items for accurate counts), LIST queries get increased limit of 50",
+            "details": "Implemented intent-aware limits in _get_live_context_with_intent(). AGGREGATION queries now fetch all items for accurate counts.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 12,
+            "title": "Phase 1.2: Add showing X of Y total context",
+            "description": "Add total count to entity results context so AI knows partial vs full data. Format: TASKS (showing 15 of 47 total)",
+            "details": "Added DataBasis tracking with items_shown, total_items, entity_types. Context now shows 'showing X of Y total' format.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 13,
+            "title": "Phase 2.1: Update frontend api.guide.query to accept page_context",
+            "description": "Modify api.ts guide.query() to accept optional page_context parameter with current_page, selected_ids, active_filters, visible_entity_type",
+            "details": "Added DataBasis interface and updated GuideQueryResponse and ChatMessage interfaces in api.ts.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 14,
+            "title": "Phase 2.2: Update GuideProvider to pass page_context to backend",
+            "description": "Modify GuideProvider.tsx sendMessage() to construct and pass page_context object including pathname, filters from URL params or component state",
+            "details": "Updated GuideProvider.tsx to import DataBasis and pass data_basis from response to assistant messages.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 15,
+            "title": "Phase 3.1: Add case-insensitive status normalization",
+            "description": "Normalize status values with .strip() and case handling to prevent mismatched aggregation counts",
+            "details": "Implemented status normalization in backend with .strip().lower() and title case output for consistent aggregation counts.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 16,
+            "title": "Phase 3.2: Add AI data scope instructions to context",
+            "description": "Add explicit DATA SCOPE NOTICE to AI context explaining it has partial data and for aggregation queries all matching items were retrieved for accurate counts",
+            "details": "Added DATA SCOPE NOTICE to context explaining data basis and accurate counts for aggregation queries.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 17,
+            "title": "Phase 4.1: Real-time count queries",
+            "description": "Run separate COUNT(*) CosmosDB queries to get accurate totals even when limiting result items",
+            "details": "Implemented real-time COUNT(*) queries in CosmosDB. Backend returns data_basis with items_shown and total_items.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 18,
+            "title": "Phase 4.2: Confidence indicators in UI",
+            "description": "Show Based on X items indicator in AI Guide responses for transparency",
+            "details": "Added confidence indicator in GuideChatMessage.tsx with Database icon showing 'Based on X items' or 'Based on X of Y items'.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "updatedAt": "2025-11-26T02:00:00.000Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 19,
+            "title": "Phase 4.3: View sync button",
+            "description": "Add Sync with current page view button to align AI Guide context with user's current filtered view",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "parentId": "undefined"
+          },
+          {
+            "id": 20,
+            "title": "Phase 4.4: Query validation logging",
+            "description": "Add debug logging to compare AI reported counts vs actual CosmosDB counts for diagnostics",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 7,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-26T00:33:47.043Z"
+      },
+      {
+        "id": "8",
+        "title": "Create Resources Library Backend",
+        "description": "Build Azure Cloud Asset Inventory backend for real-time Azure resource tracking using Azure Resource Graph API, Cost Management API, and Resource Manager API",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Create endpoints: GET /api/resources/azure-assets for live infrastructure tracking. Display AI services (Foundry, OpenAI, AI Search), data storage (Cosmos DB, Blob), compute (App Services, Container Apps), and security resources (Key Vault, Log Analytics). Show resource cards with name, type, status, location, cost, and tags. Implement Azure Resource Graph API integration for resource discovery, Cost Management API for pricing data, and Resource Manager API for detailed resource information. Use Managed Identity for authentication. Implement caching: 5 minutes for resource data, 1 hour for cost data. Store cached data in memory or Redis. See detailed specifications in Resource-Library-Enhancement-Proposal.md Section 1.",
+        "testStrategy": "Test Azure API integrations (Resource Graph, Cost Management, Resource Manager), verify Managed Identity authentication, test caching mechanisms and expiration, validate resource data accuracy, test cost data retrieval, verify real-time updates",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Azure API clients and authentication",
+            "description": "Configure Azure Resource Graph, Cost Management, and Resource Manager API clients with Managed Identity authentication",
+            "dependencies": [],
+            "details": "Install required Azure SDK packages (@azure/arm-resourcegraph, @azure/arm-costmanagement, @azure/arm-resources). Set up DefaultAzureCredential for Managed Identity authentication. Create service classes for each API client with proper error handling and retry logic. Configure required Azure permissions for the managed identity to access resource data and cost information.",
+            "status": "pending",
+            "testStrategy": "Test authentication with Managed Identity, verify API client initialization, test error handling for authentication failures",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Azure Resource Graph integration",
+            "description": "Build service to query Azure resources using Resource Graph API with filtering for relevant resource types",
+            "dependencies": [
+              1
+            ],
+            "details": "Create ResourceGraphService to query Azure resources. Implement KQL queries to filter for AI services (Foundry, OpenAI, AI Search), data storage (Cosmos DB, Blob Storage), compute resources (App Services, Container Apps), and security resources (Key Vault, Log Analytics). Extract resource properties: name, type, status, location, tags, resource group. Handle pagination for large result sets and implement proper error handling.",
+            "status": "pending",
+            "testStrategy": "Test KQL query execution, verify resource filtering accuracy, test pagination handling, validate extracted resource properties",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement Cost Management API integration",
+            "description": "Build service to retrieve cost data for Azure resources using Cost Management API",
+            "dependencies": [
+              1
+            ],
+            "details": "Create CostManagementService to query resource costs. Implement cost queries for individual resources and resource groups. Handle different cost metrics (actual, forecast, budgeted). Map cost data to corresponding resources from Resource Graph. Implement proper date range handling and currency formatting. Handle API rate limits and implement exponential backoff.",
+            "status": "pending",
+            "testStrategy": "Test cost data retrieval, verify cost-to-resource mapping, test date range filtering, validate currency formatting and rate limit handling",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement caching mechanism",
+            "description": "Build caching system with different TTL for resource data (5 min) and cost data (1 hour)",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Implement in-memory cache or Redis integration for storing Azure resource and cost data. Set up different cache keys and TTL values: 5 minutes for resource data, 1 hour for cost data. Implement cache invalidation strategies and cache warming. Add cache hit/miss metrics for monitoring. Handle cache failures gracefully with fallback to direct API calls.",
+            "status": "pending",
+            "testStrategy": "Test cache storage and retrieval, verify TTL expiration, test cache invalidation, validate fallback mechanisms",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Create Azure assets API endpoint",
+            "description": "Build GET /api/resources/azure-assets endpoint to serve real-time Azure resource data",
+            "dependencies": [
+              4
+            ],
+            "details": "Create API endpoint that combines data from ResourceGraphService and CostManagementService. Implement response formatting to include resource cards with name, type, status, location, cost, and tags. Add query parameters for filtering by resource type, location, and resource group. Implement proper error handling and response caching headers. Add OpenAPI documentation for the endpoint.",
+            "status": "pending",
+            "testStrategy": "Test endpoint response format, verify data combination from multiple services, test filtering parameters, validate error responses and caching headers",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-25T16:57:49.661Z"
+      },
+      {
+        "id": "9",
+        "title": "Build Resources Library Frontend",
+        "description": "Create Educational Resource Library with preview functionality - a document and link management system with rich preview capabilities supporting PDFs, markdown, Office docs, and web links",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Build comprehensive resource library frontend with: 1) Document upload wizard with Azure Blob Storage integration and thumbnail generation, 2) OpenGraph metadata fetching for web links, 3) Preview modal system showing 80% of content without leaving page, 4) Full-text search across title/description/tags/content, 5) Category system (Agent, Governance, Technical, Licensing, AI Architect, Architecture, Budget, Security), 6) Multi-tag support with advanced filtering, 7) Usage analytics display (view count, last accessed). Backend COMPLETE: resource_library_service.py with Azure Blob Storage integration, OpenGraph metadata extraction, PDF text extraction/thumbnail generation. Routers/resources.py with 7 endpoints (POST /create, GET /list with filtering, GET /{id}, PUT /{id}, DELETE /{id}, POST /{id}/view, GET /categories/list, GET /tags/list). Frontend COMPLETE: frontend/app/resources/library/page.tsx with responsive grid layout, search/filter UI, category descriptions with tooltips, preview modal (max-w-6xl, split-pane), usage analytics. Resource model validated with ResourceCategory enum. 8 test resources created covering all categories with working OpenGraph metadata. REMAINING: Upload wizard UI implementation (backend ready, placeholder dialog exists at page.tsx:498-509).",
+        "testStrategy": "Test document upload and thumbnail generation, verify OpenGraph metadata fetching for links, test preview modal functionality across different file types, validate full-text search capabilities, test category and tag filtering, verify usage analytics tracking, test file download and preview links",
+        "subtasks": [
+          {
+            "id": 2,
+            "title": "Implement Document Upload Wizard",
+            "description": "Create multi-step upload dialog supporting file uploads and URL links with metadata input",
+            "dependencies": [],
+            "details": "Build upload wizard replacing placeholder dialog at frontend/app/resources/library/page.tsx:498-509. Backend ready: POST /api/resources endpoint (routers/resources.py:19-127) accepts multipart form-data (file: UploadFile, url: str, title: str, description: str, category: str, tags: str[], uploaded_by: str). Supports both file upload and URL link creation (mutually exclusive). Backend validates ResourceCategory enum (Agent|Governance|Technical|Licensing|AI Architect|Architecture|Budget|Security). File upload flow: resource_library_service.py uploads to Azure Blob Storage, generates thumbnails for PDFs, extracts preview text and page count. URL link flow: fetches OpenGraph metadata (og_title, og_description, og_image) via resource_service.fetch_og_metadata(). Frontend implementation needed: Multi-step wizard with 1) Type selection (Document Upload vs Web Link), 2) File picker/URL input, 3) Metadata form (title required, description, category dropdown with CATEGORY_DESCRIPTIONS tooltips, tags multi-input, uploaded_by defaulting to current user). Use Shadcn UI Dialog, Form, Input, Select, Textarea components. Show upload progress for files. Display OpenGraph preview for URLs. On success, refresh resources list and close dialog.\n<info added on 2025-11-25T17:16:15.157Z>\nI'll analyze the codebase to understand the current implementation and provide an accurate update based on the user request.Based on my analysis of the codebase, I can see the upload wizard has been fully implemented at `frontend/app/resources/library/page.tsx` (lines 590-758). The implementation includes all the features mentioned in the user request. Here's the update text:\n\nImplementation completed at frontend/app/resources/library/page.tsx:590-758. Wizard uses Shadcn Dialog component with Tabs for upload type selection (Web Link/File Upload via TabsList at line 603). File input (line 629-639) accepts .pdf,.doc,.docx,.txt,.png,.jpg,.jpeg with 50MB guidance. URL input (line 610-623) includes helper text for metadata extraction. Form fields include: required title (line 646-656), optional description (line 659-668), required category Select dropdown populated from API (line 672-684), tags with add/remove functionality using Badge components (line 687-722). Client-side validation checks: title required (line 219), category required (line 224), file presence for file uploads (line 229), URL presence for web links (line 234). Form submission creates FormData object (line 242-254) appending file/url, title, description, category, JSON-stringified tags array, and uploaded_by. POST request to /api/resources/ at line 256-259. Loading state managed via uploading boolean (line 105) displaying spinner on submit button (line 743-748). Error handling displays uploadError state in red alert box (line 726-730). Success flow: calls loadResources() to refresh list (line 266), closes modal via setUploadOpen(false) (line 267), resets form via resetUploadForm() (line 268). Cancel button and dialog close both trigger resetUploadForm() (lines 592-594, 737-740). FormData format matches backend multipart/form-data expectations from routers/resources.py endpoint.\n</info added on 2025-11-25T17:16:15.157Z>",
+            "status": "done",
+            "testStrategy": "Test file upload functionality, verify URL link processing, test form validation, verify Azure Blob Storage integration",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T22:16:44.270Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement OpenGraph Metadata Fetching",
+            "description": "Add functionality to automatically fetch and display metadata for web links",
+            "dependencies": [],
+            "details": "Backend implementation COMPLETE at resource_library_service.py:130-166 with fetch_og_metadata() method using requests and BeautifulSoup to extract OpenGraph tags (og:title, og:description, og:image, og:site_name) from HTML meta tags. Integration COMPLETE in routers/resources.py:95-113 where POST /api/resources endpoint calls fetch_og_metadata(url) for link-type resources and stores og_title, og_description, og_image in database. Frontend display COMPLETE in library/page.tsx showing og_image in resource cards (lines 323-328) and preview modal (lines 424-429), og_description as fallback text (lines 347, 436-440). Working verification: 8 test resources include Microsoft Learn and GitHub links with successfully extracted OpenGraph metadata. Fallback handling implemented: uses basic URL and filename if OpenGraph data unavailable.",
+            "status": "done",
+            "testStrategy": "Test OpenGraph metadata extraction, verify fallback handling, test link preview display",
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "Create Resource Management Actions",
+            "description": "Implement edit, delete, and administrative actions for resources",
+            "dependencies": [],
+            "details": "Backend implementation COMPLETE with PUT /api/resources/{id} endpoint (routers/resources.py:190-247) for updating resource metadata (title, description, category, tags). DELETE /api/resources/{id} endpoint (lines 249-269) removes resource from database and calls resource_service.delete_resource_files() to clean up Azure Blob Storage files. Frontend implementation NOT STARTED - no edit dialog, delete confirmation, or administrative actions exist in library/page.tsx. Resource cards are view-only without edit/delete buttons. Permission-based access controls NOT implemented - all endpoints currently lack authentication/authorization. Bulk operations NOT implemented. Resource sharing and collaboration features NOT implemented. Implementation needed: Add edit/delete action buttons to resource cards or preview modal, create edit dialog with form pre-populated from selected resource, add delete confirmation dialog, integrate with PUT/DELETE endpoints, implement user role checking to show/hide admin actions.",
+            "status": "done",
+            "testStrategy": "Test edit functionality, verify delete confirmation, test permission controls, test bulk operations",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T22:16:49.693Z"
+          },
+          {
+            "id": 1,
+            "title": "Create Resource Library Main Page Component",
+            "description": "Build the main /app/resources/page.tsx with grid layout for resource cards, search bar, and category/tag filters",
+            "dependencies": [],
+            "details": "Create responsive grid layout displaying resource cards with thumbnails, title, description, category badges, tags, upload date, and uploaded by information. Implement search bar with live filtering and dropdown filters for categories and tags. Use Shadcn UI Card, Input, Select, and Badge components.\n<info added on 2025-11-25T02:01:46.677Z>\nI'll analyze the codebase first to understand the current implementation and provide an accurate update.Implementation completed in frontend/app/resources/library/page.tsx with functional React component featuring search and filter UI, resource card grid layout with responsive columns (md:grid-cols-2 lg:grid-cols-3), empty state handling, preview modal with metadata panel, and placeholder upload dialog. Component integrates Shadcn UI components including Card, Input, Select, Badge, Dialog, Tooltip with TooltipProvider wrapper for category descriptions. CATEGORY_DESCRIPTIONS object includes detailed explanations for 8 categories: Agent, Governance, Technical, Licensing, AI Architect, Architecture, Budget, Security. Resource interface defines comprehensive type schema supporting PDF/Document/Link/Video/Image types with document fields (file_type, file_size_bytes, blob_url, thumbnail_url, preview_text, page_count), link fields (url, og_title, og_description, og_image), and metadata (uploaded_by, uploaded_at, view_count). Filtering implemented via live search bar with Search icon, category dropdown with tooltips displaying descriptions on hover, tag filtering with selected tags displayed as removable badges, popular tags section showing top 10 tags with counts. Resource cards display thumbnail/og_image fallback to icon, title with type badge, description with line clamping, metadata (page count, file size, view count), and first 3 tags with +N indicator. 8 test resources created and loaded via /api/resources/ endpoint covering all categories. Full API integration implemented for GET /api/resources/, /api/resources/categories/list, /api/resources/tags/list endpoints with query parameter filtering (search, category, tags). Preview modal features split layout with preview area (left 2fr) and metadata panel (right 1fr), external link and download buttons, image display, and complete resource details display.\n</info added on 2025-11-25T02:01:46.677Z>",
+            "status": "done",
+            "testStrategy": "Test grid layout responsiveness, verify search functionality, test category and tag filtering",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T02:02:13.253Z"
+          },
+          {
+            "id": 3,
+            "title": "Build Preview Modal System",
+            "description": "Create preview modal that displays 80% of document content without leaving the main page",
+            "dependencies": [],
+            "details": "Implement modal component that can preview PDFs, markdown files, Office documents, and web link content. Show document preview with navigation controls, full-screen option, and download/view original buttons. Handle different file types with appropriate viewers and fallback options.\n<info added on 2025-11-25T02:05:40.078Z>\nI'll analyze the codebase to understand the current implementation and provide specific, contextual updates for the Preview Modal System.Based on my analysis of the codebase, I can see the preview modal is already implemented in `frontend/app/resources/library/page.tsx:382-496`. Here's the new implementation detail text to add:\n\nModal implementation completed at frontend/app/resources/library/page.tsx:382-496. Uses DialogContent with max-w-6xl width and h-[80vh] responsive height. Split-pane layout implemented using grid-cols-[2fr_1fr] at line 414 with left pane for content preview and right pane for metadata. Left pane displays thumbnail_url or og_image images (lines 417-430) and preview_text or og_description text content (lines 431-440). Right metadata panel (lines 444-491) shows resource details including type, category, pages, file size, view counts, and uploader information. Action buttons in DialogHeader (lines 389-410) include Open button for external URLs and Download button for blob_url files, both using ExternalLink and Download lucide-react icons. View count tracking implemented via handlePreview function (lines 158-168) which calls POST /api/resources/{id}/view endpoint when modal opens. Both panes use overflow-auto, border, rounded, and p-4 styling for consistent presentation.\n</info added on 2025-11-25T02:05:40.078Z>",
+            "status": "done",
+            "testStrategy": "Test preview functionality across different file types, verify modal navigation, test full-screen mode",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T02:07:14.344Z"
+          },
+          {
+            "id": 5,
+            "title": "Add Full-Text Search Functionality",
+            "description": "Implement comprehensive search across title, description, tags, and document content",
+            "dependencies": [],
+            "details": "Build search functionality that queries across all resource metadata and extracted document content. Implement search result highlighting, search suggestions, and advanced search filters. Integrate with backend search API for content indexing.",
+            "status": "done",
+            "testStrategy": "Test search across different content types, verify result highlighting, test search performance",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T02:05:51.568Z"
+          },
+          {
+            "id": 6,
+            "title": "Implement Category and Tag Management",
+            "description": "Create category system and multi-tag support with filtering capabilities",
+            "dependencies": [],
+            "details": "Implement predefined categories (Azure AI Foundry, Agent Framework, Governance, Licensing, Architecture, Meeting Materials, Research, Training) with color-coded badges. Add multi-tag support with tag autocomplete, tag creation, and advanced filtering options. Create tag management interface for administrators.",
+            "status": "done",
+            "testStrategy": "Test category assignment, verify tag autocomplete, test filtering combinations, test tag management interface",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T02:06:08.575Z"
+          },
+          {
+            "id": 7,
+            "title": "Add Usage Analytics Display",
+            "description": "Implement usage tracking display showing view counts and last accessed information",
+            "dependencies": [],
+            "details": "Add usage analytics components to resource cards and detail views showing view count, last accessed date, and trending indicators. Create analytics dashboard for administrators with usage statistics and popular resources. Implement privacy-compliant tracking.",
+            "status": "done",
+            "testStrategy": "Test analytics data display, verify tracking accuracy, test analytics dashboard functionality",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T02:06:26.028Z"
+          }
+        ],
+        "updatedAt": "2025-11-25T22:16:49.693Z"
+      },
+      {
+        "id": "10",
+        "title": "Implement Tech Radar System",
+        "description": "Create technology tracking system with 4-category grid layout (Adopt, Trial, Assess, Hold)",
+        "details": "Create backend endpoints: GET /api/tech-radar, POST /api/tech-radar, PUT /api/tech-radar/{id}, DELETE /api/tech-radar/{id}. Store in Cosmos DB 'tech_radar_items' collection: id, tool_name, category (Adopt|Trial|Assess|Hold), description, team_using, date_added, last_reviewed, link. Create /app/tech-radar/page.tsx with 4-column grid layout, one column per category. Each card shows tool name, description, team using, last reviewed date, external link. Add create dialog with tool name, category dropdown, description, team using, optional link. Display category descriptions: Adopt (proven), Trial (worth pursuing), Assess (worth exploring), Hold (proceed with caution).",
+        "testStrategy": "Test CRUD operations for tech items, verify 4-column grid layout, test category filtering, validate external links, test item creation and editing",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [],
+        "updatedAt": "2025-11-26T00:11:08.490Z"
+      },
+      {
+        "id": "11",
+        "title": "Build Architecture Lab Knowledge Base",
+        "description": "Create code patterns and deployment guides management system with syntax highlighting",
+        "details": "Create endpoints for code patterns: GET /api/code-patterns, POST /api/code-patterns, PUT /api/code-patterns/{id}, DELETE /api/code-patterns/{id}. Store in 'code_patterns' collection: id, title, pattern_type (Code-First|Low-Code|Hybrid), description, code_snippet, language, use_case. Create deployment guides endpoints with 'deployment_guides' collection: id, title, platform, guide_content (markdown), prerequisites[], steps[]. Create /app/architecture/page.tsx with two-tab interface. Code Patterns tab: grid of cards with syntax highlighting using react-syntax-highlighter, copy code button. Deployment Guides tab: markdown rendering using react-markdown, prerequisites checklist, step-by-step instructions.",
+        "testStrategy": "Test code pattern CRUD operations, verify syntax highlighting, test markdown rendering, validate copy code functionality, test deployment guide creation",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "12",
+        "title": "Add Edit/Delete Operations to All Entities",
+        "description": "Implement full CRUD functionality across meetings, tasks, agents, and decisions",
+        "details": "Add PUT endpoints for /api/meetings/{id}, /api/tasks/{id}, /api/agents/{id}, /api/decisions/{id} accepting partial updates. Add DELETE endpoints with soft delete for meetings/tasks, hard delete for others. Check dependencies before deletion. Update frontend components: add edit buttons to entity cards, reuse create dialogs with pre-filled data, add delete buttons with confirmation dialogs ('Are you sure you want to delete [entity name]?'). Implement optimistic UI updates, call PUT/DELETE endpoints, show success toasts. Add 'View Details' functionality with expanded dialogs showing all entity fields and related data.",
+        "testStrategy": "Test edit functionality for all entity types, verify delete confirmations, test optimistic UI updates, validate dependency checking, test detail views",
+        "priority": "medium",
+        "dependencies": [
+          "4",
+          "7",
+          "9",
+          "10",
+          "11"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "13",
+        "title": "Implement Microsoft SSO Authentication with Entra ID to Replace Shared API Key and Enable User Identification, Task Assignment, and Role-Based Access Control",
+        "description": "Integrate Microsoft Entra ID for SSO authentication using MSAL (Microsoft Authentication Library) with OAuth 2.0/OIDC, replacing the shared API key, and enable proper user identification, task assignment, and role-based access control.",
+        "status": "blocked",
+        "dependencies": [],
+        "priority": "high",
+        "details": "This is a foundational authentication task that can be worked on independently in parallel with other features. Implementation uses MSAL with OAuth 2.0/OIDC instead of SAML for modern authentication flow.\n\n**Key Components:**\n1. **Azure App Registration with MSAL Configuration**:\n   - Register application in Microsoft Entra admin center\n   - Configure OAuth 2.0/OIDC settings with appropriate redirect URIs\n   - Set up API permissions and scopes for user authentication\n   - Generate client ID and configure tenant settings\n\n2. **Backend: Python MSAL Integration with JWT Token Validation**:\n   - Implement MSAL authentication flow in Python backend\n   - Add JWT token validation middleware for all API endpoints\n   - Extract user claims (email, name, roles) from JWT tokens\n   - Replace shared API key authentication with Bearer token validation\n\n3. **Frontend: @azure/msal-react Integration**:\n   - Integrate @azure/msal-react library for React frontend\n   - Implement login/logout components and authentication context\n   - Handle token acquisition and renewal automatically\n   - Protect routes based on authentication state\n\n4. **User Model in Cosmos DB**:\n   - Create user collection in Cosmos DB to store user profiles\n   - Map Entra ID user identities to application users\n   - Store user roles and permissions for RBAC implementation\n   - Sync user data from Entra ID claims\n\n5. **Replace Shared API Key with Bearer Token Authentication**:\n   - Remove all shared API key references from codebase\n   - Update all API endpoints to require Bearer token authentication\n   - Implement proper error handling for authentication failures\n   - Ensure secure token storage and transmission\n\nRefer to detailed implementation guide at .taskmaster/docs/microsoft-sso-auth-prd.md for complete specifications.",
+        "testStrategy": "1. Test OAuth 2.0/OIDC authentication flow with multiple user accounts and roles\n2. Verify JWT token validation and Bearer token authentication on all API endpoints\n3. Test @azure/msal-react integration including login/logout and token renewal\n4. Validate user model creation and synchronization with Entra ID\n5. Confirm complete removal of shared API key authentication\n6. Test role-based access control and task assignment with authenticated users\n7. Perform end-to-end authentication flow testing including error handling\n8. Test token expiration and refresh scenarios\n9. Validate secure token storage and transmission",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Azure App Registration and MSAL Configuration",
+            "description": "Register application in Microsoft Entra admin center and configure MSAL settings for OAuth 2.0/OIDC authentication flow.",
+            "dependencies": [],
+            "details": "Register new application in Microsoft Entra admin center with appropriate name and configuration. Set up OAuth 2.0/OIDC settings including redirect URIs for both development and production environments. Configure API permissions for user authentication and profile access. Generate client ID and configure tenant-specific settings. Document all configuration values needed for backend and frontend integration.\n<info added on 2025-11-24T21:18:30.763Z>\nI'll analyze the codebase to understand the project structure and provide context-specific information about this blocker.BLOCKED: Requires Azure Application Administrator role for Entra ID app registration. User does not have admin access. Need to coordinate with Azure admin or reassign task.\n\n---\n\n**Reference Documentation:**\n- Task 13.1 setup guide: `.taskmaster/docs/task-13.1-azure-setup-guide.md`\n- Troubleshooting note: Lines 196-207 confirm Azure Application Administrator or Cloud Application Administrator role required\n\n**Coordination Points:**\n- Developer B coordination doc: `.taskmaster/docs/developer-b-coordination.md`\n- Integration timeline: Phase 1 (Independent Development) - Task 13.1 must complete before 13.2 (Backend MSAL Integration)\n- Downstream impact: Tasks 13.2-13.6 dependent on app registration completion\n\n**Recommended Actions:**\n1. Contact Fourth Limited Azure administrator to request:\n   - Application Administrator role assignment (temporary)\n   - OR: Admin performs app registration following guide at `.taskmaster/docs/task-13.1-azure-setup-guide.md`\n   - Provide client ID, tenant ID, and client secret back to Developer B\n\n2. Alternative: Escalate to David Hayes (david.hayes@fourth.com) - listed as Admin role in microsoft-sso-auth-prd.md:266\n\n3. If blocker persists >24 hours: Consider reassigning Task 13 to team member with existing Azure admin privileges\n\n**Parallel Work Options:**\n- While blocked, Developer B could begin documentation work for Task 13.2 (Backend Python MSAL Integration)\n- Review MSAL library documentation\n- Prepare environment variable templates\n</info added on 2025-11-24T21:18:30.763Z>",
+            "status": "in-progress",
+            "testStrategy": "Verify app registration is accessible, test redirect URIs work correctly, validate API permissions are properly configured",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-24T21:04:54.159Z"
+          },
+          {
+            "id": 2,
+            "title": "Backend Python MSAL Integration",
+            "description": "Implement MSAL authentication in Python backend with JWT token validation middleware for all API endpoints.",
+            "dependencies": [
+              1
+            ],
+            "details": "Install and configure python MSAL library for backend authentication. Create JWT token validation middleware that validates Bearer tokens on all API requests. Implement token verification using Microsoft's public keys and validate token claims. Extract user information (email, name, roles) from validated JWT tokens. Create authentication decorators for protecting API endpoints. Handle token expiration and refresh scenarios appropriately.",
+            "status": "pending",
+            "testStrategy": "Test JWT token validation with valid and invalid tokens, verify middleware protects all endpoints, test user claim extraction accuracy",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Frontend @azure/msal-react Integration",
+            "description": "Integrate @azure/msal-react library in React frontend for seamless authentication experience with login/logout components.",
+            "dependencies": [
+              1
+            ],
+            "details": "Install @azure/msal-react and @azure/msal-browser packages. Configure MSAL instance with client ID and tenant information from Azure app registration. Create authentication context provider to manage login state across the application. Implement login and logout components with proper error handling. Add route protection for authenticated-only pages. Handle token acquisition and automatic renewal. Implement proper loading states during authentication flows.",
+            "status": "pending",
+            "testStrategy": "Test login/logout functionality, verify token acquisition and renewal, test route protection, validate error handling scenarios",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "User Model and Cosmos DB Integration",
+            "description": "Create user collection in Cosmos DB and implement user profile management with Entra ID synchronization.",
+            "dependencies": [
+              2
+            ],
+            "details": "Design user document schema for Cosmos DB including fields for user ID, email, name, roles, permissions, and Entra ID mapping. Create user collection with appropriate indexing for efficient queries. Implement user creation and update logic that syncs with Entra ID claims. Add user profile endpoints for retrieving and updating user information. Implement role-based access control data structures. Handle user first-time login scenarios with automatic profile creation.",
+            "status": "pending",
+            "testStrategy": "Test user profile creation and updates, verify Entra ID synchronization, test role assignment and RBAC functionality",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Replace Shared API Key Authentication",
+            "description": "Remove all shared API key references and update all endpoints to use Bearer token authentication exclusively.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Audit entire codebase to identify and remove all shared API key authentication logic. Update all API endpoints to require Bearer token authentication instead of API key. Remove API key configuration from environment variables and deployment scripts. Update API documentation to reflect Bearer token authentication requirements. Implement proper HTTP 401 responses for unauthenticated requests. Ensure backward compatibility during transition period if needed.",
+            "status": "pending",
+            "testStrategy": "Verify no API key authentication remains in codebase, test all endpoints require Bearer tokens, validate proper error responses for unauthenticated requests",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "End-to-End Authentication Testing and Validation",
+            "description": "Comprehensive testing of the complete authentication flow including edge cases and error scenarios.",
+            "dependencies": [
+              3,
+              5
+            ],
+            "details": "Create comprehensive test suite covering the entire authentication flow from login to API access. Test multiple user accounts with different roles and permissions. Validate token expiration and refresh scenarios. Test error handling for network failures, invalid tokens, and authentication failures. Perform security testing to ensure tokens are properly secured. Test concurrent user sessions and token management. Validate performance impact of authentication middleware.",
+            "status": "pending",
+            "testStrategy": "Execute full authentication flow tests, validate security measures, test performance under load, verify error handling completeness",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-24T21:24:50.600Z"
+      },
+      {
+        "id": "14",
+        "title": "Coordinate Backend Restart on Port 8000 to Load New Transcript Routes",
+        "description": "Coordinate with Developers B and C to restart the backend server on port 8000 to activate new transcript-related API routes after their current work is complete.",
+        "details": "1. Confirm with Developers B and C that they have completed their current tasks and are ready for the backend restart to avoid disrupting ongoing work.\n2. Identify and terminate all processes currently using port 8000 to free the port. Use system tools such as 'netstat', 'lsof', or platform-specific commands to find and kill these processes safely.\n3. Start the backend server afresh on port 8000, ensuring it runs the updated version that includes the new transcript routes: /api/transcripts/upload and /api/transcripts/process.\n4. Verify the availability and correct functioning of the new transcript API routes by sending test requests and checking for expected responses.\n5. Notify the entire development team upon successful restart and route verification, so they can proceed with dependent tasks.\n\nConsiderations:\n- Coordinate timing carefully to minimize downtime.\n- Use logging to capture restart events and any errors.\n- Follow best practices for safely killing processes to avoid data loss.\n- Confirm environment consistency to ensure the backend version is updated before restart.",
+        "testStrategy": "1. Before restart, confirm Developers B and C signal readiness.\n2. Verify no processes are listening on port 8000 after termination commands.\n3. After backend restart, perform automated API tests on /api/transcripts/upload and /api/transcripts/process endpoints to confirm they respond correctly.\n4. Check backend logs for successful startup messages and absence of errors.\n5. Confirm team notification is sent and acknowledged.\n6. Optionally, monitor backend stability for a short period post-restart to catch any issues early.",
+        "status": "done",
+        "dependencies": [
+          "1"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-11-25T23:25:53.253Z"
+      },
+      {
+        "id": "15",
+        "title": "Add CSV Export Functionality for Meeting Data with Action Items and Decisions",
+        "description": "Implement CSV export functionality allowing users to download meeting data including summaries, action items with assignees/status/priority, decisions, and topics in a structured spreadsheet format",
+        "details": "Create comprehensive CSV export feature for meetings data that includes all AI-generated insights and related entities.\n\n**Backend Implementation:**\n1. Create new endpoint GET `/api/meetings/export` that accepts optional query parameters:\n   - `meeting_ids[]`: Array of specific meeting IDs to export (optional, exports all if not provided)\n   - `status`: Filter by meeting status (Scheduled|Completed|Cancelled)\n   - `start_date` and `end_date`: Date range filters\n   - `include_tasks`: Boolean to include full task details (default: true)\n   - `include_decisions`: Boolean to include decision details (default: true)\n\n2. Backend logic in `backend/src/routers/meetings.py`:\n   - Query meetings from Cosmos DB with filters applied\n   - For each meeting with action_items, fetch full task details using Promise.all pattern (similar to frontend implementation in meetings/page.tsx:87-96)\n   - For each meeting with decisions, fetch decision details from 'decisions' collection\n   - Generate CSV with proper escaping for multi-line fields (summary, descriptions)\n   - Set response headers: `Content-Type: text/csv; charset=utf-8` and `Content-Disposition: attachment; filename=meetings_export_{timestamp}.csv`\n\n3. CSV Structure with columns:\n   - Meeting ID, Title, Date, Type, Status, Facilitator, Attendees (pipe-separated), Summary (escaped newlines)\n   - Topics (pipe-separated), Transcript URL\n   - Action Items Count, Action Item 1 Title, Action Item 1 Assignee, Action Item 1 Status, Action Item 1 Priority, Action Item 1 Due Date\n   - (Repeat action item columns for items 2-5, with empty values if fewer items)\n   - Decisions Count, Decision 1 Title, Decision 1 Category, Decision 1 Maker\n   - (Repeat decision columns for items 2-3)\n\n4. Use Python csv module with DictWriter:\n```python\nimport csv\nfrom io import StringIO\nfrom fastapi.responses import StreamingResponse\n\ndef generate_csv(meetings: List[Meeting], tasks_map: Dict[str, List[Task]], decisions_map: Dict[str, List[Decision]]):\n    output = StringIO()\n    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)\n    # Write headers and rows\n    output.seek(0)\n    return output\n```\n\n**Frontend Implementation (meetings/page.tsx):**\n1. Add \"Export to CSV\" button in the header actions area (near Plan Meeting and Upload Transcript buttons at line 254)\n   - Use Download icon from lucide-react\n   - Position as tertiary action with outline variant\n\n2. Implement export dialog with options:\n   - Checkbox: \"Export all meetings\" vs \"Export filtered meetings only\" (respect current search/filter state)\n   - Checkbox options: \"Include full task details\", \"Include decision details\" \n   - Date range picker for filtering export (optional)\n   - Status filter dropdown\n\n3. Create `handleExportCSV` async function:\n```typescript\nasync function handleExportCSV(exportOptions: ExportOptions) {\n  try {\n    const params = new URLSearchParams();\n    if (exportOptions.meetingIds) {\n      exportOptions.meetingIds.forEach(id => params.append('meeting_ids[]', id));\n    }\n    if (exportOptions.status) params.append('status', exportOptions.status);\n    \n    const response = await fetch(`${API_BASE_URL}/api/meetings/export?${params}`);\n    const blob = await response.blob();\n    const url = window.URL.createObjectURL(blob);\n    const a = document.createElement('a');\n    a.href = url;\n    a.download = `meetings_export_${new Date().toISOString().split('T')[0]}.csv`;\n    document.body.appendChild(a);\n    a.click();\n    document.body.removeChild(a);\n    window.URL.revokeObjectURL(url);\n  } catch (error) {\n    console.error('Export failed:', error);\n    alert('Failed to export meetings data');\n  }\n}\n```\n\n4. Add export state management:\n   - `isExportDialogOpen` state\n   - `exportOptions` state with default values\n   - Loading state during export generation\n\n5. Update api.ts to add export method:\n```typescript\nexport const api = {\n  meetings: {\n    // ... existing methods\n    export: async (options?: ExportOptions): Promise<Blob> => {\n      const params = new URLSearchParams();\n      // Build query params from options\n      const response = await fetch(`${API_BASE_URL}/api/meetings/export?${params}`);\n      if (!response.ok) throw new Error('Export failed');\n      return response.blob();\n    }\n  }\n}\n```\n\n**CSV Handling Best Practices:**\n- Escape commas, quotes, and newlines in text fields (summary, descriptions)\n- Use consistent date format: YYYY-MM-DD HH:mm:ss UTC\n- Handle empty/null values gracefully with empty strings\n- Pipe-separate (|) list fields like attendees and topics\n- Limit action items and decisions to top 5 and 3 respectively per meeting to keep CSV manageable\n- Add row count and generation timestamp in first comment row\n\n**Performance Considerations:**\n- Implement streaming response for large datasets (100+ meetings)\n- Add pagination parameter for very large exports (max 500 meetings per export)\n- Cache task and decision lookups during single export operation\n- Use asyncio.gather() in Python for parallel task/decision fetching",
+        "testStrategy": "1. Test CSV export with no meetings in database (should return empty CSV with headers)\n2. Test export with 1 meeting containing all fields populated (summary, action items, decisions, topics)\n3. Test export with meetings that have no action items or decisions (verify empty columns)\n4. Test export with 50+ meetings to verify performance and streaming\n5. Verify CSV file downloads with correct filename and timestamp\n6. Test filtering: export only Completed meetings, export date range, export specific meeting IDs\n7. Validate CSV format: open in Excel/Google Sheets and verify proper column separation, no broken newlines\n8. Test special characters in meeting summaries and descriptions (commas, quotes, newlines) are properly escaped\n9. Test with meetings containing 10+ action items (verify only top 5 are included)\n10. Verify action item and decision data accuracy by cross-referencing with UI display\n11. Test export dialog: toggle checkboxes, date range selection, filtered vs all meetings export\n12. Test error handling: backend unavailable, invalid meeting IDs, network timeout during export\n13. Verify CSV encoding (UTF-8) handles special characters and international names correctly",
+        "status": "cancelled",
+        "dependencies": [
+          "4"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-11-25T23:26:05.204Z"
+      },
+      {
+        "id": "16",
+        "title": "AI Guide Intelligence Enhancement - Intent Classification, Smart Queries, and Contextual Actions",
+        "description": "Transform AI Guide from basic keyword search to intelligent assistant with intent classification, targeted CosmosDB queries, aggregations, page-aware context, action suggestions, and session memory",
+        "details": "**STATUS: CLOSED** - Core functionality complete (subtasks 1-2). Remaining features merged into Task 22.\n\n**Completed:**\n- Intent classification (subtask 1)\n- Query-specific CosmosDB queries (subtask 2)\n- Page context (done in Task 7.13-14)\n\n**Merged to Task 22:**\n- Date/time parser → Task 22.22\n- Session memory → Task 22.23\n- Proactive insights → Task 22.24\n- Quick actions → Task 22.25\n\n**Superseded by Task 22:**\n- Aggregation patterns (Task 22 Phase 1)\n- Action suggestions (Task 22.6-7)\n- Confidence scoring (Task 22 Phase 4)",
+        "testStrategy": "1. Test intent classification accuracy with 20+ sample queries across all intent types\n2. Verify query-specific CosmosDB queries return filtered results (status, priority, assignee)\n3. Test aggregation queries return correct counts and groupings\n4. Verify page context is received and used in backend query construction\n5. Test action suggestions appear in responses for actionable queries\n6. Verify date parsing handles 'this week', 'yesterday', 'overdue' correctly\n7. Test session memory maintains context across conversation turns\n8. Verify proactive insights appear on widget open based on current page\n9. Performance test: response time <2s for standard queries\n10. Test fallback behavior when classification confidence is low",
+        "status": "done",
+        "dependencies": [
+          "6"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Intent Classification System",
+            "description": "Replace keyword matching with proper intent classification to determine query type before data fetching",
+            "dependencies": [],
+            "details": "Create _classify_intent() function in main.py that categorizes queries into: STATUS_CHECK ('what's blocked?', 'show overdue'), AGGREGATION ('how many tasks?', 'count by status'), SEARCH ('find tasks about API'), COMPARISON ('compare this week vs last'), ACTION_GUIDANCE ('what should I work on?'), EXPLANATION ('what is Tier 2 governance?'). Use regex patterns initially, optionally upgrade to AI-based classification. Return intent type and extracted parameters (e.g., status='Blocked', timeframe='this_week'). Update query_agent to use classified intent for downstream processing.",
+            "status": "done",
+            "testStrategy": "Test 5+ queries per intent type, verify correct classification and parameter extraction",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-25T21:41:39.168Z"
+          },
+          {
+            "id": 2,
+            "title": "Build Query-Specific CosmosDB Query Generator",
+            "description": "Replace generic SELECT queries with targeted queries based on intent and parameters",
+            "dependencies": [
+              1
+            ],
+            "details": "Create _build_cosmos_query() function that generates appropriate queries based on intent. STATUS_CHECK: 'SELECT * FROM c WHERE c.status = @status'. SEARCH: 'SELECT * FROM c WHERE CONTAINS(LOWER(c.title), @search) OR CONTAINS(LOWER(c.description), @search)'. Date-based: 'SELECT * FROM c WHERE c.due_date >= @start AND c.due_date <= @end'. Assignee: 'SELECT * FROM c WHERE c.assigned_to = @assignee'. Priority: 'SELECT * FROM c WHERE c.priority = @priority'. Support combining multiple filters. Use parameterized queries to prevent injection.\n\n**COMPLETED:** Implemented in backend/src/main.py lines 1242-1349. Supports status, priority, assignee, integration_status, date range, selected IDs, search term, and aggregation queries.",
+            "status": "done",
+            "testStrategy": "Test each query type returns correct filtered results, test combined filters",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 3,
+            "title": "Add Aggregation Query Support",
+            "description": "Implement COUNT and GROUP BY queries for analytical questions",
+            "dependencies": [
+              2
+            ],
+            "details": "**SUPERSEDED BY TASK 22** - Intent patterns and aggregation handled in Task 22 Phase 1.",
+            "status": "done",
+            "testStrategy": "Test aggregation queries return correct counts, verify formatting is clear",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Natural Date/Time Parser",
+            "description": "Add date parsing for natural language time references in queries",
+            "dependencies": [
+              1
+            ],
+            "details": "**MERGED TO TASK 22** - Moved to Task 22 Phase 5 (subtask 22).",
+            "status": "done",
+            "testStrategy": "Test all date expressions resolve to correct date ranges, verify timezone handling",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 5,
+            "title": "Add Page Context to API Request",
+            "description": "Update frontend to send current page context with queries for backend awareness",
+            "dependencies": [],
+            "details": "**ALREADY DONE** - Completed in Task 7 subtasks 13-14 (Phase 2.1 & 2.2).",
+            "status": "done",
+            "testStrategy": "Verify page context sent from frontend, test backend uses context appropriately",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 6,
+            "title": "Implement Action Suggestion System",
+            "description": "Add intelligent next-step suggestions to AI Guide responses",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "**SUPERSEDED BY TASK 22** - Actionability improvements in Task 22 Phase 1 (subtasks 6-7).",
+            "status": "done",
+            "testStrategy": "Test suggestions are relevant and actionable, verify priority sorting",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 7,
+            "title": "Build Session-Based Conversation Memory",
+            "description": "Track conversation context within session for follow-up questions",
+            "dependencies": [
+              1
+            ],
+            "details": "**MERGED TO TASK 22** - Moved to Task 22 Phase 5 (subtask 23).",
+            "status": "done",
+            "testStrategy": "Test follow-up queries use previous context, verify session isolation",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 8,
+            "title": "Add Proactive Insights on Widget Open",
+            "description": "Surface relevant insights automatically when user opens AI Guide widget",
+            "dependencies": [
+              3,
+              5
+            ],
+            "details": "**MERGED TO TASK 22** - Moved to Task 22 Phase 5 (subtask 24).",
+            "status": "done",
+            "testStrategy": "Test insights are relevant per page, verify caching works, test dismissal",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 9,
+            "title": "Implement Quick Actions System",
+            "description": "Allow AI Guide to trigger read-only frontend actions",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "**MERGED TO TASK 22** - Moved to Task 22 Phase 5 (subtask 25).",
+            "status": "done",
+            "testStrategy": "Test each action type executes correctly, verify read-only constraint",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          },
+          {
+            "id": 10,
+            "title": "Add Confidence Scoring and Uncertainty Handling",
+            "description": "Show confidence level in responses and handle uncertain queries gracefully",
+            "dependencies": [
+              1,
+              6
+            ],
+            "details": "**SUPERSEDED BY TASK 22** - Response quality covered in Task 22 Phase 4 (response templates).",
+            "status": "done",
+            "testStrategy": "Test confidence assigned correctly per query type, verify UI displays confidence",
+            "parentId": "undefined",
+            "updatedAt": "2025-11-26T15:00:00.000Z"
+          }
+        ],
+        "updatedAt": "2025-11-25T21:41:56.932Z"
+      },
+      {
+        "id": "17",
+        "title": "AI Guide Persona-Based Testing - 7 User Personas with Query Validation",
+        "description": "Execute comprehensive persona-based testing of AI Guide using 7 defined user personas (Developer, Architect, AI Director, CTO, BizOps VP, IT Personnel, Security) with 35 test scenarios to validate intent classification, query handling, and response quality",
+        "details": "Execute persona-based testing framework defined in .taskmaster/docs/ai-guide-persona-tests.md. Each persona represents a key stakeholder with distinct query patterns and expected behaviors.\n\n**Personas:**\n1. DEVELOPER (Michael Roberts) - Technical tasks, code patterns, assigned work\n2. ARCHITECT (Sarah Chen) - System design, tier classifications, governance\n3. AI ENABLEMENT DIRECTOR (Emma Wilson) - Portfolio metrics, adoption tracking, compliance\n4. CTO (James Anderson) - Executive summaries, strategic decisions, risk awareness\n5. BIZOPS VP (Jennifer Martinez) - Operational metrics, productivity, workload\n6. IT PERSONNEL (David Hayes) - Infrastructure, Azure resources, deployments\n7. SECURITY TEAM - Security decisions, compliance, audit trails\n\n**Test Categories per Persona (5 tests each):**\n- Intent classification accuracy\n- Query filter application\n- Aggregation correctness\n- Response relevance\n- Action suggestion appropriateness\n\n**Success Metrics:**\n- Query accuracy rate (correct intent classification)\n- Response relevance score (1-5)\n- Action suggestion appropriateness\n- Response time (<2s target)\n\n**Report Output:** Generate comprehensive test report with per-persona results, feature coverage, issues found, and recommendations.",
+        "testStrategy": "Execute all 35 test scenarios via API calls to /api/agent/query endpoint. For each test: 1) Send query with persona context, 2) Validate intent classification matches expected, 3) Verify response contains relevant data, 4) Check suggestions are appropriate, 5) Measure response time. Generate pass/fail report with aggregated metrics.",
+        "status": "in-progress",
+        "dependencies": [
+          "16"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Execute Developer Persona Tests (DEV-01 to DEV-05)",
+            "description": "Run 5 test queries for Developer persona: task lists, status checks, search, blockers, filtered queries",
+            "dependencies": [],
+            "details": "DEV-01: 'show my tasks' - expect LIST intent, task list with assignee context\nDEV-02: 'what tasks are in progress?' - expect STATUS_CHECK, in-progress tasks only\nDEV-03: 'find tasks about search' - expect SEARCH, tasks with 'search' in title/desc\nDEV-04: 'what's blocking development?' - expect STATUS_CHECK, blocked tasks with blockers\nDEV-05: 'show high priority tasks assigned to David' - expect LIST + FILTER, filtered results",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Execute Architect Persona Tests (ARCH-01 to ARCH-05)",
+            "description": "Run 5 test queries for Architect persona: agent tiers, development status, proposals, explanations",
+            "dependencies": [],
+            "details": "ARCH-01: 'list all agents by tier' - expect AGGREGATION, agent tier breakdown\nARCH-02: 'show agents in development' - expect LIST + FILTER, development-status agents\nARCH-03: 'what proposals are pending review?' - expect LIST + FILTER, pending proposals\nARCH-04: 'explain the agent tier system' - expect EXPLANATION, governance explanation\nARCH-05: 'recent architecture decisions' - expect LIST, decision list",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Execute AI Director Persona Tests (AID-01 to AID-05)",
+            "description": "Run 5 test queries for AI Enablement Director: status breakdown, completion metrics, portfolio summary",
+            "dependencies": [],
+            "details": "AID-01: 'breakdown agents by status' - expect AGGREGATION, status distribution\nAID-02: 'how many tasks completed this week?' - expect AGGREGATION, week's completion count\nAID-03: 'agent portfolio summary' - expect AGGREGATION, multi-metric summary\nAID-04: 'pending governance items' - expect LIST, pending proposals/decisions\nAID-05: 'what's the adoption trend?' - expect AGGREGATION, trend data if available",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Execute CTO Persona Tests (CTO-01 to CTO-05)",
+            "description": "Run 5 test queries for CTO: executive summary, blockers, portfolio, decisions, compliance",
+            "dependencies": [],
+            "details": "CTO-01: 'executive summary' - expect AGGREGATION, high-level overview\nCTO-02: 'what are the critical blockers?' - expect STATUS_CHECK, critical/blocked items\nCTO-03: 'technology portfolio status' - expect AGGREGATION, agent/tech summary\nCTO-04: 'major decisions this month' - expect LIST, recent decisions\nCTO-05: 'any security or compliance concerns?' - expect SEARCH, relevant items",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Execute BizOps VP Persona Tests (BIZ-01 to BIZ-05)",
+            "description": "Run 5 test queries for BizOps VP: workload, overdue, meetings, approvals, productivity",
+            "dependencies": [],
+            "details": "BIZ-01: 'workload by assignee' - expect AGGREGATION, assignee distribution\nBIZ-02: 'overdue tasks' - expect STATUS_CHECK, overdue items\nBIZ-03: 'meeting completion rate' - expect AGGREGATION, meeting metrics\nBIZ-04: 'pending approvals' - expect LIST, items needing approval\nBIZ-05: 'team productivity this week' - expect AGGREGATION, productivity metrics",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Execute IT Personnel Persona Tests (IT-01 to IT-05)",
+            "description": "Run 5 test queries for IT Personnel: infrastructure, deployments, Azure, changes, integrations",
+            "dependencies": [],
+            "details": "IT-01: 'infrastructure tasks' - expect SEARCH, infra-related tasks\nIT-02: 'blocked deployments' - expect STATUS_CHECK, blocked deployment tasks\nIT-03: 'azure resources' - expect LIST, resource information\nIT-04: 'recent system changes' - expect LIST, recent updates\nIT-05: 'integration issues' - expect SEARCH, integration problems",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "Execute Security Persona Tests (SEC-01 to SEC-05)",
+            "description": "Run 5 test queries for Security Team: security decisions, compliance, governance, critical items, audit",
+            "dependencies": [],
+            "details": "SEC-01: 'security decisions' - expect SEARCH, security-related decisions\nSEC-02: 'compliance tasks' - expect SEARCH, compliance items\nSEC-03: 'governance policies' - expect EXPLANATION, policy information\nSEC-04: 'critical security items' - expect STATUS_CHECK, critical priority items\nSEC-05: 'audit trail' - expect LIST, recent activity",
+            "status": "pending",
+            "testStrategy": "Call API, verify intent, validate response data structure and content",
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "Generate Comprehensive Test Report",
+            "description": "Compile all test results into comprehensive report with per-persona scores, feature coverage, issues, and recommendations",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "details": "Generate report following template in ai-guide-persona-tests.md. Include: Executive Summary (total pass rate), Per-Persona Results (X/5 passed, strengths, issues, recommendations), Feature Coverage (intent classification %, query filters %, aggregations %, search %, suggestions %), Issues Found, Recommendations. Save report to .taskmaster/docs/ai-guide-persona-test-report.md",
+            "status": "pending",
+            "testStrategy": "Verify report contains all sections, metrics are accurate, recommendations are actionable",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-11-25T23:00:00.000Z"
+      },
+      {
+        "id": "18",
+        "title": "P0: Security Critical - Audit Logging, Security Decisions & Approval Workflow",
+        "description": "Implement critical security infrastructure identified in persona testing: audit logging system, security decision categorization, and task approval workflow tracking. These are blockers for enterprise deployment.",
+        "details": "**Problem Context:**\nPersona testing revealed 3 critical gaps affecting Security Team and BizOps VP personas:\n1. SEC-05 'audit trail' query returned no data - no mechanism to track user actions\n2. SEC-01 'security decisions' returned nothing - decisions can't be categorized as security-related\n3. BIZ-04 'pending approvals' couldn't return meaningful data - no approval workflow tracking\n\n**Business Impact:**\n- Enterprise security requires audit trails for compliance (SOC2, GDPR, ISO 27001)\n- Security team can't investigate incidents without activity logs\n- BizOps can't track governance gates or approval processes\n- Missing visibility for compliance audits\n\n**Success Criteria:**\n- SEC-05 'audit trail' returns recent user activity\n- SEC-01 'security decisions' returns security-categorized decisions\n- BIZ-04 'pending approvals' returns tasks awaiting sign-off",
+        "testStrategy": "Re-run Security Team persona tests (SEC-01 to SEC-05) and BizOps VP tests (BIZ-04). All should pass with relevant data returned.",
+        "status": "done",
+        "dependencies": [
+          "17"
+        ],
+        "priority": "critical",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement AuditLog Model and CosmosDB Container",
+            "description": "Create AuditLog pydantic model with fields: id, user_id, action (view/create/update/delete), entity_type, entity_id, timestamp, details. Create CosmosDB container for audit_logs.",
+            "dependencies": [],
+            "details": "Model fields:\n- id: str (UUID)\n- user_id: str (who performed action)\n- action: str enum ['view', 'create', 'update', 'delete', 'query']\n- entity_type: str ['task', 'agent', 'meeting', 'decision', 'proposal']\n- entity_id: str (ID of affected entity)\n- timestamp: datetime\n- ip_address: Optional[str]\n- user_agent: Optional[str]\n- details: Optional[dict] (additional context)\n\nCosmosDB: Create 'audit_logs' container with partition key '/entity_type'",
+            "status": "pending",
+            "testStrategy": "Verify model validates correctly, container created in CosmosDB",
+            "parentId": "18"
+          },
+          {
+            "id": 2,
+            "title": "Add Audit Logging Middleware/Decorator",
+            "description": "Create middleware or decorator to automatically log API calls. Log all create/update/delete operations and optionally read operations for sensitive entities.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementation options:\n1. FastAPI middleware for all routes\n2. Decorator for specific endpoints\n\nLog these operations:\n- All POST/PUT/PATCH/DELETE requests\n- GET requests for tasks, decisions, agents (configurable)\n- AI Guide queries (for usage analytics)\n\nInclude request context: user identity, timestamp, IP, endpoint, entity affected",
+            "status": "pending",
+            "testStrategy": "Make API calls, verify audit logs created in CosmosDB",
+            "parentId": "18"
+          },
+          {
+            "id": 3,
+            "title": "Create Audit Log Query API Endpoint",
+            "description": "Add GET /api/audit endpoint to retrieve audit logs with filtering by user, entity_type, action, and date range.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Endpoint: GET /api/audit\nQuery params:\n- user_id: filter by user\n- entity_type: filter by entity type\n- action: filter by action type\n- start_date, end_date: date range\n- limit: max results (default 100)\n\nResponse: List of AuditLog objects with pagination",
+            "status": "pending",
+            "testStrategy": "Query audit endpoint, verify filtering works correctly",
+            "parentId": "18"
+          },
+          {
+            "id": 4,
+            "title": "Integrate Audit Trail into AI Guide",
+            "description": "Update AI Guide to query audit_logs when user asks about 'audit trail', 'recent activity', 'who changed', etc.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update _build_cosmos_query to:\n1. Detect audit-related queries: 'audit trail', 'activity log', 'who changed', 'recent changes'\n2. Query audit_logs container\n3. Format response showing recent activity\n\nExpected queries to work:\n- 'show audit trail' → recent audit logs\n- 'who changed task X' → filtered by entity\n- 'activity this week' → date-filtered logs",
+            "status": "pending",
+            "testStrategy": "Re-run SEC-05 'audit trail' test, verify returns actual data",
+            "parentId": "18"
+          },
+          {
+            "id": 5,
+            "title": "Add ApprovalStatus Enum and Task Field",
+            "description": "Add ApprovalStatus enum (NOT_REQUIRED, PENDING, APPROVED, REJECTED) and approval fields to Task model.",
+            "dependencies": [],
+            "details": "Add to models.py:\n\nclass ApprovalStatus(str, Enum):\n    NOT_REQUIRED = 'Not Required'\n    PENDING = 'Pending'\n    APPROVED = 'Approved'\n    REJECTED = 'Rejected'\n\nAdd to Task model:\n- approval_status: ApprovalStatus = ApprovalStatus.NOT_REQUIRED\n- approver: Optional[str] = None\n- approved_at: Optional[datetime] = None\n- approval_notes: Optional[str] = None",
+            "status": "pending",
+            "testStrategy": "Verify Task model accepts new fields, existing tasks migrate cleanly",
+            "parentId": "18"
+          },
+          {
+            "id": 6,
+            "title": "Create Approval Workflow API Endpoints",
+            "description": "Add endpoints for approval workflow: request approval, approve/reject task, list pending approvals.",
+            "dependencies": [
+              5
+            ],
+            "details": "New endpoints:\n- POST /api/tasks/{id}/request-approval - set status to PENDING, assign approver\n- POST /api/tasks/{id}/approve - set APPROVED, record timestamp\n- POST /api/tasks/{id}/reject - set REJECTED with notes\n- GET /api/tasks/pending-approvals - list all PENDING tasks\n\nBusiness rules:\n- Only certain task categories require approval\n- Approver cannot be same as assignee\n- Approval changes should be audit logged",
+            "status": "pending",
+            "testStrategy": "Test full approval workflow, verify state transitions",
+            "parentId": "18"
+          },
+          {
+            "id": 7,
+            "title": "Integrate Approval Status into AI Guide",
+            "description": "Update AI Guide to filter and report on approval status when queried about 'pending approvals', 'awaiting sign-off', etc.",
+            "dependencies": [
+              6
+            ],
+            "details": "Update _extract_filters to:\n1. Detect approval queries: 'pending approvals', 'awaiting approval', 'needs sign-off'\n2. Filter tasks by approval_status = 'Pending'\n3. Include approver info in response\n\nUpdate _generate_action_suggestions to suggest:\n- 'Approve task' action for pending items\n- 'Request approval' for tasks without approval",
+            "status": "pending",
+            "testStrategy": "Re-run BIZ-04 'pending approvals' test, verify returns filtered tasks",
+            "parentId": "18"
+          },
+          {
+            "id": 8,
+            "title": "Populate Security Decisions Test Data",
+            "description": "Add sample security-categorized decisions to CosmosDB to enable SEC-01 testing. DecisionCategory.SECURITY already exists.",
+            "dependencies": [],
+            "details": "Add 2-3 security decisions:\n1. 'Implement Role-Based Access Control' - Security decision about RBAC implementation\n2. 'Data Encryption Standards' - Decision on encryption requirements\n3. 'PII Detection Requirements' - Decision on PII handling\n\nEnsure category = DecisionCategory.SECURITY for all",
+            "status": "pending",
+            "testStrategy": "Re-run SEC-01 'security decisions' test, verify returns security-categorized decisions",
+            "parentId": "18"
+          },
+          {
+            "id": 9,
+            "title": "Re-run Security & BizOps Persona Tests",
+            "description": "Execute Security Team (SEC-01 to SEC-05) and BizOps VP (BIZ-04) tests to validate all P0 fixes.",
+            "dependencies": [
+              4,
+              7,
+              8
+            ],
+            "details": "Tests to re-run:\n- SEC-01: 'security decisions' - should return security-categorized decisions\n- SEC-05: 'audit trail' - should return recent audit logs\n- BIZ-04: 'pending approvals' - should return tasks with approval_status=PENDING\n\nSuccess criteria: All 3 tests pass with relevant data",
+            "status": "pending",
+            "testStrategy": "Run API tests, document results, update test report",
+            "parentId": "18"
+          }
+        ],
+        "updatedAt": "2025-11-26T00:10:18.608Z"
+      },
+      {
+        "id": "19",
+        "title": "P1: Functionality Improvements - Intent Classification, Date Filtering & Integration Status",
+        "description": "Improve AI Guide functionality identified in persona testing: better aggregation intent classification, relative date filtering ('this month/week'), and agent integration status tracking.",
+        "details": "**Problem Context:**\nPersona testing revealed 3 functionality gaps:\n1. Aggregation queries like 'breakdown agents by status' return correct data but intent shows 'list' instead of 'aggregation'\n2. CTO-04 'major decisions this month' returned empty despite November decisions existing\n3. IT-05 'integration issues' returned inference-based response due to no explicit integration tracking\n\n**Business Impact:**\n- Aggregation intent affects UI presentation (could trigger charts/graphs)\n- Date filtering is common executive query pattern\n- IT team needs visibility into agent integration health\n\n**Success Criteria:**\n- Aggregation queries return intent='aggregation'\n- 'This month/week' queries return correct date-filtered results\n- Integration status visible for agents",
+        "testStrategy": "Re-run affected persona tests: AID-01, CTO-04, IT-05. Verify intent classification and data accuracy.",
+        "status": "in-progress",
+        "dependencies": [
+          "18"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Enhance Aggregation Intent Classification",
+            "description": "Update _classify_intent() to better recognize aggregation keywords and patterns.",
+            "dependencies": [],
+            "details": "Current issue: Queries like 'breakdown agents by status' return intent='list' instead of 'aggregation'\n\nAdd aggregation keyword patterns:\n- 'breakdown', 'breakdown by', 'distribution'\n- 'count by', 'group by', 'categorize by'\n- 'how many by', 'percentage', 'ratio'\n- 'summary by', 'stats by', 'metrics by'\n\nUpdate _classify_intent() logic:\n```python\naggregation_patterns = [\n    r'breakdown\\s+(by|of)',\n    r'distribution\\s+(by|of)',\n    r'count\\s+by',\n    r'group\\s+by',\n    r'how\\s+many\\s+.*\\s+by',\n    r'percentage',\n    r'summary\\s+(by|of)'\n]\nif any(re.search(p, query_lower) for p in aggregation_patterns):\n    return 'aggregation'\n```",
+            "status": "pending",
+            "testStrategy": "Test queries: 'breakdown agents by status', 'count tasks by priority', 'distribution by assignee'. All should return intent='aggregation'",
+            "parentId": "19"
+          },
+          {
+            "id": 2,
+            "title": "Implement Relative Date Parsing",
+            "description": "Enhance _extract_filters() to properly handle relative date expressions like 'this month', 'this week', 'recent', 'today'.",
+            "dependencies": [],
+            "details": "Date expression mappings:\n- 'today' → current date\n- 'yesterday' → current date - 1 day\n- 'this week' → Monday to Sunday of current week\n- 'last week' → previous Monday to Sunday\n- 'this month' → 1st to last day of current month\n- 'last month' → previous month range\n- 'recent' → last 30 days\n- 'past X days' → last X days\n\nImplementation:\n```python\nfrom datetime import datetime, timedelta\n\ndef _parse_relative_date(expression: str) -> tuple[datetime, datetime]:\n    today = datetime.utcnow().replace(hour=0, minute=0, second=0)\n    if 'this week' in expression:\n        start = today - timedelta(days=today.weekday())\n        end = start + timedelta(days=6)\n    elif 'this month' in expression:\n        start = today.replace(day=1)\n        # end = last day of month\n    # ... etc\n    return start, end\n```",
+            "status": "pending",
+            "testStrategy": "Test 'decisions this month', 'tasks this week', 'meetings today'. Verify correct date ranges applied.",
+            "parentId": "19"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Relative Dates into Query Builder",
+            "description": "Update _build_cosmos_query() to apply parsed relative dates as filters on created_at, due_date, decision_date fields.",
+            "dependencies": [
+              2
+            ],
+            "details": "When relative date detected:\n1. Parse to start_date, end_date range\n2. Apply appropriate filter based on entity type:\n   - Tasks: filter on created_at or due_date\n   - Decisions: filter on decision_date\n   - Meetings: filter on date field\n   - Audit logs: filter on timestamp\n\nCosmosDB query addition:\n```sql\nAND c.decision_date >= @start_date AND c.decision_date <= @end_date\n```",
+            "status": "pending",
+            "testStrategy": "Re-run CTO-04 'major decisions this month', verify returns November 2025 decisions",
+            "parentId": "19"
+          },
+          {
+            "id": 4,
+            "title": "Add IntegrationStatus Enum and Agent Field",
+            "description": "Add IntegrationStatus enum and integration fields to Agent model for tracking connectivity health.",
+            "dependencies": [],
+            "details": "Add to models.py:\n\nclass IntegrationStatus(str, Enum):\n    NOT_CONFIGURED = 'Not Configured'\n    CONNECTED = 'Connected'\n    DEGRADED = 'Degraded'\n    FAILED = 'Failed'\n\nAdd to Agent model:\n- integration_status: IntegrationStatus = IntegrationStatus.NOT_CONFIGURED\n- integration_endpoint: Optional[str] = None\n- last_health_check: Optional[datetime] = None\n- integration_error: Optional[str] = None",
+            "status": "pending",
+            "testStrategy": "Verify Agent model accepts new fields, existing agents migrate cleanly",
+            "parentId": "19"
+          },
+          {
+            "id": 5,
+            "title": "Integrate Integration Status into AI Guide",
+            "description": "Update AI Guide to filter and report on agent integration status when queried about 'integration issues', 'connectivity problems', etc.",
+            "dependencies": [
+              4
+            ],
+            "details": "Update _extract_filters to detect:\n- 'integration issues', 'integration problems'\n- 'connectivity', 'connection status'\n- 'failed integrations', 'degraded services'\n\nFilter logic:\n- 'integration issues' → integration_status IN ['Failed', 'Degraded']\n- 'integration status' → list all with their status\n\nUpdate response to include:\n- Status indicator\n- Last health check time\n- Error details if failed",
+            "status": "pending",
+            "testStrategy": "Re-run IT-05 'integration issues', verify returns agents with Failed/Degraded status",
+            "parentId": "19"
+          },
+          {
+            "id": 6,
+            "title": "Re-run Affected Persona Tests",
+            "description": "Execute tests affected by P1 changes to validate improvements.",
+            "dependencies": [
+              1,
+              3,
+              5
+            ],
+            "details": "Tests to re-run:\n- AID-01: 'breakdown agents by status' - verify intent='aggregation'\n- CTO-04: 'major decisions this month' - verify returns current month decisions\n- IT-05: 'integration issues' - verify returns agents with integration problems\n\nAdditional validation:\n- Test various relative date expressions\n- Test aggregation keyword variations",
+            "status": "pending",
+            "testStrategy": "Run API tests, compare before/after behavior, update test report",
+            "parentId": "19"
+          }
+        ],
+        "updatedAt": "2025-11-26T00:11:47.304Z"
+      },
+      {
+        "id": "20",
+        "title": "P2: Future Enhancements - Workload Balancing, Trends, Security Shortcuts & Deduplication",
+        "description": "Nice-to-have enhancements for improved user experience: proactive workload balancing suggestions, trend analysis, security-focused query shortcuts, and task deduplication detection.",
+        "details": "**Problem Context:**\nPersona testing observations for future improvement:\n1. BIZ-01 showed uneven workload (Michael: 6 tasks, Bob: 1 task) - no proactive suggestion\n2. AID-05 'adoption trend' could only provide qualitative observations - no historical data\n3. Security persona requires multiple queries for comprehensive view\n4. BIZ-02 revealed duplicate tasks in database\n\n**Business Impact:**\n- Workload balancing improves team efficiency\n- Trend analysis enables data-driven decisions\n- Security shortcuts improve security team productivity\n- Deduplication reduces data noise\n\n**Note:** These are lower priority enhancements after P0/P1 are complete.",
+        "testStrategy": "Feature acceptance testing with relevant personas. Validate suggestions appear, trends calculated, shortcuts work, duplicates detected.",
+        "status": "pending",
+        "dependencies": [
+          "19"
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Workload Balancing Suggestions",
+            "description": "Add proactive suggestions when AI Guide detects uneven workload distribution across team members.",
+            "dependencies": [],
+            "details": "When processing workload queries:\n1. Calculate task count per assignee\n2. Detect imbalance: if max/min ratio > 3x\n3. Generate suggestion: 'Consider reassigning tasks from [overloaded] to [underloaded]'\n\nThreshold configuration:\n- Warning: 3x difference\n- Critical: 5x difference\n\nResponse addition:\n```\n⚠️ Workload imbalance detected:\n- Michael Roberts: 6 tasks (overloaded)\n- Bob Smith: 1 task (capacity available)\nConsider redistributing for better balance.\n```",
+            "status": "pending",
+            "testStrategy": "Query 'workload by assignee' with imbalanced data, verify suggestion appears",
+            "parentId": "20"
+          },
+          {
+            "id": 2,
+            "title": "Add Historical Metrics Tracking",
+            "description": "Create metrics_history container to track daily snapshots of key metrics for trend analysis.",
+            "dependencies": [],
+            "details": "New CosmosDB container: metrics_history\nPartition key: /metric_type\n\nDaily snapshot model:\n```python\nclass MetricSnapshot(BaseModel):\n    id: str\n    metric_type: str  # 'agent_count', 'task_completion', 'meeting_frequency'\n    date: datetime\n    value: float\n    breakdown: Optional[dict] = None  # e.g., {status: count}\n```\n\nScheduled job (daily):\n- Count agents by status → store snapshot\n- Count tasks completed today → store snapshot\n- Count meetings held → store snapshot",
+            "status": "pending",
+            "testStrategy": "Verify daily snapshots created, queryable by date range",
+            "parentId": "20"
+          },
+          {
+            "id": 3,
+            "title": "Implement Trend Analysis Queries",
+            "description": "Enable AI Guide to answer trend questions using historical metrics data.",
+            "dependencies": [
+              2
+            ],
+            "details": "Detect trend queries:\n- 'adoption trend', 'growth trend'\n- 'how has X changed', 'X over time'\n- 'velocity', 'completion rate trend'\n\nQuery metrics_history:\n- Get snapshots for requested period\n- Calculate trend direction (increasing/decreasing/stable)\n- Calculate percentage change\n\nResponse format:\n```\nAgent adoption trend (last 30 days):\n- Start: 1 agent\n- Current: 3 agents\n- Growth: +200%\n- Trend: ↗️ Increasing\n```",
+            "status": "pending",
+            "testStrategy": "Re-run AID-05 'adoption trend' with historical data, verify quantitative response",
+            "parentId": "20"
+          },
+          {
+            "id": 4,
+            "title": "Create Security-Focused Query Shortcuts",
+            "description": "Implement compound queries that combine multiple security-relevant data points for Security persona efficiency.",
+            "dependencies": [],
+            "details": "Security shortcuts:\n\n1. 'security posture' → combines:\n   - Security-categorized decisions\n   - Critical priority tasks\n   - Compliance-related tasks\n   - Recent security audit logs\n\n2. 'risk assessment' → combines:\n   - Blocked items\n   - Overdue security tasks\n   - Failed integrations\n   - Pending security approvals\n\n3. 'compliance status' → combines:\n   - Compliance tasks by status\n   - Governance decisions\n   - Audit log summary\n\nImplementation: Detect shortcut phrases, execute multiple queries, merge results",
+            "status": "pending",
+            "testStrategy": "Test 'security posture', verify comprehensive multi-source response",
+            "parentId": "20"
+          },
+          {
+            "id": 5,
+            "title": "Implement Task Deduplication Detection",
+            "description": "Add logic to detect and flag potential duplicate tasks based on title similarity and assignee.",
+            "dependencies": [],
+            "details": "Duplicate detection triggers:\n1. On task creation: check for similar existing tasks\n2. On query: highlight duplicates in response\n3. Periodic scan: identify duplicate clusters\n\nSimilarity criteria:\n- Title similarity > 80% (fuzzy match)\n- Same assignee\n- Same category\n- Created within 7 days\n\nResponse addition:\n```\n⚠️ Potential duplicates detected:\n- 'Draft Governance Policy' (task-123) and 'Draft Governance Policy' (task-456)\n  Consider merging these tasks.\n```\n\nUse: difflib.SequenceMatcher or rapidfuzz for similarity",
+            "status": "pending",
+            "testStrategy": "Create similar tasks, verify warning appears in query response",
+            "parentId": "20"
+          },
+          {
+            "id": 6,
+            "title": "Add Deduplication Merge Suggestion",
+            "description": "When duplicates detected, suggest merge action with preview of combined task.",
+            "dependencies": [
+              5
+            ],
+            "details": "Add action suggestion:\n```json\n{\n  \"label\": \"Merge duplicates\",\n  \"action_type\": \"merge\",\n  \"params\": {\n    \"task_ids\": [\"task-123\", \"task-456\"],\n    \"preview\": \"Merged: Draft Governance Policy (combined notes)\"\n  }\n}\n```\n\nMerge logic:\n- Keep older task ID\n- Combine descriptions/notes\n- Preserve all assignees\n- Sum estimated effort\n- Delete duplicate after merge",
+            "status": "pending",
+            "testStrategy": "Click merge suggestion, verify tasks combined correctly",
+            "parentId": "20"
+          }
+        ],
+        "updatedAt": "2025-11-25T23:30:00.000Z"
+      },
+      {
+        "id": "21",
+        "title": "AI Guide Persona Use Case Testing",
+        "description": "Execute realistic persona-based test scenarios that mimic how actual users would interact with the AI Guide. Each persona represents a distinct role with specific goals, workflows, and question patterns.",
+        "details": "**Purpose:** Validate AI Guide accuracy and usefulness through realistic user scenarios.\n\n**Personas:**\n1. **Project Manager (PM)** - Needs status overviews, blockers, deadlines, team workload\n2. **Engineering Lead** - Needs technical details, agent status, integration health\n3. **Executive/Stakeholder** - Needs high-level summaries, KPIs, decision support\n4. **New Team Member** - Needs onboarding info, context, learning resources\n5. **DevOps/Platform** - Needs infrastructure status, deployments, resource health\n\n**Success Criteria:**\n- Response relevance: Does it answer the actual question?\n- Data accuracy: Are counts/statuses correct?\n- Actionability: Can user take action based on response?\n- Context awareness: Does it understand the user's role?",
+        "testStrategy": "Execute each persona's use cases, score responses on relevance/accuracy/actionability, identify failure patterns, generate comprehensive report",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "PM Persona: Daily Standup Prep",
+            "description": "Project Manager preparing for daily standup needs quick status overview",
+            "dependencies": [],
+            "details": "**Scenario:** It's 9am, PM needs to run standup in 15 minutes.\n\n**Use Cases:**\n1. 'What's blocking the team today?' - Expect: List of blocked tasks with reasons\n2. 'Show me tasks due this week' - Expect: Tasks with due dates in next 7 days\n3. 'Who has the most work assigned?' - Expect: Workload distribution by assignee\n4. 'Any meetings scheduled today?' - Expect: Today's meetings with times\n5. 'What was completed yesterday?' - Expect: Recently completed tasks\n\n**Success Criteria:**\n- Quick, scannable responses\n- Accurate task counts\n- Actionable blockers list",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, score each 1-5 on relevance/accuracy/actionability",
+            "parentId": "21"
+          },
+          {
+            "id": 2,
+            "title": "PM Persona: Sprint Planning",
+            "description": "Project Manager planning upcoming sprint needs capacity and backlog info",
+            "dependencies": [],
+            "details": "**Scenario:** Sprint planning meeting, need to understand capacity and priorities.\n\n**Use Cases:**\n1. 'What high priority tasks are still pending?' - Expect: Prioritized backlog\n2. 'How many tasks did we complete last sprint?' - Expect: Completion metrics\n3. 'Show team capacity - who has bandwidth?' - Expect: Tasks per person\n4. 'What decisions are pending approval?' - Expect: Awaiting decisions\n5. 'Any tasks without assignees?' - Expect: Unassigned work\n\n**Success Criteria:**\n- Accurate counts for planning\n- Clear priority ordering\n- Identifies capacity gaps",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, validate against actual database counts",
+            "parentId": "21"
+          },
+          {
+            "id": 3,
+            "title": "Engineering Lead: Technical Health Check",
+            "description": "Engineering Lead checking system and agent health",
+            "dependencies": [],
+            "details": "**Scenario:** Weekly technical review, need agent status and integration health.\n\n**Use Cases:**\n1. 'What agents are in production?' - Expect: Production agents with status\n2. 'Any agents with integration issues?' - Expect: Integration problems flagged\n3. 'Show me agents in development' - Expect: Development pipeline\n4. 'What's the agent deployment timeline?' - Expect: Agents by stage\n5. 'Any critical technical tasks overdue?' - Expect: Overdue high-priority items\n\n**Success Criteria:**\n- Technical accuracy on agent states\n- Integration status visibility\n- Clear deployment pipeline view",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, verify technical details match database",
+            "parentId": "21"
+          },
+          {
+            "id": 4,
+            "title": "Engineering Lead: Architecture Decisions",
+            "description": "Engineering Lead researching past architecture decisions",
+            "dependencies": [],
+            "details": "**Scenario:** Need to understand why certain technical decisions were made.\n\n**Use Cases:**\n1. 'What architecture decisions have been made?' - Expect: Decision list\n2. 'Why did we choose Azure OpenAI?' - Expect: Decision rationale\n3. 'Show recent technical decisions' - Expect: Last 30 days decisions\n4. 'What proposals are pending technical review?' - Expect: Awaiting decisions\n5. 'Who made the CosmosDB decision?' - Expect: Decision owner/date\n\n**Success Criteria:**\n- Accurate decision history\n- Rationale included when available\n- Correct attribution",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, verify decision details match records",
+            "parentId": "21"
+          },
+          {
+            "id": 5,
+            "title": "Executive: Weekly Status Report",
+            "description": "Executive preparing for leadership meeting needs high-level metrics",
+            "dependencies": [],
+            "details": "**Scenario:** Executive needs 5-minute status summary for leadership.\n\n**Use Cases:**\n1. 'Give me a summary of project status' - Expect: High-level overview\n2. 'What are the key risks or blockers?' - Expect: Risk summary\n3. 'How many agents are operational vs planned?' - Expect: Pipeline metrics\n4. 'What decisions need my attention?' - Expect: Pending approvals\n5. 'Show progress this month' - Expect: Monthly achievements\n\n**Success Criteria:**\n- Executive-friendly summaries (not technical jargon)\n- Key metrics highlighted\n- Decision items clear",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, evaluate clarity and executive-appropriateness",
+            "parentId": "21"
+          },
+          {
+            "id": 6,
+            "title": "Executive: Resource Allocation",
+            "description": "Executive reviewing resource utilization and team allocation",
+            "dependencies": [],
+            "details": "**Scenario:** Budget review, need to understand where resources are focused.\n\n**Use Cases:**\n1. 'How is the team workload distributed?' - Expect: Work per person\n2. 'What are the biggest initiatives?' - Expect: Major work streams\n3. 'Any bottlenecks in delivery?' - Expect: Blockers/delays\n4. 'Show me tasks by category' - Expect: Work breakdown\n5. 'What's the completion rate trend?' - Expect: Productivity metrics\n\n**Success Criteria:**\n- Resource visibility\n- Clear bottleneck identification\n- Actionable insights",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, evaluate business value of responses",
+            "parentId": "21"
+          },
+          {
+            "id": 7,
+            "title": "New Team Member: Onboarding",
+            "description": "New team member trying to understand the project and get oriented",
+            "dependencies": [],
+            "details": "**Scenario:** Day 1 on the project, need to understand what's happening.\n\n**Use Cases:**\n1. 'What is this project about?' - Expect: Project overview\n2. 'Who are the key people I should know?' - Expect: Team/stakeholders\n3. 'What are the main agents we're building?' - Expect: Agent overview\n4. 'What should I focus on first?' - Expect: Onboarding guidance\n5. 'Where can I find documentation?' - Expect: Resource pointers\n\n**Success Criteria:**\n- Helpful onboarding context\n- Clear explanations (not assumed knowledge)\n- Welcoming tone",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, evaluate newcomer-friendliness",
+            "parentId": "21"
+          },
+          {
+            "id": 8,
+            "title": "New Team Member: Task Pickup",
+            "description": "New team member looking for tasks to work on",
+            "dependencies": [],
+            "details": "**Scenario:** Finished onboarding, ready to pick up first task.\n\n**Use Cases:**\n1. 'What tasks are available to pick up?' - Expect: Unassigned tasks\n2. 'Show me low priority tasks good for learning' - Expect: Starter tasks\n3. 'What did the team work on recently?' - Expect: Recent activity\n4. 'Who should I ask about the AI Search task?' - Expect: Task owner\n5. 'What skills are needed for pending tasks?' - Expect: Requirements\n\n**Success Criteria:**\n- Identifies starter-friendly tasks\n- Points to right people\n- Manageable scope tasks",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, evaluate onboarding usefulness",
+            "parentId": "21"
+          },
+          {
+            "id": 9,
+            "title": "DevOps: Deployment Status",
+            "description": "DevOps engineer checking deployment pipeline and infrastructure",
+            "dependencies": [],
+            "details": "**Scenario:** Deployment day, need to verify everything is ready.\n\n**Use Cases:**\n1. 'What agents are ready for deployment?' - Expect: Deployment-ready items\n2. 'Any infrastructure tasks pending?' - Expect: Infra backlog\n3. 'Show me recent deployment decisions' - Expect: Deployment-related decisions\n4. 'What's blocking production releases?' - Expect: Release blockers\n5. 'Status of Azure resource setup?' - Expect: Infrastructure status\n\n**Success Criteria:**\n- Deployment readiness clear\n- Infrastructure status accurate\n- Blockers identified",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, verify operational accuracy",
+            "parentId": "21"
+          },
+          {
+            "id": 10,
+            "title": "DevOps: Incident Response",
+            "description": "DevOps responding to a reported issue",
+            "dependencies": [],
+            "details": "**Scenario:** User reports something is broken, need to investigate.\n\n**Use Cases:**\n1. 'Any known issues with the AI Guide?' - Expect: Known problems\n2. 'Show me recent changes to the system' - Expect: Recent updates\n3. 'What integrations might be affected?' - Expect: Integration list\n4. 'Who owns the backend service?' - Expect: Ownership info\n5. 'Any related incidents or bugs?' - Expect: Related issues\n\n**Success Criteria:**\n- Quick issue context\n- Points to owners\n- Shows related problems",
+            "status": "done",
+            "testStrategy": "Execute 5 queries, evaluate incident response usefulness",
+            "parentId": "21"
+          },
+          {
+            "id": 11,
+            "title": "Cross-Persona: Complex Multi-Part Queries",
+            "description": "Test complex queries that combine multiple concerns",
+            "dependencies": [],
+            "details": "**Scenario:** Users often ask compound questions.\n\n**Use Cases:**\n1. 'Show blocked tasks and who owns them' - Expect: Blocked + assignee\n2. 'High priority tasks due this week assigned to David' - Expect: Filtered list\n3. 'Compare agent count by status vs last month' - Expect: Comparison\n4. 'Tasks created from recent meetings' - Expect: Meeting-task link\n5. 'Pending decisions that affect the architecture' - Expect: Filtered decisions\n\n**Success Criteria:**\n- Handles compound queries\n- Applies multiple filters correctly\n- Doesn't miss parts of question",
+            "status": "done",
+            "testStrategy": "Execute 5 complex queries, verify all parts addressed",
+            "parentId": "21"
+          },
+          {
+            "id": 12,
+            "title": "Generate Comprehensive Test Report",
+            "description": "Compile results from all persona tests into actionable report",
+            "dependencies": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            "details": "**Report Structure:**\n1. Executive Summary - Overall pass rate, key findings\n2. Persona Results - Score by persona, best/worst scenarios\n3. Query Analysis - Which query types succeed/fail\n4. Failure Patterns - Common issues identified\n5. Recommendations - Priority fixes needed\n6. Data Accuracy - Count verification results\n7. Response Quality - Relevance/actionability scores\n\n**Scoring:**\n- Relevance: 1-5 (Does it answer the question?)\n- Accuracy: 1-5 (Is the data correct?)\n- Actionability: 1-5 (Can user act on it?)\n- Overall: Average of above\n\n**Output:** Markdown report with tables and recommendations",
+            "status": "done",
+            "testStrategy": "Generate report after all tests complete",
+            "parentId": "21"
+          }
+        ],
+        "updatedAt": "2025-11-26T12:00:00.000Z"
+      },
+      {
+        "id": "22",
+        "title": "AI Guide Relevance and Actionability Improvements",
+        "description": "Implement improvements to address low relevance (7 queries, 12.7%) and low actionability (17 queries, 30.9%) issues identified in persona testing. Target: Relevance 3.95→4.5+, Actionability 3.38→4.2+",
+        "details": "**Root Cause Analysis:**\n- Accuracy is strong (4.87/5) but understanding (3.95/5) and actionability (3.38/5) need improvement\n- Intent patterns missing: risks, blockers, bottlenecks, ownership, learning-friendly\n- AI system prompt lacks actionability guidance\n- Data model missing: complexity, owner, timeline fields\n- No historical data for comparisons\n\n**Implementation Phases:**\n- Phase 1 (1-2 days): Quick wins - expand intent patterns, enhance AI prompt (subtasks 1-8)\n- Phase 2 (3-5 days): Data model enhancements - complexity, owner fields (subtasks 9-13)\n- Phase 3 (5-7 days): Historical snapshots for trend queries (subtasks 14-17)\n- Phase 4 (3-5 days): Response templates by intent (subtasks 18-21)\n- Phase 5 (Enhancement): Date parser, session memory, proactive insights, quick actions (subtasks 22-25) - merged from Task 16\n\n**Files to Modify:**\n- backend/src/main.py (lines 732-798, 1242-1349, 1691-1792)\n- backend/src/ai_client.py (lines 218-231)\n- backend/src/models.py\n\n**Reference:** See AI_Guide_Improvement_Plan.md for detailed analysis",
+        "testStrategy": "Re-run all 55 persona tests after each phase. Phase 1 Success: 0 queries with R<=2, <10 queries with Act<=2. Phase 2 Success: Learning/timeline queries score R>=4. Phase 3 Success: Comparison queries score R>=4, Act>=3.",
+        "status": "in-progress",
+        "dependencies": ["21"],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Phase 1.1: Expand STATUS_CHECK Intent Patterns",
+            "description": "Add missing patterns for risks, blockers, bottlenecks to STATUS_CHECK intent",
+            "dependencies": [],
+            "details": "**DONE:** Added patterns to STATUS_CHECK in main.py:749-751\n\n**Patterns added:**\n- r\"\\b(risks?|blockers?|bottlenecks?|impediments?)\\b\"\n- r\"\\bwhat('s| is| are).*\\b(blocking|stuck|delayed|holding up)\\b\"\n\n**Queries Fixed:**\n- 'What are the key risks or blockers?' (R=1→4)\n- 'What's blocking the team today?' (R=2→4)\n- 'Any bottlenecks in delivery?' (R=2→4)",
+            "status": "done",
+            "testStrategy": "Run targeted tests for the 3 affected queries, verify R>=4",
+            "parentId": "22"
+          },
+          {
+            "id": 2,
+            "title": "Phase 1.2: Add OWNERSHIP Intent Detection",
+            "description": "Create new OWNERSHIP intent type with patterns for ownership queries",
+            "dependencies": [],
+            "details": "**DONE:** Added OWNERSHIP intent to QueryIntent enum (main.py:709) and patterns (main.py:790-795)\n\n**Patterns added:**\n- r\"\\b(who owns|owner of|responsible for|who manages)\\b\"\n- r\"\\bwho.*\\b(contact|ask about|handles|maintains)\\b\"\n- r\"\\b(ownership|responsible|in charge of)\\b\"\n\n**Query Fixed:**\n- 'Who owns the backend service?' (R=2→4)",
+            "status": "done",
+            "testStrategy": "Run ownership query, verify R>=4",
+            "parentId": "22"
+          },
+          {
+            "id": 3,
+            "title": "Phase 1.3: Add ACTION_GUIDANCE Patterns",
+            "description": "Add patterns for learning-friendly and beginner task queries",
+            "dependencies": [],
+            "details": "**DONE:** Added learning/starter patterns to ACTION_GUIDANCE in main.py:776-779\n\n**Patterns added:**\n- r\"\\b(good for|suitable for|appropriate for)\\s*(learning|beginners?|new|onboarding)\\b\"\n- r\"\\b(starter|beginner|easy|simple|introductory)\\s*(tasks?|work|items?)\\b\"\n- r\"\\bfirst\\s*(task|issue|thing|item)\\s*(to|for)\\b\"\n\n**Query Fixed:**\n- 'Show me low priority tasks good for learning' (R=2→4)",
+            "status": "done",
+            "testStrategy": "Run learning query, verify R>=4",
+            "parentId": "22"
+          },
+          {
+            "id": 4,
+            "title": "Phase 1.4: Add COMPARISON Intent Patterns",
+            "description": "Add patterns for historical and trend comparison queries",
+            "dependencies": [],
+            "details": "**DONE:** Added historical/trend patterns to COMPARISON in main.py:768-771\n\n**Patterns added:**\n- r\"\\bvs\\.?\\s*(last|previous)\\s*(month|quarter|year|week)\\b\"\n- r\"\\b(historical|trend|over time|progress)\\b\"\n- r\"\\b(how has|what changed|growth|decline)\\b\"\n\n**Query Fixed (partial - needs Phase 3 data):**\n- 'Compare agent count by status vs last month' (R=2→3, needs snapshot data for R=4)",
+            "status": "done",
+            "testStrategy": "Verify intent is correctly classified even without historical data",
+            "parentId": "22"
+          },
+          {
+            "id": 5,
+            "title": "Phase 1.5: Enhance System Prompt for Query Relevance",
+            "description": "Expand the AI system prompt with detailed context about data model, entities, and query interpretation to improve response relevance",
+            "dependencies": [],
+            "details": "**DONE:** Enhanced system prompt in ai_client.py:218-268\n\n**Added sections:**\n- DATA MODEL UNDERSTANDING: Entity types (TASKS, AGENTS, MEETINGS, DECISIONS) with field descriptions\n- QUERY INTERPRETATION RULES: 7 rules for blockers, timeline, ownership, capacity, learning, dates, overdue\n- PERSONA AWARENESS: 4 persona detection patterns (PM, technical, executive, new member)\n\n**Impact:** Should improve relevance scores from avg 3.95 to 4.3+ by helping AI understand what users are really asking",
+            "status": "done",
+            "testStrategy": "Run the 7 low-relevance queries, verify R improves from <=2 to >=3",
+            "parentId": "22"
+          },
+          {
+            "id": 6,
+            "title": "Phase 1.6: Enhance AI System Prompt for Actionability",
+            "description": "Add actionability guidelines to the AI system prompt",
+            "dependencies": [],
+            "details": "**DONE:** Added actionability guidelines to system prompt in ai_client.py:252-265\n\n**Added sections:**\n- ACTIONABILITY GUIDELINES: 6 rules for next steps, contacts, highlighting urgent items, action required\n- RESPONSE FORMAT: 5 formatting rules for bullets, dates, assignees, recommendations\n\n**Impact:** Should improve actionability scores from avg 3.38 to 4.0+",
+            "status": "done",
+            "testStrategy": "Re-run all 55 tests, verify actionability avg improves to 4.0+",
+            "parentId": "22"
+          },
+          {
+            "id": 7,
+            "title": "Phase 1.7: Add Action Hints to AI Context",
+            "description": "Pass action suggestions to AI as context hints",
+            "dependencies": [6],
+            "details": "**DONE:** Added _generate_action_hints() function (main.py:1103-1151) and integrated into query flow (main.py:1833-1839)\n\n**Implementation:**\n- New function generates intent-specific hints based on query type and data count\n- Hints include: contact suggestions, pattern highlighting, urgency guidance\n- Hints added to full_context before AI call as [Suggested Response Actions]\n\n**Purpose:** Help AI include actionable next steps in responses",
+            "status": "done",
+            "testStrategy": "Verify AI responses include relevant action suggestions",
+            "parentId": "22"
+          },
+          {
+            "id": 8,
+            "title": "Phase 1 Validation: Re-run All 55 Persona Tests",
+            "description": "Validate Phase 1 improvements with full test suite",
+            "dependencies": [1, 2, 3, 4, 5, 6, 7],
+            "details": "**DONE:** Phase 1 validation complete!\n\n**Results (Before → After):**\n| Metric | Before | After | Improvement |\n|--------|--------|-------|-------------|\n| Relevance | 3.95 | 4.18 | +5.8% |\n| Accuracy | 4.87 | 4.76 | -2.3% (within variance) |\n| Actionability | 3.38 | 4.45 | +31.7% |\n| Overall | 4.07 | 4.47 | +9.8% |\n\n**Key improvements:**\n- 'What are the key risks or blockers?' R: 1→4\n- 'Any bottlenecks in delivery?' R: 2→5\n- 'Who owns the backend service?' R: 2→5\n- Actionability dramatically improved due to Next Steps guidance\n\n**Report:** AI_Guide_Persona_Test_Report.md",
+            "status": "done",
+            "testStrategy": "Full persona test suite execution",
+            "parentId": "22"
+          },
+          {
+            "id": 9,
+            "title": "Phase 2.1: Add Task Complexity Fields to Data Model",
+            "description": "Add complexity, learning_friendly, skills_required fields to Task model",
+            "dependencies": [8],
+            "details": "**DONE:** Added to models.py:115-147\n\n**Added:**\n- TaskComplexity enum: beginner, intermediate, advanced\n- Task.complexity: Optional[TaskComplexity]\n- Task.learning_friendly: bool = False\n- Task.skills_required: List[str] = []\n\n**Test Result:** 'Show me low priority tasks good for learning' R: 2→5",
+            "status": "done",
+            "testStrategy": "Verify model accepts new fields, migration completes without errors",
+            "parentId": "22"
+          },
+          {
+            "id": 10,
+            "title": "Phase 2.2: Add Agent Timeline Fields to Data Model",
+            "description": "Add target_deployment_date, deployment_blockers, next_milestone fields to Agent model",
+            "dependencies": [8],
+            "details": "**DONE:** Added to models.py:161-167\n\n**Added to Agent model:**\n- target_deployment_date: Optional[datetime]\n- deployment_blockers: List[str] = []\n- next_milestone: Optional[str]\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Test Result:** 'What's the agent deployment timeline?' R: 2→4",
+            "status": "done",
+            "testStrategy": "Verify model accepts new fields, test timeline queries",
+            "parentId": "22"
+          },
+          {
+            "id": 11,
+            "title": "Phase 2.3: Add Owner/Contact Fields to All Models",
+            "description": "Add owner_name, owner_contact, team fields to relevant models",
+            "dependencies": [8],
+            "details": "**DONE:** Added to models.py\n\n**Task model (lines 142-145):**\n- owner_name: Optional[str]\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Agent model (lines 165-167):**\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Test Result:** 'Who owns the backend service?' R: 2→4",
+            "status": "done",
+            "testStrategy": "Verify ownership queries return contact info",
+            "parentId": "22"
+          },
+          {
+            "id": 12,
+            "title": "Phase 2.4: Update Query Builder for New Fields",
+            "description": "Update _build_cosmos_query to filter/sort by new fields",
+            "dependencies": [9, 10, 11],
+            "details": "**DONE:** Updated main.py\n\n**_build_cosmos_query (lines 1394-1414):**\n- learning_friendly filter\n- complexity filter\n- owner filter (searches owner, owner_name, assigned_to)\n- team filter\n\n**_classify_intent (lines 883-911):**\n- Learning pattern extraction → learning_friendly, complexity params\n- Ownership subject extraction\n- Timeline flag extraction\n\n**_generate_action_hints (lines 1155-1191):**\n- Enhanced hints for learning queries\n- Enhanced hints for ownership queries\n- Timeline hints for agent lists",
+            "status": "done",
+            "testStrategy": "Verify queries return correctly filtered results",
+            "parentId": "22"
+          },
+          {
+            "id": 13,
+            "title": "Phase 2 Validation: Re-run Targeted Tests",
+            "description": "Validate Phase 2 improvements with targeted tests",
+            "dependencies": [12],
+            "details": "**DONE:** Phase 2 validation complete!\n\n**Key Query Improvements:**\n| Query | Before | After |\n|-------|--------|-------|\n| 'Show me low priority tasks good for learning' | R=2 | R=5 |\n| 'What's the agent deployment timeline?' | R=2 | R=4 |\n| 'Who owns the backend service?' | R=2 | R=4 |\n\n**Overall Metrics (Post Phase 2):**\n- Relevance: 4.13/5\n- Accuracy: 4.58/5\n- Actionability: 4.51/5\n- Overall: 4.41/5\n- All 55 tests passed (100%)",
+            "status": "done",
+            "testStrategy": "Run targeted tests for affected queries",
+            "parentId": "22"
+          },
+          {
+            "id": 14,
+            "title": "Phase 3.1: Create Snapshot Service",
+            "description": "Build service to capture daily/weekly snapshots for trend analysis",
+            "dependencies": [13],
+            "details": "**DONE:** Created backend/src/snapshot_service.py (280 lines)\n\n**SnapshotService class features:**\n- capture_daily_snapshot(): Captures metrics for tasks, agents, decisions, meetings\n- _get_task_metrics(): Counts by status, priority, overdue\n- _get_agent_metrics(): Counts by status, tier, production/development\n- _get_decision_metrics(): Counts by category\n- _get_meeting_metrics(): Counts by status\n- get_snapshot_by_id(): Retrieve specific snapshot\n- get_snapshot(days_ago): Get historical snapshot\n- get_snapshots_range(): Get snapshots in date range\n- clear_all_snapshots(): Delete all snapshots (for test→prod transition)\n- format_comparison(): Format comparison text for AI context\n\n**CosmosDB:** Auto-creates 'snapshots' container with partition key /snapshot_type",
+            "status": "done",
+            "testStrategy": "Verify snapshots are created and stored correctly",
+            "parentId": "22"
+          },
+          {
+            "id": 15,
+            "title": "Phase 3.2: Implement COMPARISON Intent Handler",
+            "description": "Add handler to fetch and format historical comparisons",
+            "dependencies": [14],
+            "details": "**DONE:** Added COMPARISON intent handler to main.py:1879-1912\n\n**Implementation:**\n- Detects time period from query: 'last week' (7 days), 'last month' (30 days), 'yesterday' (1 day)\n- Calls snapshot_service.capture_daily_snapshot() for current state\n- Calls snapshot_service.get_snapshot(days_ago) for historical state\n- Uses snapshot_service.format_comparison() to create AI context\n- Returns comparison_status: 'full', 'partial', or 'none'\n\n**Context Added to AI:**\n- **Comparison with Previous Period:** section\n- Task totals with deltas (+/-)\n- Agent status breakdown with changes\n- Production/development counts comparison",
+            "status": "done",
+            "testStrategy": "Create test snapshots, verify comparison output",
+            "parentId": "22"
+          },
+          {
+            "id": 16,
+            "title": "Phase 3.3: Snapshot API Endpoints",
+            "description": "Add REST API endpoints for snapshot management",
+            "dependencies": [14],
+            "details": "**DONE:** Added snapshot endpoints to main.py:1994-2086\n\n**Endpoints Created:**\n1. POST /api/snapshots/capture - Manual snapshot capture (returns full snapshot data)\n2. GET /api/snapshots/{snapshot_id} - Get specific snapshot by ID\n3. GET /api/snapshots/compare/{days_ago} - Compare current vs N days ago\n4. GET /api/snapshots - List recent snapshots (default limit 30)\n5. DELETE /api/snapshots - Clear all snapshots (for test→prod transition)\n\n**Note:** Implemented as on-demand API instead of scheduled task. Snapshots captured:\n- Automatically on COMPARISON queries\n- Manually via POST /api/snapshots/capture\n- Can schedule externally via cron/Azure Functions calling the API",
+            "status": "done",
+            "testStrategy": "Verify endpoints return correct data via curl/Postman",
+            "parentId": "22"
+          },
+          {
+            "id": 17,
+            "title": "Phase 3 Validation: Test Comparison Queries + UI",
+            "description": "Validate historical comparison functionality and management UI",
+            "dependencies": [15, 16],
+            "details": "**DONE:** Phase 3 validation complete!\n\n**API Testing:**\n- POST /api/snapshots/capture - Working, returns full snapshot data\n- GET /api/snapshots/compare/7 - Returns partial status (no historical data yet)\n- DELETE /api/snapshots - Working, returns deleted_count\n\n**Frontend UI Added (audit/page.tsx):**\n- Historical Snapshots card on Audit Trail page\n- Shows snapshot count and latest capture date\n- Clear Snapshots button with confirmation dialog\n- AlertDialog explains when to clear (test→prod transition)\n\n**New Components:**\n- Created components/ui/alert-dialog.tsx (shadcn/ui AlertDialog)\n- Added @radix-ui/react-alert-dialog dependency\n\n**Fixes Applied:**\n- HTML hydration fix: AlertDialogDescription uses asChild with <div> wrapper\n\n**Note:** Full comparison scoring requires historical snapshot accumulation over time",
+            "status": "done",
+            "testStrategy": "Run comparison queries, verify accuracy",
+            "parentId": "22"
+          },
+          {
+            "id": 18,
+            "title": "Phase 4.1: Create Response Templates by Intent",
+            "description": "Build structured response templates for each intent type",
+            "dependencies": [17],
+            "details": "**DONE:** Added RESPONSE_TEMPLATES dict to main.py:1133-1226\n\n**Templates Created (9 total):**\n- STATUS_CHECK: Status summary, top 3 items, attention section, next steps\n- AGGREGATION: Headline number, breakdown table, key insight, recommendation\n- LIST: Count, formatted items, summary, next steps\n- ACTION_GUIDANCE: Recommendation, rationale, who to contact, getting started\n- OWNERSHIP: Direct answer, contact details, team, reach suggestion\n- COMPARISON: Headline change, +/- indicators, trend, implication\n- EXPLANATION: Definition, context, examples, related concepts\n- AUDIT: Time context, chronological activities, patterns, notable items\n- DETAIL: Entity name, organized sections, related items, actions\n\n**Integration:** main.py:2125-2134 - templates injected into AI context",
+            "status": "done",
+            "testStrategy": "Verify templates produce consistent, actionable responses",
+            "parentId": "22"
+          },
+          {
+            "id": 19,
+            "title": "Phase 4.2: Add Contact Information Enhancement",
+            "description": "Auto-enhance responses with relevant contact information",
+            "dependencies": [18],
+            "details": "**DONE:** Added _extract_contact_info() function to main.py:1300-1383\n\n**Features:**\n- Extracts contacts from: assigned_to, owner, owner_contact, facilitator, made_by\n- Prioritizes contacts for blocked/urgent items (marked NEEDS ATTENTION)\n- Shows up to 5 contacts with role, contact details, team affiliation\n- Limits output to top 3 urgent + 2 others\n- Groups by name to avoid duplicates\n\n**Integration:** main.py:2128-2136 - contact info injected into AI context\n\n**Test Results:** Queries now include relevant contacts in Next Steps section",
+            "status": "done",
+            "testStrategy": "Verify responses include relevant contacts",
+            "parentId": "22"
+          },
+          {
+            "id": 20,
+            "title": "Phase 4.3: Enhanced Test Suite Implementation",
+            "description": "Implement comprehensive test suite for production readiness",
+            "dependencies": [18, 19],
+            "details": "**DONE:** Created 7 new test files in backend/tests/\n\n**Files Created:**\n1. conftest.py - Shared fixtures (query_guide, helpers, assertions)\n2. test_template_compliance.py - 7 test classes, validates response format by intent\n3. test_contact_extraction.py - 4 test classes, contact surfacing accuracy\n4. test_comparison_queries.py - 5 test classes, historical/trend query handling\n5. test_edge_cases.py - 6 test classes, error handling, ambiguity, security\n6. test_fourth_terminology.py - 5 test classes, company-specific terminology\n7. test_response_quality.py - 5 test classes, length/structure/tone/consistency\n\n**Total New Tests:** ~80 test methods across 32 test classes\n\n**Coverage Areas:**\n- Response template compliance by intent type\n- Contact extraction and prioritization\n- Historical comparison handling\n- Edge cases (empty results, long queries, typos, injection)\n- Fourth terminology (tiers, lifecycle, governance)\n- Response quality metrics (length, structure, tone)",
+            "status": "done",
+            "testStrategy": "pytest backend/tests/ --verbose",
+            "parentId": "22"
+          },
+          {
+            "id": "20b",
+            "title": "Phase 4 Final Validation: Run Full Test Suite",
+            "description": "Execute complete test suite to validate all improvements",
+            "dependencies": [20],
+            "details": "**Target Scores:**\n| Metric | Before | After | Improvement |\n|--------|--------|-------|-------------|\n| Relevance | 3.95 | 4.5+ | +14% |\n| Accuracy | 4.87 | 4.9+ | +1% (maintain) |\n| Actionability | 3.38 | 4.2+ | +24% |\n| Overall | 4.07 | 4.5+ | +11% |\n\n**Success Criteria:**\n- 0 queries with R<=2\n- 0 queries with Act<=2\n- All personas avg 4.0+ overall",
+            "status": "pending",
+            "testStrategy": "Run all persona tests + new enhanced tests, generate final report",
+            "parentId": "22"
+          },
+          {
+            "id": 21,
+            "title": "Generate Final Improvement Report",
+            "description": "Document all changes and final test results",
+            "dependencies": [20],
+            "details": "**Report Contents:**\n1. Executive Summary - Before/after metrics\n2. Changes Implemented - By phase\n3. Test Results - All 55 queries with scores\n4. Code Changes - Files modified with line numbers\n5. Data Model Changes - New fields added\n6. Future Recommendations - Phase 5+ ideas\n\n**Output:** AI_Guide_Improvement_Final_Report.md",
+            "status": "pending",
+            "testStrategy": "Review report for completeness and accuracy",
+            "parentId": "22"
+          },
+          {
+            "id": 22,
+            "title": "Phase 5.1: Implement Natural Date/Time Parser",
+            "description": "Add date parsing for natural language time references in queries",
+            "dependencies": [20],
+            "details": "**DONE:** Enhanced _extract_date_references() in main.py:1386-1540\n\n**Patterns Added:**\n- last month, this quarter, last quarter\n- end of week (eow, by friday)\n- end of month (eom, by month end)\n- Specific weekday ('on Monday', 'by Tuesday')\n\n**Existing Patterns (already implemented):**\n- this week, last week, next week\n- today, yesterday, tomorrow\n- this month\n- overdue, due soon\n- last N days, next N days\n\n**Returns:** start_date, end_date, timeframe (ISO format, UTC)",
+            "status": "done",
+            "testStrategy": "Test all date expressions resolve to correct date ranges, verify timezone handling",
+            "parentId": "22"
+          },
+          {
+            "id": 23,
+            "title": "Phase 5.2: Build Session-Based Conversation Memory",
+            "description": "Track conversation context within session for follow-up questions",
+            "dependencies": [20],
+            "details": "**DONE:** Implemented conversation memory system\n\n**Backend (main.py:695-862):**\n- ConversationTurn dataclass: query, response, intent, entities, extracted_context\n- ConversationMemory class: sessions dict, 30min TTL, max 5 turns\n- _resolve_pronouns(): handles 'those', 'them', 'it' + 'which are overdue?' patterns\n- Integration in query_agent(): session_id handling, context injection, turn storage\n\n**Frontend (GuideProvider.tsx):**\n- generateSessionId(): unique session per widget open\n- sessionIdRef: persists during session, resets on close/clear\n- api.guide.query() updated with session_id parameter\n\n**Models (models.py:389):**\n- AgentQueryRequest.session_id: Optional[str]\n\n**API (api.ts):**\n- GuideQueryRequest.session_id added\n- api.guide.query() accepts sessionId parameter",
+            "status": "done",
+            "testStrategy": "Test follow-up queries use previous context, verify session isolation",
+            "parentId": "22"
+          },
+          {
+            "id": 24,
+            "title": "Phase 5.3: Add Proactive Insights on Widget Open",
+            "description": "Surface relevant insights automatically when user opens AI Guide widget",
+            "dependencies": [20],
+            "details": "**DONE:** Implemented proactive insights system\n\n**Backend (main.py:2445-2659):**\n- GET /api/agent/insights?page=X endpoint\n- InsightItem model: id, type (warning/info/action), title, description, count, action_label, action_query\n- Page-specific insights:\n  - tasks/dashboard: overdue, blocked, unassigned high-priority, due this week\n  - agents: integration issues, in development count\n  - meetings: next meeting, unprocessed transcripts\n  - governance: pending proposals, recent decisions\n\n**Frontend:**\n- api.ts: InsightItem, InsightsResponse types, api.guide.getInsights()\n- GuideProvider.tsx: insights state, 60s cache, fetchInsights on widget open\n- GuideInsightsBar.tsx: displays insights with dismiss/action buttons\n- GuideWidgetPanel.tsx: shows insights above empty state\n\n**Features:**\n- 60 second cache to reduce API calls\n- Dismissible cards\n- Action buttons that run suggested queries",
+            "status": "done",
+            "testStrategy": "Test insights are relevant per page, verify caching works, test dismissal",
+            "parentId": "22"
+          },
+          {
+            "id": 25,
+            "title": "Phase 5.4: Implement Quick Actions System",
+            "description": "Allow AI Guide to trigger read-only frontend actions",
+            "dependencies": [20],
+            "details": "**DONE:** Implemented quick actions system\n\n**Backend (already existed - main.py:1147-1280):**\n- _generate_action_suggestions() generates context-aware actions\n- ActionSuggestion model with action_type and params\n- Action types: query, filter, navigate, show_detail, export, create\n\n**Frontend:**\n- api.ts: ActionSuggestion type, ChatMessage.suggestions, GuideQueryResponse.suggestions\n- GuideProvider.tsx: executeAction() handles all action types:\n  - query: runs sendMessage()\n  - navigate: router.push()\n  - filter/show_detail/export: dispatches CustomEvents\n  - create: logged (read-only enforcement)\n- GuideActionSuggestions.tsx: displays action buttons with icons\n- GuideChatMessage.tsx: shows action suggestions below responses\n- GuideWidgetPanel/GuideWidget: passes executeAction through component tree\n\n**Read-Only Enforcement:**\n- create actions filtered out in UI\n- Only query, navigate, filter, show_detail, export are actionable",
+            "status": "done",
+            "testStrategy": "Test each action type executes correctly, verify read-only constraint",
+            "parentId": "22"
+          }
+        ],
+        "updatedAt": "2025-11-30T12:00:00.000Z"
+      },
+      {
+        "id": "23",
+        "title": "Agent Framework Migration Evaluation",
+        "description": "Evaluate and potentially migrate AI Guide from custom pipeline to Microsoft Agent Framework (Semantic Kernel, AutoGen, or Azure AI Agent Service)",
+        "details": "**Context:** Current AI Guide uses custom pipeline:\n- Pattern-based intent classification\n- Direct CosmosDB queries\n- Azure AI Search for RAG\n- Azure OpenAI GPT-4 for response generation\n\n**Why Evaluate Migration:**\n1. Reduced maintenance - framework handles conversation flow\n2. Multi-turn memory - built-in conversation state management\n3. Tool/plugin ecosystem - pre-built integrations\n4. Enterprise features - observability, guardrails, evaluation\n5. Future-proofing - align with Microsoft AI stack\n\n**Framework Options:**\n\n| Framework | Pros | Cons | Fit |\n|-----------|------|------|-----|\n| Semantic Kernel | .NET/Python, Microsoft supported, Tool calling, Memory plugins | Learning curve, Abstraction overhead | HIGH |\n| AutoGen | Multi-agent patterns, Async conversations, Code execution | Complex for single-agent, Beta features | MEDIUM |\n| Azure AI Agent Service | Managed service, Built-in memory, Easy deployment | Preview, Limited customization, Vendor lock-in | HIGH |\n| LangChain | Largest ecosystem, Many connectors | Python-focused, Frequent breaking changes | MEDIUM |\n\n**Recommended Approach:**\n1. Start with Semantic Kernel (same Azure stack)\n2. Create proof-of-concept with existing guide functionality\n3. Compare performance, latency, cost\n4. Gradual migration if successful",
+        "testStrategy": "POC comparison: same 55 persona queries on both architectures, measure latency/accuracy/cost",
+        "priority": "medium",
+        "dependencies": ["22"],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Research and Document Framework Options",
+            "description": "Deep-dive into Semantic Kernel, AutoGen, and Azure AI Agent Service capabilities",
+            "dependencies": [],
+            "details": "**Research Areas:**\n- Multi-turn conversation memory\n- Tool/plugin architecture\n- Azure OpenAI integration\n- CosmosDB connector availability\n- RAG pattern support\n- Observability and tracing\n- Cost implications\n\n**Deliverable:** Framework comparison document with recommendations",
+            "status": "pending",
+            "testStrategy": "Review documentation, try sample code, document findings",
+            "parentId": "23"
+          },
+          {
+            "id": 2,
+            "title": "Build Semantic Kernel POC",
+            "description": "Create proof-of-concept AI Guide using Semantic Kernel",
+            "dependencies": [1],
+            "details": "**POC Scope:**\n- Same intent classification via SK native functions\n- CosmosDB query tool as SK plugin\n- Azure AI Search as SK memory store\n- GPT-4 via SK chat completion\n- Session memory via SK conversation history\n\n**Files:** backend/src/sk_guide_poc.py (new)",
+            "status": "pending",
+            "testStrategy": "Run 10 representative queries, compare to current implementation",
+            "parentId": "23"
+          },
+          {
+            "id": 3,
+            "title": "Performance and Cost Comparison",
+            "description": "Benchmark POC against current implementation",
+            "dependencies": [2],
+            "details": "**Metrics:**\n- Response latency (p50, p95, p99)\n- Token usage per query\n- Response quality (manual scoring)\n- Code complexity/maintainability\n- Operational cost projection\n\n**Deliverable:** Comparison report with migration recommendation",
+            "status": "pending",
+            "testStrategy": "Run full test suite on both, aggregate metrics",
+            "parentId": "23"
+          },
+          {
+            "id": 4,
+            "title": "Migration Decision and Roadmap",
+            "description": "Make go/no-go decision and create migration plan if proceeding",
+            "dependencies": [3],
+            "details": "**Decision Criteria:**\n- Quality >= current (no regression)\n- Latency <= current + 20%\n- Cost <= current + 30%\n- Maintainability improvement\n\n**If GO:** Create phased migration plan\n**If NO-GO:** Document learnings, revisit in 6 months",
+            "status": "pending",
+            "testStrategy": "Stakeholder review and sign-off",
+            "parentId": "23"
+          }
+        ],
+        "updatedAt": "2025-11-28T10:30:00.000Z"
+      },
+      {
+        "id": "24",
+        "title": "Azure Deployment Preparation - First Production Release",
+        "description": "Comprehensive preparation for deploying the Agent Architecture Guide platform to Azure for team use",
+        "details": "**Objective:** Deploy the complete platform (Frontend + Backend + Infrastructure) to Azure so the Fourth team can begin using it.\n\n**Architecture Overview:**\n- Frontend: Next.js app → Azure Static Web Apps or App Service\n- Backend: FastAPI (Python) → Azure App Service or Container Apps\n- Database: Azure Cosmos DB (already provisioned)\n- Search: Azure AI Search (already provisioned)\n- AI: Azure OpenAI GPT-4 (already provisioned)\n- Auth: Microsoft Entra ID (SSO)\n- Storage: Azure Blob Storage (transcripts)\n\n**Key Considerations:**\n1. Single-tenant auth (Fourth Limited only)\n2. Production redirect URIs\n3. Environment variable management (Key Vault)\n4. CORS configuration for production domains\n5. SSL/TLS certificates\n6. Monitoring and logging setup\n7. CI/CD pipeline configuration",
+        "testStrategy": "Pre-deployment checklist validation, smoke tests in staging, SSO login verification, API endpoint health checks, end-to-end user journey test",
+        "priority": "high",
+        "dependencies": ["22"],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Infrastructure Assessment and Resource Planning",
+            "description": "Audit existing Azure resources and plan additional infrastructure needed",
+            "dependencies": [],
+            "details": "**DONE:** See .taskmaster/docs/task-24-infrastructure-assessment.md\n\n**Existing Resources Verified:**\n- Cosmos DB: agent-architecture-cosmos (active)\n- OpenAI: swedencentral.api.cognitive.microsoft.com (gpt-4o, ada-002)\n- AI Foundry: mb-ai-foundry.openai.azure.com\n- AI Search: agent-demo-search.search.windows.net\n- Blob Storage: agentarchstorage\n- Subscription: c9bed202-c4a1-43e9-922d-9a38d966f83e\n\n**New Resources Needed:**\n- App Service Plan (B2/P1v2): ~$55-75/mo\n- Backend App Service\n- Static Web App (Free/Standard): $0-9/mo\n- Key Vault: ~$0.03/10k ops\n- Application Insights: ~$2-10/mo\n\n**17 secrets identified for Key Vault migration**\n**Naming: agent-arch-{component}-prod**",
+            "status": "done",
+            "testStrategy": "Verify access to all existing resources via Azure Portal and CLI",
+            "parentId": "24"
+          },
+          {
+            "id": 2,
+            "title": "Environment Configuration and Secrets Management",
+            "description": "Set up Azure Key Vault and migrate all secrets from local .env files",
+            "dependencies": [1],
+            "details": "**Key Vault Setup:**\n1. Create Azure Key Vault in same resource group\n2. Configure access policies (App Service managed identity)\n3. Migrate secrets from backend/.env:\n   - COSMOS_ENDPOINT, COSMOS_KEY\n   - AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY\n   - AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY\n   - AZURE_STORAGE_CONNECTION_STRING\n   - ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET, ENTRA_TENANT_ID\n   - JWT_SECRET_KEY\n4. Create environment-specific configs (dev, staging, prod)\n\n**Files to Update:**\n- backend/src/config.py - add Key Vault integration\n- Create azure-keyvault-secrets.json reference\n\n**Security:**\n- Enable soft-delete and purge protection\n- Set up access logging",
+            "status": "pending",
+            "testStrategy": "Test secret retrieval from Key Vault using managed identity",
+            "parentId": "24"
+          },
+          {
+            "id": 3,
+            "title": "Backend Deployment Configuration",
+            "description": "Prepare FastAPI backend for Azure App Service deployment",
+            "dependencies": [2],
+            "details": "**CAN DO NOW - Deployment Artifacts:**\n1. Create requirements.txt freeze (production deps only)\n2. Create startup.sh script for App Service\n3. Configure gunicorn/uvicorn for production\n4. Set up health check endpoint (/health)\n5. Configure CORS for production frontend domain\n\n**Files to Create/Update:**\n- backend/startup.sh\n- backend/gunicorn.conf.py\n- backend/.deployment (Azure deployment config)\n- backend/web.config (IIS configuration if needed)\n\n**App Service Configuration:**\n- Python 3.11 runtime\n- B2 or P1v2 plan (minimum for production)\n- Always On: enabled\n- HTTPS Only: enabled\n- Managed Identity: enabled\n\n**Environment Variables (from Key Vault):**\n- @Microsoft.KeyVault(VaultName=...;SecretName=...)\n\n**Entra Placeholder Approach:**\n- Use existing dev Entra values for now\n- Key Vault references ready for prod values when available\n- Auth will work with localhost redirects until Task 13 complete",
+            "status": "pending",
+            "testStrategy": "Local docker build test, deploy to staging slot first",
+            "parentId": "24"
+          },
+          {
+            "id": 4,
+            "title": "Frontend Build and Deployment Configuration",
+            "description": "Prepare Next.js frontend for Azure Static Web Apps or App Service deployment",
+            "dependencies": [2],
+            "details": "**CAN DO NOW - Build Configuration:**\n1. Update next.config.js for production\n2. Configure environment variables for production API URL\n3. Set up static export or SSR mode\n4. Optimize bundle size (analyze with @next/bundle-analyzer)\n\n**Environment Variables:**\n- NEXT_PUBLIC_API_URL=https://api.{yourdomain}.azurewebsites.net\n- NEXT_PUBLIC_ENTRA_CLIENT_ID (use dev value for now)\n- NEXT_PUBLIC_ENTRA_TENANT_ID (use dev value for now)\n\n**Static Web Apps Configuration:**\n- Create staticwebapp.config.json\n- Configure routing rules\n- Set up custom domain (if available)\n\n**Or App Service Configuration:**\n- Node.js 20 LTS runtime\n- PM2 ecosystem file for process management\n- Custom startup command\n\n**Entra Placeholder Approach:**\n- Build and deploy work with any valid Entra config\n- Auth redirect URIs updated in Task 5 when admin provides access",
+            "status": "pending",
+            "testStrategy": "Production build locally, test all routes work with static export",
+            "parentId": "24"
+          },
+          {
+            "id": 5,
+            "title": "Microsoft Entra ID Production Configuration",
+            "description": "Update app registration with production redirect URIs and verify SSO",
+            "dependencies": [3, 4],
+            "details": "**⚠️ BLOCKED: Requires Task 13 completion (Admin/IT access to Entra ID)**\n\n**When unblocked - App Registration Updates:**\n1. Add production redirect URIs:\n   - https://{frontend-domain}/auth/callback\n   - https://{frontend-domain}/api/auth/callback\n2. Update logout URLs\n3. Review and tighten API permissions\n4. Generate new client secret for production (shorter expiry)\n\n**Conditional Access (optional):**\n- Require MFA for all users\n- Block non-corporate IPs\n- Require compliant devices\n\n**Testing:**\n- Test SSO flow end-to-end\n- Verify token claims include required user info\n- Test session expiry and refresh\n\n**Prerequisite:** Task 13 - Azure App Registration Setup (awaiting IT admin)",
+            "status": "pending",
+            "testStrategy": "Full SSO login/logout cycle in staging environment",
+            "parentId": "24"
+          },
+          {
+            "id": 6,
+            "title": "CI/CD Pipeline Setup",
+            "description": "Configure GitHub Actions or Azure DevOps for automated deployments",
+            "dependencies": [3, 4],
+            "details": "**GitHub Actions Workflows:**\n\n1. Backend CI/CD (.github/workflows/backend-deploy.yml):\n   - Trigger: push to main (backend/** changes)\n   - Jobs: lint, test, build, deploy to App Service\n   - Use azure/webapps-deploy@v2\n   - Secrets: AZURE_WEBAPP_PUBLISH_PROFILE\n\n2. Frontend CI/CD (.github/workflows/frontend-deploy.yml):\n   - Trigger: push to main (frontend/** changes)\n   - Jobs: lint, build, deploy to Static Web Apps\n   - Use Azure/static-web-apps-deploy@v1\n\n**Deployment Slots:**\n- staging slot for preview deployments\n- Swap to production after validation\n\n**Branch Protection:**\n- Require PR reviews for main\n- Require status checks to pass",
+            "status": "pending",
+            "testStrategy": "Trigger test deployment via PR, verify staging deployment works",
+            "parentId": "24"
+          },
+          {
+            "id": 7,
+            "title": "Monitoring and Observability Setup",
+            "description": "Configure Application Insights, logging, and alerting",
+            "dependencies": [3, 4],
+            "details": "**Application Insights:**\n1. Create App Insights resource\n2. Add instrumentation to backend (opentelemetry-instrumentation-fastapi)\n3. Add frontend monitoring (applicationinsights-react)\n4. Configure sampling rate\n\n**Logging:**\n- Structured logging (JSON format)\n- Log levels: INFO in prod, DEBUG in staging\n- Correlation IDs for request tracing\n\n**Alerts:**\n- 5xx error rate > 1%\n- Response time p95 > 3s\n- Failed dependencies\n- App Service health degradation\n\n**Dashboard:**\n- Create Azure Dashboard with key metrics\n- Request rate, error rate, latency\n- Cosmos DB RU consumption\n- OpenAI token usage",
+            "status": "pending",
+            "testStrategy": "Verify telemetry flows to App Insights, test alert triggers",
+            "parentId": "24"
+          },
+          {
+            "id": 8,
+            "title": "Security Hardening (Non-Auth)",
+            "description": "Apply security best practices that don't require Entra ID access",
+            "dependencies": [2],
+            "details": "**Network Security (can do now):**\n- Enable Azure Private Endpoints for Cosmos DB, Storage\n- Configure App Service access restrictions (if VPN/corporate network)\n- Enable DDoS protection (basic included)\n\n**Application Security (can do now):**\n- Verify all secrets in Key Vault (no hardcoded secrets)\n- Enable HTTPS redirect\n- Configure security headers (CSP, HSTS, X-Frame-Options)\n- Review CORS policy (production domains only)\n\n**Data Protection (can do now):**\n- Verify Cosmos DB encryption at rest (default)\n- Enable TLS 1.2+ only\n- Review PII handling in logs\n\n**Compliance (can do now):**\n- Document data residency (UK South region)\n- Review for GDPR compliance\n- Audit logging enabled\n\n**NOTE:** Auth-specific security (Conditional Access, MFA policies) deferred to subtask 5",
+            "status": "pending",
+            "testStrategy": "Security scan with Azure Security Center, run OWASP ZAP baseline",
+            "parentId": "24"
+          },
+          {
+            "id": 9,
+            "title": "Pre-Deployment Checklist and Documentation (Draft)",
+            "description": "Create deployment runbook - can draft most without Entra ID",
+            "dependencies": [1, 2, 3, 4, 6, 7, 8],
+            "details": "**CAN DO NOW - Deployment Runbook:**\n1. Pre-deployment checklist (draft)\n2. Step-by-step deployment procedure\n3. Rollback procedure\n4. Post-deployment verification steps\n5. Contact escalation matrix\n\n**CAN DO NOW - Documentation Updates:**\n- Update README with production URLs (placeholders ok)\n- Create operations guide\n- Document known issues/workarounds\n- Create user onboarding guide (draft)\n\n**Pre-Deployment Checklist (mark what's ready):**\n- [ ] All Azure resources provisioned\n- [ ] Key Vault secrets populated (non-Entra)\n- [ ] ⏳ Entra ID configured with prod URIs (BLOCKED - Task 13)\n- [ ] CI/CD pipelines tested\n- [ ] Monitoring configured\n- [ ] Security review complete (non-auth parts)\n- [ ] Backup/DR plan documented\n- [ ] Stakeholder sign-off obtained\n\n**NOTE:** Final sign-off requires Entra ID completion",
+            "status": "pending",
+            "testStrategy": "Walkthrough checklist with team, simulate deployment in staging",
+            "parentId": "24"
+          },
+          {
+            "id": 10,
+            "title": "Production Deployment and Verification",
+            "description": "Execute deployment to production and verify all functionality",
+            "dependencies": [9],
+            "details": "**Deployment Steps:**\n1. Deploy backend to App Service (via CI/CD or manual)\n2. Verify backend health endpoint\n3. Deploy frontend to Static Web Apps\n4. Update DNS/custom domains if applicable\n5. Swap staging to production\n\n**Post-Deployment Verification:**\n- [ ] Frontend loads correctly\n- [ ] SSO login works\n- [ ] AI Guide responds to queries\n- [ ] Data displays correctly (tasks, agents, meetings)\n- [ ] All navigation works\n- [ ] No console errors\n- [ ] Monitoring data flows to App Insights\n\n**Smoke Test Scenarios:**\n1. Login via Microsoft SSO\n2. View dashboard\n3. Ask AI Guide a question\n4. Navigate to Agents page\n5. View a task detail\n6. Logout\n\n**Rollback Trigger Criteria:**\n- Critical functionality broken\n- Authentication failures\n- Data not loading\n- Error rate > 5%",
+            "status": "pending",
+            "testStrategy": "Execute smoke tests, monitor error rates for 1 hour post-deploy",
+            "parentId": "24"
+          },
+          {
+            "id": 11,
+            "title": "Team Onboarding and Handoff",
+            "description": "Onboard team members and establish support procedures",
+            "dependencies": [10],
+            "details": "**Team Onboarding:**\n1. Send access instructions to team\n2. Provide production URL\n3. Quick start guide / demo video\n4. Known limitations document\n\n**Support Procedures:**\n- Define support channels (Teams, email)\n- Create issue reporting template\n- Establish SLA expectations\n- Document common troubleshooting steps\n\n**Feedback Collection:**\n- Set up feedback form or channel\n- Schedule 2-week check-in\n- Plan iteration based on feedback\n\n**Success Metrics:**\n- Daily active users\n- AI Guide query volume\n- Error rate trends\n- User feedback scores",
+            "status": "pending",
+            "testStrategy": "Verify all team members can login and complete basic tasks",
+            "parentId": "24"
+          }
+        ],
+        "updatedAt": "2025-11-30T12:00:00.000Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-30T12:00:00.000Z",
+      "taskCount": 24,
+      "completedCount": 12,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}

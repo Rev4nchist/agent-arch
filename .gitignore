@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+.npm
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.log
+
+# Azure
+.azure/
+
+# Temporary Python scripts (cleanup in frontend)
+frontend/*.py
+
+# Windows special files
+nul
+NUL
+
+# Root level env (use .env.example)
+.env

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Skill(task-master-workflow)",
+      "Bash(npx task-master:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

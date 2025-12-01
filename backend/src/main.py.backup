@@ -1,0 +1,471 @@
+"""Main FastAPI application."""
+from fastapi.encoders import jsonable_encoder
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from src.config import settings
+from src.database import db
+from src.ai_client import ai_client
+from src.models import (
+    Meeting,
+    Task,
+    Agent,
+    Decision,
+    Resource,
+    TechRadarItem,
+    CodePattern,
+    TranscriptProcessRequest,
+    TranscriptProcessResponse,
+    AgentQueryRequest,
+    AgentQueryResponse,
+)
+from typing import List
+import uuid
+import logging
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup/shutdown."""
+    # Startup
+    logger.info("Initializing database...")
+    db.initialize()
+    logger.info("Application started")
+    yield
+    # Shutdown
+    logger.info("Application shutdown")
+
+
+app = FastAPI(
+    title="MSFT Agent Architecture Guide API",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# Configure CORS
+logger.info(f"Configuring CORS with origins: {settings.cors_origins_list}")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=False,  # Changed to False - we use Bearer tokens, not cookies
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Health check
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "environment": settings.environment}
+
+
+# Meetings endpoints
+@app.get("/api/meetings", response_model=List[Meeting])
+async def get_meetings():
+    """Get all meetings."""
+    try:
+        container = db.get_container("meetings")
+        items = list(container.read_all_items())
+        return [Meeting(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching meetings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/meetings/{meeting_id}", response_model=Meeting)
+async def get_meeting(meeting_id: str):
+    """Get meeting by ID."""
+    try:
+        container = db.get_container("meetings")
+        item = container.read_item(item=meeting_id, partition_key=meeting_id)
+        return Meeting(**item)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+
+@app.post("/api/meetings", response_model=Meeting)
+async def create_meeting(meeting: Meeting):
+    """Create new meeting."""
+    try:
+        if not meeting.id:
+            meeting.id = str(uuid.uuid4())
+        meeting.created_at = datetime.utcnow()
+        meeting.updated_at = datetime.utcnow()
+
+        container = db.get_container("meetings")
+        container.create_item(body=meeting.model_dump(mode='json'))
+        return jsonable_encoder(meeting)
+    except Exception as e:
+        logger.error(f"Error creating meeting: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/meetings/{meeting_id}", response_model=Meeting)
+async def update_meeting(meeting_id: str, meeting: Meeting):
+    """Update meeting."""
+    try:
+        meeting.id = meeting_id
+        meeting.updated_at = datetime.utcnow()
+
+        container = db.get_container("meetings")
+        container.upsert_item(body=meeting.model_dump(mode='json'))
+        return jsonable_encoder(meeting)
+    except Exception as e:
+        logger.error(f"Error updating meeting: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/meetings/{meeting_id}")
+async def delete_meeting(meeting_id: str):
+    """Delete meeting."""
+    try:
+        container = db.get_container("meetings")
+        container.delete_item(item=meeting_id, partition_key=meeting_id)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+
+# Tasks endpoints
+@app.get("/api/tasks", response_model=List[Task])
+async def get_tasks():
+    """Get all tasks."""
+    try:
+        container = db.get_container("tasks")
+        items = list(container.read_all_items())
+        return [Task(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching tasks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/tasks/{task_id}", response_model=Task)
+async def get_task(task_id: str):
+    """Get task by ID."""
+    try:
+        container = db.get_container("tasks")
+        item = container.read_item(item=task_id, partition_key=task_id)
+        return Task(**item)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+
+@app.post("/api/tasks", response_model=Task)
+async def create_task(task: Task):
+    """Create new task."""
+    try:
+        if not task.id:
+            task.id = str(uuid.uuid4())
+        task.created_at = datetime.utcnow()
+        task.updated_at = datetime.utcnow()
+
+        container = db.get_container("tasks")
+        container.create_item(body=task.model_dump(mode='json'))
+        return jsonable_encoder(task)
+    except Exception as e:
+        logger.error(f"Error creating task: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/tasks/{task_id}", response_model=Task)
+async def update_task(task_id: str, task: Task):
+    """Update task."""
+    try:
+        task.id = task_id
+        task.updated_at = datetime.utcnow()
+
+        container = db.get_container("tasks")
+        container.upsert_item(body=task.model_dump(mode='json'))
+        return jsonable_encoder(task)
+    except Exception as e:
+        logger.error(f"Error updating task: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/tasks/{task_id}")
+async def delete_task(task_id: str):
+    """Delete task."""
+    try:
+        container = db.get_container("tasks")
+        container.delete_item(item=task_id, partition_key=task_id)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+
+# Agents endpoints
+@app.get("/api/agents", response_model=List[Agent])
+async def get_agents():
+    """Get all agents."""
+    try:
+        container = db.get_container("agents")
+        items = list(container.read_all_items())
+        return [Agent(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching agents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}", response_model=Agent)
+async def get_agent(agent_id: str):
+    """Get agent by ID."""
+    try:
+        container = db.get_container("agents")
+        item = container.read_item(item=agent_id, partition_key=agent_id)
+        return Agent(**item)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+
+@app.post("/api/agents", response_model=Agent)
+async def create_agent(agent: Agent):
+    """Create new agent."""
+    try:
+        if not agent.id:
+            agent.id = str(uuid.uuid4())
+        agent.created_at = datetime.utcnow()
+        agent.updated_at = datetime.utcnow()
+
+        container = db.get_container("agents")
+        container.create_item(body=agent.model_dump(mode='json'))
+        return jsonable_encoder(agent)
+    except Exception as e:
+        logger.error(f"Error creating agent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/agents/{agent_id}", response_model=Agent)
+async def update_agent(agent_id: str, agent: Agent):
+    """Update agent."""
+    try:
+        agent.id = agent_id
+        agent.updated_at = datetime.utcnow()
+
+        container = db.get_container("agents")
+        container.upsert_item(body=agent.model_dump(mode='json'))
+        return jsonable_encoder(agent)
+    except Exception as e:
+        logger.error(f"Error updating agent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/agents/{agent_id}")
+async def delete_agent(agent_id: str):
+    """Delete agent."""
+    try:
+        container = db.get_container("agents")
+        container.delete_item(item=agent_id, partition_key=agent_id)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+
+# Decisions endpoints
+@app.get("/api/decisions", response_model=List[Decision])
+async def get_decisions():
+    """Get all decisions."""
+    try:
+        container = db.get_container("decisions")
+        items = list(container.read_all_items())
+        return [Decision(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching decisions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/decisions", response_model=Decision)
+async def create_decision(decision: Decision):
+    """Create new decision."""
+    try:
+        if not decision.id:
+            decision.id = str(uuid.uuid4())
+        decision.created_at = datetime.utcnow()
+
+        container = db.get_container("decisions")
+        container.create_item(body=decision.model_dump(mode='json'))
+        return jsonable_encoder(decision)
+    except Exception as e:
+        logger.error(f"Error creating decision: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Resources endpoints
+@app.get("/api/resources", response_model=List[Resource])
+async def get_resources():
+    """Get all resources."""
+    try:
+        container = db.get_container("resources")
+        items = list(container.read_all_items())
+        return [Resource(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching resources: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/resources", response_model=Resource)
+async def create_resource(resource: Resource):
+    """Create new resource."""
+    try:
+        if not resource.id:
+            resource.id = str(uuid.uuid4())
+        resource.uploaded_date = datetime.utcnow()
+
+        container = db.get_container("resources")
+        container.create_item(body=resource.model_dump(mode='json'))
+        return jsonable_encoder(resource)
+    except Exception as e:
+        logger.error(f"Error creating resource: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/resources/{resource_id}")
+async def delete_resource(resource_id: str):
+    """Delete resource."""
+    try:
+        container = db.get_container("resources")
+        container.delete_item(item=resource_id, partition_key=resource_id)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Resource not found")
+
+
+# Tech Radar endpoints
+@app.get("/api/tech-radar", response_model=List[TechRadarItem])
+async def get_tech_radar_items():
+    """Get all tech radar items."""
+    try:
+        container = db.get_container("tech_radar_items")
+        items = list(container.read_all_items())
+        return [TechRadarItem(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching tech radar items: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/tech-radar", response_model=TechRadarItem)
+async def create_tech_radar_item(item: TechRadarItem):
+    """Create new tech radar item."""
+    try:
+        if not item.id:
+            item.id = str(uuid.uuid4())
+        item.last_updated = datetime.utcnow()
+
+        container = db.get_container("tech_radar_items")
+        container.create_item(body=item.model_dump(mode='json'))
+        return jsonable_encoder(item)
+    except Exception as e:
+        logger.error(f"Error creating tech radar item: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/tech-radar/{item_id}", response_model=TechRadarItem)
+async def update_tech_radar_item(item_id: str, item: TechRadarItem):
+    """Update tech radar item."""
+    try:
+        item.id = item_id
+        item.last_updated = datetime.utcnow()
+
+        container = db.get_container("tech_radar_items")
+        container.upsert_item(body=item.model_dump(mode='json'))
+        return jsonable_encoder(item)
+    except Exception as e:
+        logger.error(f"Error updating tech radar item: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Code Patterns endpoints
+@app.get("/api/code-patterns", response_model=List[CodePattern])
+async def get_code_patterns():
+    """Get all code patterns."""
+    try:
+        container = db.get_container("code_patterns")
+        items = list(container.read_all_items())
+        return [CodePattern(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Error fetching code patterns: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/code-patterns", response_model=CodePattern)
+async def create_code_pattern(pattern: CodePattern):
+    """Create new code pattern."""
+    try:
+        if not pattern.id:
+            pattern.id = str(uuid.uuid4())
+        pattern.created_at = datetime.utcnow()
+
+        container = db.get_container("code_patterns")
+        container.create_item(body=pattern.model_dump(mode='json'))
+        return jsonable_encoder(pattern)
+    except Exception as e:
+        logger.error(f"Error creating code pattern: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# AI endpoints
+@app.post("/api/transcripts/process", response_model=TranscriptProcessResponse)
+async def process_transcript(request: TranscriptProcessRequest):
+    """Process transcript to extract action items and decisions."""
+    try:
+        result = await ai_client.process_transcript(request.transcript_text)
+
+        # Create Task and Decision objects
+        tasks = []
+        for item in result.get("action_items", []):
+            task = Task(
+                id=str(uuid.uuid4()),
+                title=item.get("title", ""),
+                description=item.get("description"),
+                assigned_to=item.get("assigned_to"),
+                due_date=item.get("due_date"),
+                priority=item.get("priority", "Medium"),
+                created_from_meeting=request.meeting_id,
+            )
+            tasks.append(task)
+
+        decisions = []
+        for item in result.get("decisions", []):
+            decision = Decision(
+                id=str(uuid.uuid4()),
+                title=item.get("title", ""),
+                description=item.get("description", ""),
+                decision_date=datetime.utcnow(),
+                decision_maker=item.get("decision_maker", ""),
+                category=item.get("category", "Governance"),
+                rationale=item.get("rationale"),
+                meeting=request.meeting_id,
+            )
+            decisions.append(decision)
+
+        return TranscriptProcessResponse(
+            action_items=tasks,
+            decisions=decisions,
+        )
+    except Exception as e:
+        logger.error(f"Error processing transcript: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agent/query", response_model=AgentQueryResponse)
+async def query_agent(request: AgentQueryRequest):
+    """Query the Fourth AI Guide agent."""
+    try:
+        result = await ai_client.query_agent(
+            query=request.query,
+            context=request.context,
+        )
+        return AgentQueryResponse(**result)
+    except Exception as e:
+        logger.error(f"Error querying agent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

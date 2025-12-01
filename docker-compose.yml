@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # Reverse Proxy - The "concierge" that routes everything
+  # Access everything at: http://localhost:8080
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: agent-arch-proxy
+    ports:
+      - "8080:80"  # Single entry point - no CORS needed!
+    volumes:
+      - ${USERPROFILE}/.azure:/root/.azure:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - agent-arch-network
+    restart: unless-stopped
+
+  # Frontend - Next.js app (not exposed directly)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agent-arch-frontend
+    environment:
+      # Empty string - endpoints already have /api prefix
+      - NEXT_PUBLIC_API_URL=
+      - NODE_ENV=development
+    volumes:
+      - ${USERPROFILE}/.azure:/root/.azure:ro
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - agent-arch-network
+    # No ports exposed - only accessible via reverse-proxy
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  # Backend - FastAPI app (not exposed directly)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agent-arch-backend
+    environment:
+      # Load from .env file
+      - COSMOS_ENDPOINT=${COSMOS_ENDPOINT}
+      - COSMOS_KEY=${COSMOS_KEY}
+      - COSMOS_DATABASE_NAME=${COSMOS_DATABASE_NAME}
+      - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
+      - AZURE_STORAGE_CONTAINER_NAME=${AZURE_STORAGE_CONTAINER_NAME}
+      - AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+      - AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT=${AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - AZURE_SEARCH_ENDPOINT=${AZURE_SEARCH_ENDPOINT}
+      - AZURE_SEARCH_API_KEY=${AZURE_SEARCH_API_KEY}
+      - AZURE_SEARCH_INDEX_NAME=${AZURE_SEARCH_INDEX_NAME}
+      - AZURE_AI_FOUNDRY_ENDPOINT=${AZURE_AI_FOUNDRY_ENDPOINT}
+      - AZURE_AI_FOUNDRY_API_KEY=${AZURE_AI_FOUNDRY_API_KEY}
+      - MODEL_ROUTER_DEPLOYMENT=${MODEL_ROUTER_DEPLOYMENT}
+      - API_ACCESS_KEY=${API_ACCESS_KEY}
+      # No CORS origins needed! Reverse proxy handles it
+      - CORS_ORIGINS=http://localhost:8080
+      - ENVIRONMENT=development
+    volumes:
+      - ${USERPROFILE}/.azure:/root/.azure:ro
+      - ${USERPROFILE}/.azure:/root/.azure:ro
+      - ./backend:/app
+    networks:
+      - agent-arch-network
+    # No ports exposed - only accessible via reverse-proxy
+    expose:
+      - "8001"
+    restart: unless-stopped
+
+networks:
+  agent-arch-network:
+    driver: bridge
+
+# To use this setup:
+# 1. docker-compose up --build
+# 2. Open http://localhost:8080 (everything works from one URL!)
+# 3. No CORS errors! 🎉
