@@ -334,6 +334,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    update: (id: string, data: Partial<Omit<Decision, 'id' | 'created_at' | 'updated_at'>>) =>
+      apiFetch<Decision>(`/api/decisions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      apiFetch<void>(`/api/decisions/${id}`, {
+        method: 'DELETE',
+      }),
     createFromProposal: (proposalId: string, data: Partial<Omit<Decision, 'id' | 'created_at' | 'updated_at' | 'proposal_id'>>) =>
       apiFetch<Decision>('/api/decisions/from-proposal', {
         method: 'POST',

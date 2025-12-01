@@ -530,6 +530,56 @@ async def create_decision(decision: Decision):
 
 
 
+
+@app.get("/api/decisions/{decision_id}", response_model=Decision)
+async def get_decision(decision_id: str):
+    """Get a single decision by ID."""
+    try:
+        container = db.get_container("decisions")
+        item = container.read_item(item=decision_id, partition_key=decision_id)
+        return Decision(**item)
+    except Exception as e:
+        if "NotFound" in str(e):
+            raise HTTPException(status_code=404, detail="Decision not found")
+        logger.error(f"Error fetching decision {decision_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/decisions/{decision_id}", response_model=Decision)
+async def update_decision(decision_id: str, data: dict):
+    """Update an existing decision."""
+    try:
+        container = db.get_container("decisions")
+        existing = container.read_item(item=decision_id, partition_key=decision_id)
+
+        # Update fields
+        for key, value in data.items():
+            if key not in ['id', 'created_at'] and value is not None:
+                existing[key] = value
+        existing['updated_at'] = datetime.utcnow().isoformat()
+
+        container.replace_item(item=decision_id, body=existing)
+        return Decision(**existing)
+    except Exception as e:
+        if "NotFound" in str(e):
+            raise HTTPException(status_code=404, detail="Decision not found")
+        logger.error(f"Error updating decision {decision_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/decisions/{decision_id}")
+async def delete_decision(decision_id: str):
+    """Delete a decision."""
+    try:
+        container = db.get_container("decisions")
+        container.delete_item(item=decision_id, partition_key=decision_id)
+        return {"message": "Decision deleted"}
+    except Exception as e:
+        if "NotFound" in str(e):
+            raise HTTPException(status_code=404, detail="Decision not found")
+        logger.error(f"Error deleting decision {decision_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/decisions/from-proposal", response_model=Decision)
 async def create_decision_from_proposal(data: dict):
     """Create decision from approved proposal."""

@@ -35,6 +35,9 @@ import {
   FileText,
   CheckCircle,
   ArrowRight,
+  Edit3,
+  Trash2,
+  X,
 } from 'lucide-react';
 
 function SearchParamsHandler({ onCreateOpen }: { onCreateOpen: () => void }) {
@@ -58,6 +61,11 @@ export default function ProposalsDecisionsPage() {
   const [isCreateProposalOpen, setIsCreateProposalOpen] = useState(false);
   const [isCreateDecisionOpen, setIsCreateDecisionOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null);
+  const [isDecisionDetailsOpen, setIsDecisionDetailsOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedDecision, setEditedDecision] = useState<Partial<Decision>>({});
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [newProposal, setNewProposal] = useState({
     title: '',
@@ -96,6 +104,40 @@ export default function ProposalsDecisionsPage() {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  
+  function openDecisionDetails(decision: Decision) {
+    setSelectedDecision(decision);
+    setEditedDecision(decision);
+    setIsEditMode(false);
+    setIsDecisionDetailsOpen(true);
+  }
+
+  async function handleUpdateDecision() {
+    if (!selectedDecision) return;
+    try {
+      await api.decisions.update(selectedDecision.id, editedDecision);
+      await loadData();
+      setIsEditMode(false);
+      setIsDecisionDetailsOpen(false);
+    } catch (error) {
+      console.error('Failed to update decision:', error);
+    }
+  }
+
+  async function handleDeleteDecision() {
+    if (!selectedDecision) return;
+    setIsDeleting(true);
+    try {
+      await api.decisions.delete(selectedDecision.id);
+      await loadData();
+      setIsDecisionDetailsOpen(false);
+    } catch (error) {
+      console.error('Failed to delete decision:', error);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -836,6 +878,188 @@ export default function ProposalsDecisionsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+        {/* Decision Details Modal */}
+        <Dialog open={isDecisionDetailsOpen} onOpenChange={setIsDecisionDetailsOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-xl">
+                  {isEditMode ? 'Edit Decision' : 'Decision Details'}
+                </DialogTitle>
+                <div className="flex gap-2">
+                  {!isEditMode && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                      >
+                        <Edit3 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteDecision}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </DialogHeader>
+            {selectedDecision && (
+              <div className="space-y-6 pt-4">
+                {isEditMode ? (
+                  /* Edit Mode */
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Title</label>
+                      <Input
+                        value={editedDecision.title || ''}
+                        onChange={(e) => setEditedDecision({ ...editedDecision, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <Textarea
+                        value={editedDecision.description || ''}
+                        onChange={(e) => setEditedDecision({ ...editedDecision, description: e.target.value })}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Category</label>
+                        <Select
+                          value={editedDecision.category || 'Architecture'}
+                          onValueChange={(value) => setEditedDecision({ ...editedDecision, category: value as Decision['category'] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Governance">Governance</SelectItem>
+                            <SelectItem value="Architecture">Architecture</SelectItem>
+                            <SelectItem value="Licensing">Licensing</SelectItem>
+                            <SelectItem value="Budget">Budget</SelectItem>
+                            <SelectItem value="Security">Security</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Decision Date</label>
+                        <Input
+                          type="date"
+                          value={editedDecision.decision_date || ''}
+                          onChange={(e) => setEditedDecision({ ...editedDecision, decision_date: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Decision Maker</label>
+                      <TeamMemberSelect
+                        value={editedDecision.decision_maker || ''}
+                        onValueChange={(value) => setEditedDecision({ ...editedDecision, decision_maker: value })}
+                        placeholder="Select decision maker"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Rationale</label>
+                      <Textarea
+                        value={editedDecision.rationale || ''}
+                        onChange={(e) => setEditedDecision({ ...editedDecision, rationale: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Impact</label>
+                      <Textarea
+                        value={editedDecision.impact || ''}
+                        onChange={(e) => setEditedDecision({ ...editedDecision, impact: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setIsEditMode(false);
+                          setEditedDecision(selectedDecision);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={handleUpdateDecision}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View Mode */
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold">{selectedDecision.title}</h3>
+                      <Badge className={getCategoryColor(selectedDecision.category)} variant="secondary">
+                        {selectedDecision.category}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>Decision Date: {new Date(selectedDecision.decision_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        <span>Decision Maker: {selectedDecision.decision_maker}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-2">Description</h4>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedDecision.description}</p>
+                    </div>
+
+                    {selectedDecision.rationale && (
+                      <div>
+                        <h4 className="font-medium mb-2">Rationale</h4>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{selectedDecision.rationale}</p>
+                      </div>
+                    )}
+
+                    {selectedDecision.impact && (
+                      <div>
+                        <h4 className="font-medium mb-2">Impact</h4>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{selectedDecision.impact}</p>
+                      </div>
+                    )}
+
+                    {selectedDecision.meeting && (
+                      <div>
+                        <h4 className="font-medium mb-2">Related Meeting</h4>
+                        <p className="text-muted-foreground">{selectedDecision.meeting}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm text-muted-foreground">
+                      <div>Created: {new Date(selectedDecision.created_at).toLocaleString()}</div>
+                      <div>Updated: {new Date(selectedDecision.updated_at).toLocaleString()}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }
