@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -85,7 +86,8 @@ export default function TasksPage() {
   });
 
   useEffect(() => {
-    loadTasks();
+    // Then reload tasks
+      setTimeout(() => loadTasks(), 100);
   }, []);
 
   async function loadTasks() {
@@ -114,6 +116,7 @@ export default function TasksPage() {
         learning_friendly: newTask.learning_friendly,
       });
 
+      // Close dialog first
       setIsCreateDialogOpen(false);
       setNewTask({
         title: '',
@@ -126,7 +129,8 @@ export default function TasksPage() {
         complexity: '',
         learning_friendly: false,
       });
-      loadTasks();
+      // Then reload tasks
+      setTimeout(() => loadTasks(), 100);
     } catch (error) {
       console.error('Failed to create task:', error);
       alert('Failed to create task. Please try again.');
@@ -142,7 +146,8 @@ export default function TasksPage() {
       await api.tasks.update(selectedTask.id, fullTaskUpdate);
       setIsEditing(false);
       setEditedTask({});
-      loadTasks();
+      // Then reload tasks
+      setTimeout(() => loadTasks(), 100);
 
       // Update selectedTask with new data
       const updatedTask = { ...selectedTask, ...editedTask };
@@ -338,14 +343,14 @@ export default function TasksPage() {
             </Button>
           </div>
 
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} modal={true}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 New Task
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px]" onCloseClick={() => setIsCreateDialogOpen(false)}>
               <DialogHeader>
                 <DialogTitle>Create New Task</DialogTitle>
                 <DialogDescription>
@@ -504,13 +509,15 @@ export default function TasksPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
                 <Button
                   className="flex-1"
                   onClick={handleCreateTask}
@@ -689,7 +696,7 @@ export default function TasksPage() {
               setEditedTask({});
             }}
           >
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" onCloseClick={() => { setSelectedTask(null); setIsEditing(false); setEditedTask({}); }}>
               <DialogHeader>
                 <DialogTitle className="text-2xl">
                   {isEditing ? 'Edit Task' : selectedTask.title}
