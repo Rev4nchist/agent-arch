@@ -2,6 +2,7 @@
 from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 from src.config import settings
 from src.database import db
@@ -2495,6 +2496,157 @@ async def query_agent(request: AgentQueryRequest):
         return AgentQueryResponse(**result)
     except Exception as e:
         logger.error(f"Error querying agent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/agent/query/stream")
+async def query_agent_stream(request: AgentQueryRequest):
+    """Stream query responses from the Fourth AI Guide agent with SSE."""
+    import json as json_module
+
+    try:
+        context = request.context or ""
+        sources = []
+        session_id = request.session_id or "default"
+
+        # Phase 5.2: Resolve pronouns and get context from conversation history
+        query_to_process = request.query
+        session_context_additions = {}
+        if session_id != "default":
+            query_to_process, session_context_additions = _resolve_pronouns(request.query, session_id)
+            history_summary = conversation_memory.get_history_summary(session_id)
+            if history_summary:
+                context = f"{history_summary}\n\n{context}" if context else history_summary
+
+        # Step 1: Classify query intent and extract parameters
+        classified = _classify_intent(query_to_process)
+
+        if session_context_additions:
+            classified.parameters.update(session_context_additions)
+
+        if request.page_context:
+            classified = _apply_page_context(classified, request.page_context)
+
+        logger.info(
+            f"Stream Query: '{request.query[:50]}...' | Intent: {classified.intent.value} | "
+            f"Entities: {classified.entities} | Confidence: {classified.confidence}"
+        )
+
+        intent_context = f"\n[Query Analysis]\nIntent: {classified.intent.value}\nTarget: {', '.join(classified.entities)}"
+        if classified.parameters:
+            intent_context += f"\nFilters: {classified.parameters}"
+
+        # Step 2: Fetch LIVE data from CosmosDB
+        live_items = []
+        data_basis_info = None
+        query_limit = None if classified.intent == QueryIntent.AGGREGATION else 50
+
+        try:
+            live_context, live_sources, live_items, data_basis_info = _get_live_context_with_intent(classified, limit=query_limit)
+            if live_context:
+                context = f"{context}\n\n{live_context}" if context else live_context
+                sources.extend(live_sources)
+        except Exception as db_error:
+            logger.error(f"CosmosDB query failed: {db_error}")
+            try:
+                live_context, live_sources = _get_live_context(classified.entities, limit=15)
+                if live_context:
+                    context = f"{context}\n\n{live_context}" if context else live_context
+                    sources.extend(live_sources)
+            except Exception:
+                pass
+
+        # Step 3: Semantic search for additional context
+        try:
+            search_service = get_search_service()
+            search_results = search_service.search(query=request.query, top=3, use_semantic_search=True)
+            if search_results:
+                context_parts = ["\n=== RELATED DOCUMENTS ==="]
+                for result in search_results:
+                    context_parts.append(f"[{result['type'].upper()}] {result['title']}: {result['content'][:300]}")
+                    sources.append(f"{result['type']}: {result['title']}")
+                context = f"{context}\n" + "\n".join(context_parts)
+        except Exception:
+            pass
+
+        # Step 4: Generate action hints and response template
+        action_hints = _generate_action_hints(classified, len(live_items))
+        response_template = _get_response_template(classified.intent)
+        contact_info = _extract_contact_info(live_items, classified)
+
+        full_context = f"{intent_context}\n{context}" if context else intent_context
+        if response_template:
+            full_context = f"{full_context}\n{response_template}"
+        if contact_info:
+            full_context = f"{full_context}\n{contact_info}"
+        if action_hints:
+            full_context = f"{full_context}\n{action_hints}"
+
+        # Generate suggestions
+        suggestions = _generate_action_suggestions(classified, live_items, "")
+
+        def generate():
+            """Generator for SSE stream."""
+            # First, send metadata
+            # Handle data_basis - could be dict or Pydantic model
+            data_basis_dict = None
+            if data_basis_info:
+                if hasattr(data_basis_info, 'model_dump'):
+                    data_basis_dict = data_basis_info.model_dump()
+                elif isinstance(data_basis_info, dict):
+                    data_basis_dict = data_basis_info
+
+            metadata = {
+                "type": "metadata",
+                "sources": sources,
+                "intent": classified.intent.value,
+                "confidence": classified.confidence,
+                "suggestions": [s.model_dump() for s in suggestions],
+                "data_basis": data_basis_dict,
+            }
+            yield f"data: {json_module.dumps(metadata)}\n\n"
+
+            # Stream content from AI
+            full_response = ""
+            for token in ai_client.query_agent_streaming(query=request.query, context=full_context):
+                full_response += token
+                chunk_data = {"type": "content", "token": token}
+                yield f"data: {json_module.dumps(chunk_data)}\n\n"
+
+            # Store conversation turn for multi-turn context
+            if session_id != "default":
+                extracted_context = {}
+                if classified.parameters.get('assignee'):
+                    extracted_context['assignee'] = classified.parameters['assignee']
+                if classified.parameters.get('status'):
+                    extracted_context['status'] = classified.parameters['status']
+                if classified.parameters.get('priority'):
+                    extracted_context['priority'] = classified.parameters['priority']
+
+                conversation_memory.add_turn(
+                    session_id=session_id,
+                    query=request.query,
+                    response=full_response[:500],
+                    intent=classified.intent.value,
+                    entities=classified.entities,
+                    extracted_context=extracted_context
+                )
+
+            # Send completion signal
+            yield 'data: {"type": "done"}\n\n'
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error in streaming query: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

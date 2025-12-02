@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { ChatMessage, ChatSource, DataBasis, InsightItem, ActionSuggestion, api, PageContext as ApiPageContext } from '@/lib/api';
+import { ChatMessage, ChatSource, InsightItem, ActionSuggestion, api, PageContext as ApiPageContext, StreamMetadataChunk } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { getPageContext, getSuggestionsForPage, PageContext, Suggestion } from '@/lib/guide-context';
 
@@ -126,29 +126,71 @@ export function GuideProvider({ children }: GuideProviderProps) {
         visible_entity_type: currentPage.pageType,
       };
 
-      // Phase 5.2: Include session ID for conversation memory
-      const response = await api.guide.query(query, contextString, pageContextForApi, sessionIdRef.current);
-
-      const sources: ChatSource[] = response.sources?.map((s, i) => {
-        const [type, ...titleParts] = s.split(': ');
-        return {
-          id: `source-${i}`,
-          title: titleParts.join(': ') || s,
-          type: (type.toLowerCase() as 'meeting' | 'task' | 'agent' | 'governance') || 'governance',
-        };
-      }) || [];
-
+      // Create initial assistant message for streaming
+      const assistantMessageId = generateId();
       const assistantMessage: ChatMessage = {
-        id: generateId(),
+        id: assistantMessageId,
         role: 'assistant',
-        content: response.response,
-        sources: sources.length > 0 ? sources : undefined,
-        data_basis: response.data_basis,
-        suggestions: response.suggestions,  // Phase 5.4: Quick actions
+        content: '',
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Stream the response
+      let fullContent = '';
+      let metadata: StreamMetadataChunk | null = null;
+
+      for await (const chunk of api.guide.queryStream(
+        query,
+        contextString,
+        pageContextForApi,
+        sessionIdRef.current
+      )) {
+        if (chunk.type === 'metadata') {
+          metadata = chunk;
+        } else if (chunk.type === 'content') {
+          fullContent += chunk.token;
+
+          // Update message with new content progressively
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: fullContent }
+                : msg
+            )
+          );
+        } else if (chunk.type === 'done') {
+          // Stream complete, apply final metadata
+          if (metadata) {
+            const sources: ChatSource[] = (metadata.sources || []).map(
+              (s: string, i: number) => {
+                const [type, ...titleParts] = s.split(': ');
+                return {
+                  id: `source-${i}`,
+                  title: titleParts.join(': ') || s,
+                  type:
+                    (type.toLowerCase() as 'meeting' | 'task' | 'agent' | 'governance') ||
+                    'governance',
+                };
+              }
+            );
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      sources: sources.length > 0 ? sources : undefined,
+                      data_basis: metadata?.data_basis || undefined,
+                      suggestions: metadata?.suggestions,
+                    }
+                  : msg
+              )
+            );
+          }
+        }
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to get response';
       setError(errorMsg);
@@ -163,7 +205,7 @@ export function GuideProvider({ children }: GuideProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, currentPage]);
+  }, [isLoading, currentPage, pathname]);
 
   const clearConversation = useCallback(() => {
     setMessages([]);
