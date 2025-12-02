@@ -63,8 +63,11 @@ export default function ProposalsDecisionsPage() {
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null);
   const [isDecisionDetailsOpen, setIsDecisionDetailsOpen] = useState(false);
+  const [isProposalDetailsOpen, setIsProposalDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isProposalEditMode, setIsProposalEditMode] = useState(false);
   const [editedDecision, setEditedDecision] = useState<Partial<Decision>>({});
+  const [editedProposal, setEditedProposal] = useState<Partial<Proposal>>({});
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [newProposal, setNewProposal] = useState({
@@ -136,6 +139,45 @@ export default function ProposalsDecisionsPage() {
       setIsDecisionDetailsOpen(false);
     } catch (error) {
       console.error('Failed to delete decision:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  function openProposalDetails(proposal: Proposal) {
+    setSelectedProposal(proposal);
+    setEditedProposal(proposal);
+    setIsProposalEditMode(false);
+    setIsProposalDetailsOpen(true);
+  }
+
+  async function handleUpdateProposal() {
+    if (!selectedProposal) return;
+    try {
+      await api.proposals.update(selectedProposal.id, editedProposal);
+      await loadData();
+      setIsProposalEditMode(false);
+      setIsProposalDetailsOpen(false);
+    } catch (error) {
+      console.error('Failed to update proposal:', error);
+    }
+  }
+
+  async function handleDeleteProposal() {
+    if (!selectedProposal) return;
+    setIsDeleting(true);
+    try {
+      // Note: Need to add delete method to proposals API if not exists
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/proposals/${selectedProposal.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_KEY || 'dev-test-key-123'}`,
+        },
+      });
+      await loadData();
+      setIsProposalDetailsOpen(false);
+    } catch (error) {
+      console.error('Failed to delete proposal:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -488,6 +530,13 @@ export default function ProposalsDecisionsPage() {
                       )}
 
                       <div className="flex gap-2 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openProposalDetails(proposal)}
+                        >
+                          View Details
+                        </Button>
                         {proposal.status === 'Proposed' && (
                           <Button
                             variant="outline"
@@ -887,34 +936,9 @@ export default function ProposalsDecisionsPage() {
         <Dialog open={isDecisionDetailsOpen} onOpenChange={setIsDecisionDetailsOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <div className="flex items-center justify-between">
-                <DialogTitle className="text-xl">
-                  {isEditMode ? 'Edit Decision' : 'Decision Details'}
-                </DialogTitle>
-                <div className="flex gap-2">
-                  {!isEditMode && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditMode(true)}
-                      >
-                        <Edit3 className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleDeleteDecision}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {isDeleting ? 'Deleting...' : 'Delete'}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              <DialogTitle className="text-xl">
+                {isEditMode ? 'Edit Decision' : 'Decision Details'}
+              </DialogTitle>
             </DialogHeader>
             {selectedDecision && (
               <div className="space-y-6 pt-4">
@@ -1057,6 +1081,217 @@ export default function ProposalsDecisionsPage() {
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm text-muted-foreground">
                       <div>Created: {new Date(selectedDecision.created_at).toLocaleString()}</div>
                       <div>Updated: {new Date(selectedDecision.updated_at).toLocaleString()}</div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                      >
+                        <Edit3 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteDecision}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Proposal Details Modal */}
+        <Dialog open={isProposalDetailsOpen} onOpenChange={setIsProposalDetailsOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl">
+                {isProposalEditMode ? 'Edit Proposal' : 'Proposal Details'}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedProposal && (
+              <div className="space-y-6 pt-4">
+                {isProposalEditMode ? (
+                  /* Edit Mode */
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Title</label>
+                      <Input
+                        value={editedProposal.title || ''}
+                        onChange={(e) => setEditedProposal({ ...editedProposal, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <Textarea
+                        value={editedProposal.description || ''}
+                        onChange={(e) => setEditedProposal({ ...editedProposal, description: e.target.value })}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Category</label>
+                        <Select
+                          value={editedProposal.category || 'Governance'}
+                          onValueChange={(value) => setEditedProposal({ ...editedProposal, category: value as Proposal['category'] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Agent">Agent</SelectItem>
+                            <SelectItem value="Governance">Governance</SelectItem>
+                            <SelectItem value="Technical">Technical</SelectItem>
+                            <SelectItem value="Licensing">Licensing</SelectItem>
+                            <SelectItem value="AI Architect">AI Architect</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Status</label>
+                        <Select
+                          value={editedProposal.status || 'Proposed'}
+                          onValueChange={(value) => setEditedProposal({ ...editedProposal, status: value as Proposal['status'] })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Proposed">Proposed</SelectItem>
+                            <SelectItem value="Reviewing">Reviewing</SelectItem>
+                            <SelectItem value="Agreed">Agreed</SelectItem>
+                            <SelectItem value="Deferred">Deferred</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Proposer</label>
+                        <TeamMemberSelect
+                          value={editedProposal.proposer || ''}
+                          onValueChange={(value) => setEditedProposal({ ...editedProposal, proposer: value })}
+                          placeholder="Select proposer"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Department</label>
+                        <Input
+                          value={editedProposal.department || ''}
+                          onChange={(e) => setEditedProposal({ ...editedProposal, department: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Rationale</label>
+                      <Textarea
+                        value={editedProposal.rationale || ''}
+                        onChange={(e) => setEditedProposal({ ...editedProposal, rationale: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Impact</label>
+                      <Textarea
+                        value={editedProposal.impact || ''}
+                        onChange={(e) => setEditedProposal({ ...editedProposal, impact: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setIsProposalEditMode(false);
+                          setEditedProposal(selectedProposal);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={handleUpdateProposal}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View Mode */
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-semibold">{selectedProposal.title}</h3>
+                      <Badge className={getStatusColor(selectedProposal.status)}>
+                        {selectedProposal.status}
+                      </Badge>
+                      <Badge variant="outline">
+                        {selectedProposal.category}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        <span>Proposer: {selectedProposal.proposer}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Building2 className="h-4 w-4" />
+                        <span>Department: {selectedProposal.department}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-2">Description</h4>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedProposal.description}</p>
+                    </div>
+
+                    {selectedProposal.rationale && (
+                      <div>
+                        <h4 className="font-medium mb-2">Rationale</h4>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{selectedProposal.rationale}</p>
+                      </div>
+                    )}
+
+                    {selectedProposal.impact && (
+                      <div>
+                        <h4 className="font-medium mb-2">Expected Impact</h4>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{selectedProposal.impact}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t text-sm text-muted-foreground">
+                      <div>Created: {new Date(selectedProposal.created_at).toLocaleString()}</div>
+                      <div>Updated: {new Date(selectedProposal.updated_at).toLocaleString()}</div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsProposalEditMode(true)}
+                      >
+                        <Edit3 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteProposal}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {isDeleting ? 'Deleting...' : 'Delete'}
+                      </Button>
                     </div>
                   </div>
                 )}

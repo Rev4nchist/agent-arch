@@ -42,8 +42,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: ''
-          NEXT_PUBLIC_API_KEY: ''
+          NEXT_PUBLIC_API_URL: 'https://agent-arch-api.icyplant-75ca2495.westeurope.azurecontainerapps.io'
+          NEXT_PUBLIC_API_KEY: 'dev-test-key-123'
 
       - name: Copy staticwebapp.config.json to output
         run: cp staticwebapp.config.json out/
