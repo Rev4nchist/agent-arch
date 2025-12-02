@@ -219,7 +219,9 @@ export default function TasksPage() {
       const matchesAssignee =
         filterAssignee === 'all' || task.assigned_to === filterAssignee;
 
-      return matchesSearch && matchesPriority && matchesCategory && matchesAssignee;
+      const hideFromList = viewMode === 'list' && task.status === 'Done';
+
+      return matchesSearch && matchesPriority && matchesCategory && matchesAssignee && !hideFromList;
     })
     .sort((a, b) => {
       const today = new Date();
