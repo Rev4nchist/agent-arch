@@ -75,6 +75,7 @@ export default function TasksPage() {
   const [editedTask, setEditedTask] = useState<Partial<Task>>({});
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<StatusColumn | null>(null);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -196,22 +197,53 @@ export default function TasksPage() {
     }
   }
 
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch =
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const priorityOrder: Record<string, number> = {
+    Critical: 0,
+    High: 1,
+    Medium: 2,
+    Low: 3,
+  };
 
-    const matchesPriority =
-      filterPriority === 'all' || task.priority === filterPriority;
+  const filteredTasks = tasks
+    .filter((task) => {
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory =
-      filterCategory === 'all' || task.category === filterCategory;
+      const matchesPriority =
+        filterPriority === 'all' || task.priority === filterPriority;
 
-    const matchesAssignee =
-      filterAssignee === 'all' || task.assigned_to === filterAssignee;
+      const matchesCategory =
+        filterCategory === 'all' || task.category === filterCategory;
 
-    return matchesSearch && matchesPriority && matchesCategory && matchesAssignee;
-  });
+      const matchesAssignee =
+        filterAssignee === 'all' || task.assigned_to === filterAssignee;
+
+      return matchesSearch && matchesPriority && matchesCategory && matchesAssignee;
+    })
+    .sort((a, b) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const aDate = a.due_date ? new Date(a.due_date) : null;
+      const bDate = b.due_date ? new Date(b.due_date) : null;
+      const aOverdue = aDate && aDate < today && a.status !== 'Done';
+      const bOverdue = bDate && bDate < today && b.status !== 'Done';
+
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+
+      if (aDate && bDate) {
+        const dateCompare = aDate.getTime() - bDate.getTime();
+        if (dateCompare !== 0) return dateCompare;
+      } else if (aDate && !bDate) {
+        return -1;
+      } else if (!aDate && bDate) {
+        return 1;
+      }
+
+      return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
+    });
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -273,15 +305,31 @@ export default function TasksPage() {
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     setDraggedTaskId(taskId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', taskId);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, column: StatusColumn) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    if (dragOverColumn !== column) {
+      setDragOverColumn(column);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverColumn(null);
+    }
   };
 
   const handleDrop = async (e: React.DragEvent, newStatus: StatusColumn) => {
     e.preventDefault();
+    e.stopPropagation();
+    setDragOverColumn(null);
+
     if (!draggedTaskId) return;
 
     const task = tasks.find((t) => t.id === draggedTaskId);
@@ -290,19 +338,25 @@ export default function TasksPage() {
       return;
     }
 
+    const originalStatus = task.status;
+    setTasks((prev) =>
+      prev.map((t) => (t.id === draggedTaskId ? { ...t, status: newStatus } : t))
+    );
+    setDraggedTaskId(null);
+
     try {
-      const updatedTask = { ...task, status: newStatus };
-      await api.tasks.update(task.id, updatedTask);
-      setDraggedTaskId(null);
-      setTimeout(() => loadTasks(), 100);
+      await api.tasks.update(task.id, { ...task, status: newStatus });
     } catch (error) {
       console.error('Failed to update task status:', error);
-      setDraggedTaskId(null);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === draggedTaskId ? { ...t, status: originalStatus } : t))
+      );
     }
   };
 
   const handleDragEnd = () => {
     setDraggedTaskId(null);
+    setDragOverColumn(null);
   };
 
   const groupedTasks = {
@@ -611,10 +665,41 @@ export default function TasksPage() {
                 </CardContent>
               </Card>
             ) : (
-              filteredTasks.map((task) => (
+              filteredTasks.map((task) => {
+                const listGlowStyle = isOverdue(task)
+                  ? '0 0 8px rgba(239, 68, 68, 0.25)'
+                  : task.priority === 'Critical'
+                  ? '0 0 8px rgba(147, 51, 234, 0.25)'
+                  : '';
+                const listHoverStyle = listGlowStyle
+                  ? `${listGlowStyle}, 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)`
+                  : '';
+
+                return (
                 <Card
                   key={task.id}
-                  className="hover:shadow-lg transition-shadow"
+                  className={`transition-all ${
+                    isOverdue(task)
+                      ? 'ring-1 ring-red-300 hover:ring-red-400'
+                      : task.priority === 'Critical'
+                      ? 'ring-1 ring-purple-300 hover:ring-purple-400'
+                      : 'hover:shadow-lg'
+                  }`}
+                  style={
+                    listGlowStyle
+                      ? { boxShadow: listGlowStyle }
+                      : undefined
+                  }
+                  onMouseEnter={(e) => {
+                    if (listHoverStyle) {
+                      e.currentTarget.style.boxShadow = listHoverStyle;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (listGlowStyle) {
+                      e.currentTarget.style.boxShadow = listGlowStyle;
+                    }
+                  }}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
@@ -646,9 +731,12 @@ export default function TasksPage() {
                             </div>
                           )}
                           {task.due_date && (
-                            <div className="flex items-center gap-1">
+                            <div className={`flex items-center gap-1 ${
+                              isOverdue(task) ? 'text-red-600 font-medium' : ''
+                            }`}>
                               <Clock className="h-3 w-3" />
                               {new Date(task.due_date).toLocaleDateString()}
+                              {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
                             </div>
                           )}
                         </div>
@@ -665,103 +753,147 @@ export default function TasksPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))
+                );
+              })
             )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {(['Pending', 'In-Progress', 'Done', 'Blocked'] as StatusColumn[]).map(
-              (status) => (
-                <div
-                  key={status}
-                  className="space-y-4"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, status)}
-                >
-                  <Card className="bg-gray-100">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-semibold uppercase text-gray-600 flex items-center justify-between">
-                        <span>{status}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {groupedTasks[status].length}
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
+              (status) => {
+                const isDropTarget = dragOverColumn === status && draggedTaskId !== null;
+                const draggedTask = draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) : null;
+                const canDrop = draggedTask && draggedTask.status !== status;
 
-                  <div className="space-y-3 min-h-[100px]">
-                    {groupedTasks[status].length === 0 ? (
-                      <Card className="border-dashed border-2 border-gray-300">
-                        <CardContent className="p-6 text-center">
-                          <p className="text-sm text-gray-500 italic">
-                            Drop tasks here
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      groupedTasks[status].map((task) => (
-                        <Card
-                          key={task.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, task.id)}
-                          onDragEnd={handleDragEnd}
-                          className={`hover:shadow-lg transition-all cursor-grab active:cursor-grabbing ${
-                            draggedTaskId === task.id ? 'opacity-50 scale-95' : ''
-                          } ${
-                            isOverdue(task)
-                              ? 'ring-2 ring-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
-                              : task.priority === 'Critical'
-                              ? 'ring-2 ring-purple-400 shadow-[0_0_10px_rgba(147,51,234,0.3)]'
-                              : ''
-                          }`}
-                          onClick={() => setSelectedTask(task)}
+                return (
+                  <div
+                    key={status}
+                    className="flex flex-col"
+                    onDragOver={(e) => handleDragOver(e, status)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, status)}
+                  >
+                    <Card
+                      className={`bg-gray-100 transition-all duration-200 ${
+                        isDropTarget && canDrop ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                      }`}
+                    >
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-semibold uppercase text-gray-600 flex items-center justify-between">
+                          <span>{status}</span>
+                          <Badge variant="outline" className="ml-2">
+                            {groupedTasks[status].length}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                    </Card>
+
+                    <div
+                      className={`flex-1 space-y-3 min-h-[200px] mt-4 p-3 rounded-lg transition-all duration-200 ${
+                        isDropTarget && canDrop
+                          ? 'bg-blue-50/70 border-2 border-dashed border-blue-400'
+                          : 'border-2 border-transparent'
+                      }`}
+                    >
+                      {isDropTarget && canDrop && (
+                        <div
+                          className="h-20 border-2 border-dashed border-blue-400 rounded-lg bg-blue-100/50 flex items-center justify-center animate-pulse"
+                          style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-medium text-sm text-gray-900">
-                                {task.title}
-                              </h4>
-                              <Badge
-                                className={getPriorityColor(task.priority)}
-                                variant="outline"
-                              >
-                                {(task.priority === 'Critical' || task.priority === 'High') && (
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                )}
-                                {task.priority}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                              {task.description}
+                          <span className="text-blue-500 text-sm font-medium">
+                            Drop to move to {status}
+                          </span>
+                        </div>
+                      )}
+
+                      {groupedTasks[status].length === 0 && !isDropTarget ? (
+                        <Card className="border-dashed border-2 border-gray-300 bg-gray-50/50">
+                          <CardContent className="p-6 text-center">
+                            <p className="text-sm text-gray-400 italic">
+                              No tasks
                             </p>
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {task.category && (
-                                <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
-                                  {task.category}
-                                </Badge>
-                              )}
-                              {task.assigned_to && (
-                                <Badge variant="outline" className="text-xs">
-                                  {task.assigned_to}
-                                </Badge>
-                              )}
-                            </div>
-                            {task.due_date && (
-                              <div className={`flex items-center gap-1 mt-2 text-xs ${
-                                isOverdue(task) ? 'text-red-600 font-medium' : 'text-gray-500'
-                              }`}>
-                                <Clock className="h-3 w-3" />
-                                {new Date(task.due_date).toLocaleDateString()}
-                                {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
-                              </div>
-                            )}
                           </CardContent>
                         </Card>
-                      ))
-                    )}
+                      ) : (
+                        groupedTasks[status].map((task) => (
+                          <Card
+                            key={task.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, task.id)}
+                            onDragEnd={handleDragEnd}
+                            className={`transition-all duration-200 cursor-grab active:cursor-grabbing ${
+                              draggedTaskId === task.id
+                                ? 'opacity-40 scale-95 rotate-1 shadow-xl'
+                                : 'hover:shadow-lg hover:-translate-y-0.5'
+                            } ${
+                              isOverdue(task)
+                                ? 'ring-2 ring-red-400'
+                                : task.priority === 'Critical'
+                                ? 'ring-2 ring-purple-400'
+                                : ''
+                            }`}
+                            style={
+                              isOverdue(task)
+                                ? { boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)' }
+                                : task.priority === 'Critical'
+                                ? { boxShadow: '0 0 12px rgba(147, 51, 234, 0.4)' }
+                                : undefined
+                            }
+                            onClick={() => !draggedTaskId && setSelectedTask(task)}
+                          >
+                            <CardContent className="p-3 flex flex-col h-full">
+                              <div>
+                                <h4 className="font-medium text-sm text-gray-900 mb-1">
+                                  {task.title}
+                                </h4>
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  <Badge
+                                    className={getPriorityColor(task.priority)}
+                                    variant="outline"
+                                  >
+                                    {(task.priority === 'Critical' || task.priority === 'High') && (
+                                      <AlertCircle className="h-3 w-3 mr-1" />
+                                    )}
+                                    {task.priority}
+                                  </Badge>
+                                  {task.category && (
+                                    <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
+                                      {task.category}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {task.description && (
+                                  <p className="text-xs text-gray-600 line-clamp-3">
+                                    {task.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="mt-auto pt-3">
+                                {task.assigned_to && (
+                                  <div className="mb-1.5">
+                                    <Badge variant="outline" className="text-xs">
+                                      {task.assigned_to}
+                                    </Badge>
+                                  </div>
+                                )}
+                                {task.due_date && (
+                                  <div className={`flex items-center gap-1 text-xs ${
+                                    isOverdue(task) ? 'text-red-600 font-medium' : 'text-gray-500'
+                                  }`}>
+                                    <Clock className="h-3 w-3" />
+                                    {new Date(task.due_date).toLocaleDateString()}
+                                    {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
+                );
+              }
             )}
           </div>
         )}
