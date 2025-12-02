@@ -48,7 +48,7 @@ export default function Sidebar() {
             className="flex-shrink-0"
           />
           <h1 className="text-xl font-bold text-gray-900">
-            Agent Architecture
+            Fourth AI Architecture
           </h1>
         </div>
 

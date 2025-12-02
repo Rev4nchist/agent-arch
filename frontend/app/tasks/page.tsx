@@ -74,6 +74,7 @@ export default function TasksPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Partial<Task>>({});
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -259,6 +260,49 @@ export default function TasksPage() {
       default:
         return 'bg-gray-50 text-gray-600 border-gray-300';
     }
+  };
+
+  const isOverdue = (task: Task) => {
+    if (!task.due_date || task.status === 'Done') return false;
+    const dueDate = new Date(task.due_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return dueDate < today;
+  };
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: StatusColumn) => {
+    e.preventDefault();
+    if (!draggedTaskId) return;
+
+    const task = tasks.find((t) => t.id === draggedTaskId);
+    if (!task || task.status === newStatus) {
+      setDraggedTaskId(null);
+      return;
+    }
+
+    try {
+      const updatedTask = { ...task, status: newStatus };
+      await api.tasks.update(task.id, updatedTask);
+      setDraggedTaskId(null);
+      setTimeout(() => loadTasks(), 100);
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      setDraggedTaskId(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTaskId(null);
   };
 
   const groupedTasks = {
@@ -628,7 +672,12 @@ export default function TasksPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {(['Pending', 'In-Progress', 'Done', 'Blocked'] as StatusColumn[]).map(
               (status) => (
-                <div key={status} className="space-y-4">
+                <div
+                  key={status}
+                  className="space-y-4"
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, status)}
+                >
                   <Card className="bg-gray-100">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm font-semibold uppercase text-gray-600 flex items-center justify-between">
@@ -640,12 +689,12 @@ export default function TasksPage() {
                     </CardHeader>
                   </Card>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 min-h-[100px]">
                     {groupedTasks[status].length === 0 ? (
-                      <Card className="border-dashed">
+                      <Card className="border-dashed border-2 border-gray-300">
                         <CardContent className="p-6 text-center">
                           <p className="text-sm text-gray-500 italic">
-                            No tasks
+                            Drop tasks here
                           </p>
                         </CardContent>
                       </Card>
@@ -653,7 +702,16 @@ export default function TasksPage() {
                       groupedTasks[status].map((task) => (
                         <Card
                           key={task.id}
-                          className="hover:shadow-lg transition-shadow cursor-pointer"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`hover:shadow-lg transition-all cursor-grab active:cursor-grabbing ${
+                            draggedTaskId === task.id ? 'opacity-50 scale-95' : ''
+                          } ${
+                            isOverdue(task)
+                              ? 'ring-2 ring-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+                              : ''
+                          }`}
                           onClick={() => setSelectedTask(task)}
                         >
                           <CardContent className="p-4">
@@ -687,9 +745,12 @@ export default function TasksPage() {
                               )}
                             </div>
                             {task.due_date && (
-                              <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                              <div className={`flex items-center gap-1 mt-2 text-xs ${
+                                isOverdue(task) ? 'text-red-600 font-medium' : 'text-gray-500'
+                              }`}>
                                 <Clock className="h-3 w-3" />
                                 {new Date(task.due_date).toLocaleDateString()}
+                                {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
                               </div>
                             )}
                           </CardContent>
