@@ -1,0 +1,66 @@
+{
+  "deployment": {
+    "method": "github-actions",
+    "trigger": "git push to main branch",
+    "backend": {
+      "type": "Azure App Service",
+      "name": "agent-arch-api-prod",
+      "deployMethod": "zip",
+      "workflowFile": ".github/workflows/backend-deploy.yml",
+      "manualDeploy": "cd backend && zip -r ../deploy.zip . -x 'venv/*' -x '__pycache__/*' -x 'tests/*' && az webapp deploy --name agent-arch-api-prod --resource-group rg-agent-architecture --src-path ../deploy.zip --type zip"
+    },
+    "frontend": {
+      "type": "Azure Static Web Apps",
+      "name": "agent-arch-web-prod",
+      "url": "witty-coast-0e5f72203.3.azurestaticapps.net",
+      "workflowFile": ".github/workflows/frontend-deploy.yml",
+      "manualDeploy": "cd frontend && npm run build && cp staticwebapp.config.json out/ && npx swa deploy out --deployment-token <TOKEN> --env production"
+    },
+    "resourceGroup": "rg-agent-architecture"
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "bug|error|fix|debug|broken|issue|crash|fail",
+        "command": "echo '[SKILL ACTIVATION] Debugging context detected - applying systematic-debugging framework'"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "echo '[SKILL CHECK] Verifying changes follow skill guidelines'"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "command": "powershell -ExecutionPolicy Bypass -File \"$env:USERPROFILE\\.claude\\scripts\\checkpoint.ps1\" create auto-save && echo '[SKILL REMINDER] Before completion: Verify evidence per code-review skill'"
+      }
+    ]
+  },
+  "fileGuard": {
+    "patterns": [
+      ".env*",
+      "*.pem",
+      "*.key",
+      "*secret*",
+      "*credential*",
+      "*.pfx",
+      "id_rsa*"
+    ]
+  },
+  "skills": {
+    "systematic-debugging": {
+      "triggers": ["bug", "error", "fix", "debug", "broken", "crash"],
+      "path": "~/.claude/skills/systematic-debugging/SKILL.md"
+    },
+    "databases": {
+      "triggers": ["database", "query", "sql", "postgresql", "schema", "migration"],
+      "path": "~/.claude/skills/databases/SKILL.md"
+    },
+    "code-review": {
+      "triggers": ["pr", "review", "merge", "complete", "done", "finished"],
+      "path": "~/.claude/skills/code-review/SKILL.md"
+    }
+  }
+}

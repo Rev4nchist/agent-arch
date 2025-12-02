@@ -209,6 +209,20 @@ class Proposal(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ProposalUpdate(BaseModel):
+    """Proposal partial update model - all fields optional for PATCH."""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[ProposalCategory] = None
+    status: Optional[ProposalStatus] = None
+    proposer: Optional[str] = None
+    department: Optional[str] = None
+    team_member: Optional[str] = None
+    rationale: Optional[str] = None
+    impact: Optional[str] = None
+
+
 class DecisionCategory(str, Enum):
     """Decision category enum."""
 
