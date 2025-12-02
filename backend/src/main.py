@@ -14,6 +14,7 @@ from src.models import (
     Task,
     Agent,
     Proposal,
+    ProposalUpdate,
     Decision,
     Resource,
     TechRadarItem,
@@ -465,16 +466,21 @@ async def create_proposal(proposal: Proposal):
 
 
 @app.patch("/api/proposals/{proposal_id}", response_model=Proposal)
-async def update_proposal(proposal_id: str, proposal: Proposal):
+async def update_proposal(proposal_id: str, update_data: ProposalUpdate):
     """Update proposal (partial update)."""
     try:
-        proposal.id = proposal_id
-        proposal.updated_at = datetime.utcnow()
-
         container = db.get_container("proposals")
-        container.upsert_item(body=proposal.model_dump(mode='json'))
+        existing = container.read_item(item=proposal_id, partition_key=proposal_id)
 
-        # Index to search
+        update_dict = update_data.model_dump(exclude_unset=True)
+        for key, value in update_dict.items():
+            if value is not None:
+                existing[key] = value
+        existing["updated_at"] = datetime.utcnow().isoformat()
+
+        container.upsert_item(body=existing)
+
+        proposal = Proposal(**existing)
         index_document_async(proposal.id, "governance", proposal)
 
         return jsonable_encoder(proposal)

@@ -302,6 +302,10 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    delete: (id: string) =>
+      apiFetch<{ success: boolean }>(`/api/tasks/${id}`, {
+        method: 'DELETE',
+      }),
   },
   agents: {
     list: () => apiFetch<Agent[]>('/api/agents'),

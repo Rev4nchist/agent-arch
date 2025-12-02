@@ -35,6 +35,7 @@ import {
   Search,
   Clock,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 
 function SearchParamsHandler({ onCreateOpen }: { onCreateOpen: () => void }) {
@@ -72,6 +73,7 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Partial<Task>>({});
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -177,6 +179,20 @@ export default function TasksPage() {
   function handleCancelEdit() {
     setIsEditing(false);
     setEditedTask({});
+  }
+
+  async function handleDeleteTask() {
+    if (!taskToDelete) return;
+
+    try {
+      await api.tasks.delete(taskToDelete.id);
+      setTaskToDelete(null);
+      setSelectedTask(null);
+      setTimeout(() => loadTasks(), 100);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
   }
 
   const filteredTasks = tasks.filter((task) => {
@@ -939,6 +955,13 @@ export default function TasksPage() {
                     >
                       Close
                     </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => setTaskToDelete(selectedTask)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <Button className="flex-1" onClick={handleEditClick}>
                       Edit Task
                     </Button>
@@ -957,6 +980,36 @@ export default function TasksPage() {
                     </Button>
                   </>
                 )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {taskToDelete && (
+          <Dialog open={!!taskToDelete} onOpenChange={() => setTaskToDelete(null)}>
+            <DialogContent className="sm:max-w-[400px]" onCloseClick={() => setTaskToDelete(null)}>
+              <DialogHeader>
+                <DialogTitle>Delete Task</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{taskToDelete.title}&quot;? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setTaskToDelete(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDeleteTask}
+                >
+                  Delete Task
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

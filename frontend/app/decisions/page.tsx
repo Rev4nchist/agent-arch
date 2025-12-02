@@ -627,7 +627,11 @@ export default function ProposalsDecisionsPage() {
                       )}
 
                       <div className="flex gap-2 pt-4 border-t">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDecisionDetails(decision)}
+                        >
                           View Details
                         </Button>
                         {decision.proposal_id && (
