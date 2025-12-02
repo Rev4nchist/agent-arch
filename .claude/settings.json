@@ -3,11 +3,12 @@
     "method": "github-actions",
     "trigger": "git push to main branch",
     "backend": {
-      "type": "Azure App Service",
-      "name": "agent-arch-api-prod",
-      "deployMethod": "zip",
+      "type": "Azure Container Apps",
+      "name": "agent-arch-api",
+      "acr": "agentarchacr.azurecr.io",
+      "image": "agent-arch-api",
       "workflowFile": ".github/workflows/backend-deploy.yml",
-      "manualDeploy": "cd backend && zip -r ../deploy.zip . -x 'venv/*' -x '__pycache__/*' -x 'tests/*' && az webapp deploy --name agent-arch-api-prod --resource-group rg-agent-architecture --src-path ../deploy.zip --type zip"
+      "manualDeploy": "cd backend && docker build -t agentarchacr.azurecr.io/agent-arch-api:latest . && az acr login --name agentarchacr && docker push agentarchacr.azurecr.io/agent-arch-api:latest && az containerapp update --name agent-arch-api --resource-group rg-agent-architecture --image agentarchacr.azurecr.io/agent-arch-api:latest"
     },
     "frontend": {
       "type": "Azure Static Web Apps",
