@@ -62,11 +62,18 @@ jobs:
           echo "Waiting for deployment to stabilize..."
           sleep 30
 
-          # Get the app URL and check health
           APP_URL=$(az containerapp show \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
 
           echo "Checking health at: https://${APP_URL}/health"
-          curl -f "https://${APP_URL}/health" || echo "Health check pending - container may still be starting"
+          for i in 1 2 3; do
+            if curl -sf "https://${APP_URL}/health" > /dev/null; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, waiting 10s..."
+            sleep 10
+          done
+          echo "Health check pending - container may still be starting"
