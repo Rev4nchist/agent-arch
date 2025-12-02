@@ -710,6 +710,8 @@ export default function TasksPage() {
                           } ${
                             isOverdue(task)
                               ? 'ring-2 ring-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
+                              : task.priority === 'Critical'
+                              ? 'ring-2 ring-purple-400 shadow-[0_0_10px_rgba(147,51,234,0.3)]'
                               : ''
                           }`}
                           onClick={() => setSelectedTask(task)}
