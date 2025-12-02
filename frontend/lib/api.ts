@@ -203,6 +203,27 @@ export interface InsightsResponse {
   generated_at: string;
 }
 
+// Streaming response chunk types
+export interface StreamMetadataChunk {
+  type: 'metadata';
+  sources: string[];
+  intent: string;
+  confidence: string;
+  suggestions: ActionSuggestion[];
+  data_basis: DataBasis | null;
+}
+
+export interface StreamContentChunk {
+  type: 'content';
+  token: string;
+}
+
+export interface StreamDoneChunk {
+  type: 'done';
+}
+
+export type StreamChunk = StreamMetadataChunk | StreamContentChunk | StreamDoneChunk;
+
 export interface SearchResult {
   id: string;
   title: string;
@@ -389,6 +410,75 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ query, context, page_context: pageContext, session_id: sessionId }),
       }),
+    queryStream: async function* (
+      query: string,
+      context?: string,
+      pageContext?: PageContext,
+      sessionId?: string
+    ): AsyncGenerator<StreamChunk, void, unknown> {
+      const response = await fetch(`${API_URL}/api/agent/query/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`,
+        },
+        body: JSON.stringify({
+          query,
+          context,
+          page_context: pageContext,
+          session_id: sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Stream API error: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      try {
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines[lines.length - 1];
+
+          for (let i = 0; i < lines.length - 1; i++) {
+            const line = lines[i];
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6);
+              if (dataStr && dataStr.trim()) {
+                try {
+                  yield JSON.parse(dataStr) as StreamChunk;
+                } catch {
+                  // Skip malformed JSON
+                }
+              }
+            }
+          }
+        }
+
+        if (buffer.startsWith('data: ')) {
+          const dataStr = buffer.slice(6);
+          if (dataStr && dataStr.trim()) {
+            try {
+              yield JSON.parse(dataStr) as StreamChunk;
+            } catch {
+              // Skip malformed JSON
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    },
     search: (query: string, docType?: string, top?: number) =>
       apiFetch<SearchResult[]>('/api/search', {
         method: 'POST',
