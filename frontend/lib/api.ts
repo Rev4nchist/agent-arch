@@ -44,6 +44,7 @@ export interface Task {
   owner_name?: string;
   owner_contact?: string;
   team?: string;
+  from_submission_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -280,6 +281,86 @@ export interface AuditQueryParams {
   offset?: number;
 }
 
+export type SubmissionCategory = 'Bug Report' | 'Feature Request' | 'Improvement Idea' | 'Question';
+export type SubmissionStatus = 'Submitted' | 'Under Review' | 'In Progress' | 'Completed' | 'Declined';
+export type SubmissionPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+
+export interface SubmissionComment {
+  id: string;
+  user: string;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Submission {
+  id: string;
+  title: string;
+  description: string;
+  category: SubmissionCategory;
+  priority: SubmissionPriority;
+  status: SubmissionStatus;
+  submitted_by: string;
+  submitted_at: string;
+  upvotes: string[];
+  upvote_count: number;
+  comments: SubmissionComment[];
+  assigned_to?: string;
+  tags: string[];
+  linked_task_id?: string;
+  resolved_at?: string;
+  resolution_notes?: string;
+  updated_at: string;
+}
+
+export interface SubmissionCreate {
+  title: string;
+  description: string;
+  category: SubmissionCategory;
+  priority: SubmissionPriority;
+  submitted_by: string;
+  tags?: string[];
+}
+
+export interface SubmissionUpdate {
+  title?: string;
+  description?: string;
+  category?: SubmissionCategory;
+  priority?: SubmissionPriority;
+  status?: SubmissionStatus;
+  assigned_to?: string;
+  tags?: string[];
+  resolution_notes?: string;
+}
+
+export interface SubmissionFilters {
+  status?: SubmissionStatus;
+  category?: SubmissionCategory;
+  priority?: SubmissionPriority;
+  assigned_to?: string;
+  submitted_by?: string;
+  sort_by?: 'upvotes' | 'date' | 'priority';
+  limit?: number;
+  offset?: number;
+}
+
+export interface SubmissionListResponse {
+  items: Submission[];
+  total: number;
+}
+
+export interface SubmissionStats {
+  total: number;
+  by_status: Record<string, number>;
+  by_category: Record<string, number>;
+  by_priority: Record<string, number>;
+}
+
+export interface SubmissionConvertResponse {
+  submission: Submission;
+  task: Task;
+}
+
 async function apiFetch<T>(
   endpoint: string,
   options?: RequestInit
@@ -509,5 +590,59 @@ export const api = {
     getUserActivity: (userId: string, limit?: number) =>
       apiFetch<AuditLog[]>(`/api/audit/user/${userId}?limit=${limit || 50}`),
     getSummary: () => apiFetch<AuditSummary>('/api/audit/summary'),
+  },
+  submissions: {
+    list: (filters?: SubmissionFilters) => {
+      const queryParams = new URLSearchParams();
+      if (filters?.status) queryParams.append('status', filters.status);
+      if (filters?.category) queryParams.append('category', filters.category);
+      if (filters?.priority) queryParams.append('priority', filters.priority);
+      if (filters?.assigned_to) queryParams.append('assigned_to', filters.assigned_to);
+      if (filters?.submitted_by) queryParams.append('submitted_by', filters.submitted_by);
+      if (filters?.sort_by) queryParams.append('sort_by', filters.sort_by);
+      if (filters?.limit) queryParams.append('limit', filters.limit.toString());
+      if (filters?.offset) queryParams.append('offset', filters.offset.toString());
+      const qs = queryParams.toString();
+      return apiFetch<SubmissionListResponse>(`/api/submissions${qs ? `?${qs}` : ''}`);
+    },
+    get: (id: string) => apiFetch<Submission>(`/api/submissions/${id}`),
+    create: (data: SubmissionCreate) =>
+      apiFetch<Submission>('/api/submissions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: SubmissionUpdate) =>
+      apiFetch<Submission>(`/api/submissions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      apiFetch<{ message: string }>(`/api/submissions/${id}`, {
+        method: 'DELETE',
+      }),
+    upvote: (id: string, user: string) =>
+      apiFetch<Submission>(`/api/submissions/${id}/upvote?user=${encodeURIComponent(user)}`, {
+        method: 'POST',
+      }),
+    addComment: (id: string, user: string, content: string) =>
+      apiFetch<Submission>(`/api/submissions/${id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ user, content }),
+      }),
+    updateComment: (id: string, commentId: string, content: string) =>
+      apiFetch<Submission>(`/api/submissions/${id}/comments/${commentId}?content=${encodeURIComponent(content)}`, {
+        method: 'PUT',
+      }),
+    deleteComment: (id: string, commentId: string) =>
+      apiFetch<Submission>(`/api/submissions/${id}/comments/${commentId}`, {
+        method: 'DELETE',
+      }),
+    convertToTask: (id: string, category?: string) => {
+      const queryParams = category ? `?category=${encodeURIComponent(category)}` : '';
+      return apiFetch<SubmissionConvertResponse>(`/api/submissions/${id}/convert-to-task${queryParams}`, {
+        method: 'POST',
+      });
+    },
+    getStats: () => apiFetch<SubmissionStats>('/api/submissions/stats'),
   },
 };

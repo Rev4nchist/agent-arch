@@ -143,6 +143,8 @@ class Task(BaseModel):
     owner_name: Optional[str] = None
     owner_contact: Optional[str] = None  # email or slack handle
     team: Optional[str] = None
+    # Feedback integration
+    from_submission_id: Optional[str] = None  # Submission ID if created from feedback
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -482,3 +484,103 @@ class AuditLogQueryParams(BaseModel):
     end_date: Optional[datetime] = None
     limit: int = 100
     offset: int = 0
+
+
+class SubmissionCategory(str, Enum):
+    """Submission category enum."""
+
+    BUG_REPORT = "Bug Report"
+    FEATURE_REQUEST = "Feature Request"
+    IMPROVEMENT_IDEA = "Improvement Idea"
+    QUESTION = "Question"
+
+
+class SubmissionStatus(str, Enum):
+    """Submission status enum."""
+
+    SUBMITTED = "Submitted"
+    UNDER_REVIEW = "Under Review"
+    IN_PROGRESS = "In Progress"
+    COMPLETED = "Completed"
+    DECLINED = "Declined"
+
+
+class SubmissionPriority(str, Enum):
+    """Submission priority enum."""
+
+    CRITICAL = "Critical"
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+
+
+class SubmissionComment(BaseModel):
+    """Comment on a submission."""
+
+    id: str
+    user: str
+    content: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+
+class Submission(BaseModel):
+    """Internal ticketing/idea submission data model."""
+
+    id: Optional[str] = None
+    title: str
+    description: str
+    category: SubmissionCategory
+    priority: SubmissionPriority
+    status: SubmissionStatus = SubmissionStatus.SUBMITTED
+    submitted_by: str
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    upvotes: List[str] = []
+    upvote_count: int = 0
+    comments: List[SubmissionComment] = []
+    assigned_to: Optional[str] = None
+    tags: List[str] = []
+    linked_task_id: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+    resolution_notes: Optional[str] = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SubmissionCreate(BaseModel):
+    """Request model for creating a submission."""
+
+    title: str
+    description: str
+    category: SubmissionCategory
+    priority: SubmissionPriority
+    submitted_by: str
+    tags: List[str] = []
+
+
+class SubmissionUpdate(BaseModel):
+    """Request model for updating a submission (admin)."""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[SubmissionCategory] = None
+    priority: Optional[SubmissionPriority] = None
+    status: Optional[SubmissionStatus] = None
+    assigned_to: Optional[str] = None
+    tags: Optional[List[str]] = None
+    resolution_notes: Optional[str] = None
+
+
+class CommentCreate(BaseModel):
+    """Request model for creating a comment."""
+
+    user: str
+    content: str
+
+
+class SubmissionStats(BaseModel):
+    """Dashboard statistics for submissions."""
+
+    total: int = 0
+    by_status: dict = Field(default_factory=dict)
+    by_category: dict = Field(default_factory=dict)
+    by_priority: dict = Field(default_factory=dict)

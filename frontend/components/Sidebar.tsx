@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Lightbulb,
   Shield,
+  MessageCircle,
 } from 'lucide-react';
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Resources Library', href: '/resources', icon: FolderOpen },
   { name: 'Tech Radar', href: '/tech-radar', icon: Radar },
   { name: 'Architecture Lab', href: '/architecture', icon: BookOpen },
+  { name: 'Feedback Hub', href: '/feedback', icon: MessageCircle },
   { name: 'Audit Trail', href: '/audit', icon: Shield },
   { name: 'Fourth AI Guide', href: '/guide', icon: MessageSquare },
 ];
@@ -54,7 +56,9 @@ export default function Sidebar() {
 
         <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
 
             return (
@@ -62,7 +66,7 @@ export default function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                  relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
                   ${
                     isActive
                       ? 'bg-blue-50 text-blue-600'
@@ -70,7 +74,10 @@ export default function Sidebar() {
                   }
                 `}
               >
-                <Icon className="h-5 w-5" />
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full" />
+                )}
+                <Icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : ''}`} />
                 {item.name}
               </Link>
             );
