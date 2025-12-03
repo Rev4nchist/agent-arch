@@ -38,6 +38,7 @@ class Database:
                 ("tech_radar_items", "/id"),
                 ("code_patterns", "/id"),
                 ("audit_logs", "/entity_type"),
+                ("submissions", "/id"),
             ]
 
             # Create containers if not exists

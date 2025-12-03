@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api, Task } from '@/lib/api';
 import { TeamMemberSelect } from '@/components/ui/team-member-select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -36,6 +37,8 @@ import {
   Clock,
   AlertCircle,
   Trash2,
+  Building2,
+  MessageCircle,
 } from 'lucide-react';
 
 function SearchParamsHandler({ onCreateOpen }: { onCreateOpen: () => void }) {
@@ -76,6 +79,7 @@ export default function TasksPage() {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<StatusColumn | null>(null);
+  const [taskSource, setTaskSource] = useState<'architecture' | 'feedback'>('architecture');
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -206,6 +210,10 @@ export default function TasksPage() {
 
   const filteredTasks = tasks
     .filter((task) => {
+      const matchesSource = taskSource === 'architecture'
+        ? !task.from_submission_id
+        : !!task.from_submission_id;
+
       const matchesSearch =
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -221,7 +229,7 @@ export default function TasksPage() {
 
       const hideFromList = viewMode === 'list' && task.status === 'Done';
 
-      return matchesSearch && matchesPriority && matchesCategory && matchesAssignee && !hideFromList;
+      return matchesSource && matchesSearch && matchesPriority && matchesCategory && matchesAssignee && !hideFromList;
     })
     .sort((a, b) => {
       const today = new Date();
@@ -389,6 +397,19 @@ export default function TasksPage() {
             Track and manage your project tasks
           </p>
         </div>
+
+        <Tabs value={taskSource} onValueChange={(v) => setTaskSource(v as 'architecture' | 'feedback')} className="mb-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="architecture" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Architecture Tasks
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Feedback Tasks
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -653,17 +674,21 @@ export default function TasksPage() {
                 <CardContent className="p-12 text-center">
                   <CheckSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No tasks found
+                    No {taskSource === 'feedback' ? 'feedback' : 'architecture'} tasks found
                   </h3>
                   <p className="text-gray-600 mb-4">
                     {searchQuery
                       ? 'Try adjusting your search or filter'
-                      : 'Get started by creating your first task'}
+                      : taskSource === 'feedback'
+                        ? 'Feedback tasks are created when submissions are converted to tasks'
+                        : 'Get started by creating your first task'}
                   </p>
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Task
-                  </Button>
+                  {taskSource === 'architecture' && (
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Your First Task
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : (
