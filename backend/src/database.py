@@ -39,6 +39,7 @@ class Database:
                 ("code_patterns", "/id"),
                 ("audit_logs", "/entity_type"),
                 ("submissions", "/id"),
+                ("platform_docs", "/category"),
             ]
 
             # Create containers if not exists

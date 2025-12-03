@@ -584,3 +584,61 @@ class SubmissionStats(BaseModel):
     by_status: dict = Field(default_factory=dict)
     by_category: dict = Field(default_factory=dict)
     by_priority: dict = Field(default_factory=dict)
+
+
+class PlatformDocCategory(str, Enum):
+    """Platform documentation category enum."""
+
+    NAVIGATION = "navigation"
+    FEATURE = "feature"
+    WORKFLOW = "workflow"
+    FAQ = "faq"
+
+
+class PlatformDoc(BaseModel):
+    """Platform documentation for AI Guide context."""
+
+    id: Optional[str] = None
+    category: PlatformDocCategory
+    title: str
+    content: str
+    keywords: List[str] = []
+    related_features: List[str] = []
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PlatformDocCreate(BaseModel):
+    """Request model for creating platform documentation."""
+
+    category: PlatformDocCategory
+    title: str
+    content: str
+    keywords: List[str] = []
+    related_features: List[str] = []
+
+
+class PlatformDocUpdate(BaseModel):
+    """Request model for updating platform documentation."""
+
+    category: Optional[PlatformDocCategory] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    related_features: Optional[List[str]] = None
+
+
+class QueryIntent(str, Enum):
+    """Query intent classification for AI Guide."""
+
+    PLATFORM_HELP = "platform_help"
+    DATA_QUERY = "data_query"
+    NAVIGATION = "navigation"
+    GENERAL = "general"
+
+
+class ContextResult(BaseModel):
+    """Result from context retrieval."""
+
+    context: str
+    sources: List[str] = []
+    intent: QueryIntent = QueryIntent.GENERAL

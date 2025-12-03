@@ -146,7 +146,7 @@ export interface ChatMessage {
 export interface ChatSource {
   id: string;
   title: string;
-  type: 'meeting' | 'task' | 'agent' | 'governance';
+  type: 'meeting' | 'task' | 'agent' | 'governance' | 'docs' | 'platform';
   snippet?: string;
 }
 

@@ -166,12 +166,23 @@ export function GuideProvider({ children }: GuideProviderProps) {
             const sources: ChatSource[] = (metadata.sources || []).map(
               (s: string, i: number) => {
                 const [type, ...titleParts] = s.split(': ');
+                const knownTypes = ['meeting', 'task', 'agent', 'governance', 'docs', 'platform'];
+                const lowerType = type.toLowerCase();
+
+                // Check if the first part is a known type
+                if (knownTypes.includes(lowerType)) {
+                  return {
+                    id: `source-${i}`,
+                    title: titleParts.join(': ') || s,
+                    type: lowerType as 'meeting' | 'task' | 'agent' | 'governance' | 'docs' | 'platform',
+                  };
+                }
+
+                // Otherwise, it's a platform doc source (just a title)
                 return {
                   id: `source-${i}`,
-                  title: titleParts.join(': ') || s,
-                  type:
-                    (type.toLowerCase() as 'meeting' | 'task' | 'agent' | 'governance') ||
-                    'governance',
+                  title: s,
+                  type: 'docs' as 'meeting' | 'task' | 'agent' | 'governance' | 'docs' | 'platform',
                 };
               }
             );

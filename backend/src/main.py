@@ -7,7 +7,8 @@ from contextlib import asynccontextmanager
 from src.config import settings
 from src.database import db
 from src.ai_client import ai_client
-from src.routers import transcripts, azure_resources, resources, audit, submissions
+from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs
+from src.context_service import context_service
 from src.audit_middleware import AuditMiddleware
 from src.search_service import initialize_search_index, get_search_service
 from src.models import (
@@ -179,6 +180,7 @@ app.include_router(azure_resources.router)
 app.include_router(resources.router)
 app.include_router(audit.router)
 app.include_router(submissions.router)
+app.include_router(platform_docs.router)
 
 
 # Health check
@@ -2442,6 +2444,27 @@ async def query_agent(request: AgentQueryRequest):
         # Step 4c: Extract contact information from results (Phase 4.2)
         contact_info = _extract_contact_info(live_items, classified)
 
+        # Step 4d: Get platform documentation context for platform-related queries
+        platform_context_result = None
+        platform_intent = None
+        try:
+            page_ctx = None
+            if request.page_context:
+                page_ctx = {
+                    "current_page": request.page_context.current_page,
+                    "selected_ids": request.page_context.selected_ids,
+                    "active_filters": request.page_context.active_filters,
+                }
+            platform_context_result = await context_service.get_context_for_query(
+                request.query, page_context=page_ctx
+            )
+            if platform_context_result.sources:
+                sources.extend(platform_context_result.sources)
+                platform_intent = platform_context_result.intent.value
+                logger.info(f"Platform docs context: intent={platform_intent}, sources={platform_context_result.sources}")
+        except Exception as platform_error:
+            logger.warning(f"Platform docs lookup failed: {platform_error}")
+
         # Step 5: Prepend intent context, response template, and action hints to help AI
         full_context = f"{intent_context}\n{context}" if context else intent_context
         if response_template:
@@ -2451,10 +2474,13 @@ async def query_agent(request: AgentQueryRequest):
         if action_hints:
             full_context = f"{full_context}\n{action_hints}"
 
-        # Step 6: Call AI with enriched context
+        # Step 6: Call AI with enriched context and platform docs
+        platform_docs_context = platform_context_result.context if platform_context_result else None
         result = await ai_client.query_agent(
             query=request.query,
             context=full_context,
+            platform_context=platform_docs_context,
+            intent=platform_intent,
         )
 
         if 'sources' not in result or not result['sources']:
@@ -2575,6 +2601,26 @@ async def query_agent_stream(request: AgentQueryRequest):
         response_template = _get_response_template(classified.intent)
         contact_info = _extract_contact_info(live_items, classified)
 
+        # Step 4d: Get platform documentation context
+        platform_context_result = None
+        platform_intent = None
+        try:
+            page_ctx = None
+            if request.page_context:
+                page_ctx = {
+                    "current_page": request.page_context.current_page,
+                    "selected_ids": request.page_context.selected_ids,
+                    "active_filters": request.page_context.active_filters,
+                }
+            platform_context_result = await context_service.get_context_for_query(
+                request.query, page_context=page_ctx
+            )
+            if platform_context_result.sources:
+                sources.extend(platform_context_result.sources)
+                platform_intent = platform_context_result.intent.value
+        except Exception as platform_error:
+            logger.warning(f"Platform docs lookup failed: {platform_error}")
+
         full_context = f"{intent_context}\n{context}" if context else intent_context
         if response_template:
             full_context = f"{full_context}\n{response_template}"
@@ -2585,6 +2631,7 @@ async def query_agent_stream(request: AgentQueryRequest):
 
         # Generate suggestions
         suggestions = _generate_action_suggestions(classified, live_items, "")
+        platform_docs_context = platform_context_result.context if platform_context_result else None
 
         def generate():
             """Generator for SSE stream."""
@@ -2607,9 +2654,14 @@ async def query_agent_stream(request: AgentQueryRequest):
             }
             yield f"data: {json_module.dumps(metadata)}\n\n"
 
-            # Stream content from AI
+            # Stream content from AI with platform docs context
             full_response = ""
-            for token in ai_client.query_agent_streaming(query=request.query, context=full_context):
+            for token in ai_client.query_agent_streaming(
+                query=request.query,
+                context=full_context,
+                platform_context=platform_docs_context,
+                intent=platform_intent,
+            ):
                 full_response += token
                 chunk_data = {"type": "content", "token": token}
                 yield f"data: {json_module.dumps(chunk_data)}\n\n"

@@ -72,8 +72,8 @@ export default function GuidePage() {
                   How can I help you today?
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-md mb-6">
-                  I can help you query meeting transcripts, track tasks, explore agent status,
-                  and find governance decisions.
+                  I can help you navigate the platform, explain features, guide you through workflows,
+                  and query your data like tasks, agents, and meetings.
                 </p>
 
                 <GuideSuggestionBar
