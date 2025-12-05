@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { useGuide } from '@/components/providers/GuideProvider';
 import { GuideWidgetTrigger } from './GuideWidgetTrigger';
 import { GuideWidgetPanel } from './GuideWidgetPanel';
 
+const HIDDEN_ON_ROUTES = ['/landing'];
+
 export function GuideWidget() {
+  const pathname = usePathname();
   const {
     messages,
     isLoading,
@@ -44,6 +48,11 @@ export function GuideWidget() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Hide widget on landing page
+  if (HIDDEN_ON_ROUTES.includes(pathname)) {
+    return null;
+  }
 
   return (
     <>

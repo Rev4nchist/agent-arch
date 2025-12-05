@@ -1,8 +1,8 @@
 // Use empty string for relative URLs when running through reverse proxy
 // Endpoints already include /api prefix
-const API_URL = process.env.NEXT_PUBLIC_API_URL === undefined
-  ? 'http://localhost:8001'  // Fallback for non-Docker dev
-  : process.env.NEXT_PUBLIC_API_URL;  // Use env value (can be empty string for reverse proxy)
+// In production: uses NEXT_PUBLIC_API_URL from .env.production
+// In local dev: set NEXT_PUBLIC_API_URL in .env.local to your local API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'dev-test-key-123';
 
 export interface Meeting {
@@ -361,6 +361,109 @@ export interface SubmissionConvertResponse {
   task: Task;
 }
 
+export type BudgetCategory = 'Azure Service' | 'Software License' | 'Custom Allocation';
+export type BudgetStatus = 'On Track' | 'Warning' | 'Critical' | 'Exceeded';
+export type LicenseType = 'Subscription' | 'Pay-as-you-go' | 'Perpetual' | 'Enterprise';
+export type LicenseStatus = 'Active' | 'Expiring' | 'Expired' | 'Suspended';
+
+export interface Budget {
+  id: string;
+  name: string;
+  category: BudgetCategory;
+  resource_groups: string[];
+  azure_service_type?: string;
+  amount: number;
+  spent: number;
+  currency: string;
+  period: string;
+  status: BudgetStatus;
+  threshold_warning: number;
+  threshold_critical: number;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+  owner?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BudgetCreate {
+  name: string;
+  category: BudgetCategory;
+  resource_groups?: string[];
+  azure_service_type?: string;
+  amount: number;
+  currency?: string;
+  period?: string;
+  threshold_warning?: number;
+  threshold_critical?: number;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+  owner?: string;
+}
+
+export interface License {
+  id: string;
+  name: string;
+  vendor: string;
+  license_type: LicenseType;
+  seats?: number;
+  cost_per_seat?: number;
+  monthly_cost: number;
+  annual_cost?: number;
+  renewal_date?: string;
+  status: LicenseStatus;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LicenseCreate {
+  name: string;
+  vendor: string;
+  license_type: LicenseType;
+  seats?: number;
+  cost_per_seat?: number;
+  monthly_cost: number;
+  annual_cost?: number;
+  renewal_date?: string;
+  notes?: string;
+}
+
+export interface CostSummary {
+  total_cost: number;
+  currency: string;
+  resource_groups_count: number;
+  period: string;
+  period_start: string;
+  period_end: string;
+  by_resource_group: Array<{ name: string; cost: number }>;
+  top_services: Array<{ name: string; cost: number }>;
+}
+
+export interface ResourceGroupCost {
+  resource_group: string;
+  total_cost: number;
+  currency: string;
+  services: Array<{ name: string; cost: number; currency: string }>;
+  period_start?: string;
+  period_end?: string;
+  error?: string;
+}
+
+export interface BudgetDashboard {
+  azure_costs: CostSummary;
+  budgets: Budget[];
+  licenses: License[];
+  totals: {
+    azure_spend: number;
+    license_spend: number;
+    total_monthly: number;
+    total_budget: number;
+  };
+}
+
 async function apiFetch<T>(
   endpoint: string,
   options?: RequestInit
@@ -644,5 +747,58 @@ export const api = {
       });
     },
     getStats: () => apiFetch<SubmissionStats>('/api/submissions/stats'),
+  },
+  budget: {
+    getDashboard: () => apiFetch<BudgetDashboard>('/api/budget/dashboard'),
+    getCostSummary: () => apiFetch<CostSummary>('/api/budget/costs/summary'),
+    getResourceGroupCosts: (forceRefresh?: boolean) =>
+      apiFetch<ResourceGroupCost[]>(`/api/budget/costs/resource-groups${forceRefresh ? '?force_refresh=true' : ''}`),
+    getResourceGroupCost: (resourceGroup: string) =>
+      apiFetch<ResourceGroupCost>(`/api/budget/costs/resource-groups/${encodeURIComponent(resourceGroup)}`),
+    getCostsByService: () =>
+      apiFetch<{ services: Array<{ name: string; cost: number }> }>('/api/budget/costs/by-service'),
+    getCostTrend: (resourceGroup?: string, days?: number) => {
+      const params = new URLSearchParams();
+      if (resourceGroup) params.append('resource_group', resourceGroup);
+      if (days) params.append('days', days.toString());
+      const qs = params.toString();
+      return apiFetch<{ trend: Array<{ date: string; cost: number }>; days: number; resource_group?: string }>(
+        `/api/budget/costs/trend${qs ? `?${qs}` : ''}`
+      );
+    },
+    getResourceGroups: () =>
+      apiFetch<{ resource_groups: string[] }>('/api/budget/resource-groups'),
+    listBudgets: () => apiFetch<Budget[]>('/api/budget/budgets'),
+    getBudget: (id: string) => apiFetch<Budget>(`/api/budget/budgets/${id}`),
+    createBudget: (data: BudgetCreate) =>
+      apiFetch<Budget>('/api/budget/budgets', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateBudget: (id: string, data: BudgetCreate) =>
+      apiFetch<Budget>(`/api/budget/budgets/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    deleteBudget: (id: string) =>
+      apiFetch<{ message: string }>(`/api/budget/budgets/${id}`, {
+        method: 'DELETE',
+      }),
+    listLicenses: () => apiFetch<License[]>('/api/budget/licenses'),
+    getLicense: (id: string) => apiFetch<License>(`/api/budget/licenses/${id}`),
+    createLicense: (data: LicenseCreate) =>
+      apiFetch<License>('/api/budget/licenses', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    updateLicense: (id: string, data: LicenseCreate) =>
+      apiFetch<License>(`/api/budget/licenses/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    deleteLicense: (id: string) =>
+      apiFetch<{ message: string }>(`/api/budget/licenses/${id}`, {
+        method: 'DELETE',
+      }),
   },
 };

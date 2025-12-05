@@ -1,7 +1,13 @@
 {
+  "routes": [
+    {
+      "route": "/landing",
+      "rewrite": "/landing/index.html"
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/_next/static/*", "/favicon.ico"]
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/_next/static/*", "/favicon.ico", "/landing/*"]
   },
   "responseOverrides": {
     "404": {
@@ -10,6 +16,8 @@
     }
   },
   "globalHeaders": {
+    "Content-Security-Policy": "upgrade-insecure-requests; default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://agent-arch-api.icyplant-75ca2495.westeurope.azurecontainerapps.io https://login.microsoftonline.com https://*.microsoftonline.com",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "X-XSS-Protection": "1; mode=block",

@@ -703,7 +703,7 @@ export default function ProposalsDecisionsPage() {
         </Tabs>
 
         <Dialog open={isCreateProposalOpen} onOpenChange={setIsCreateProposalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onCloseClick={() => setIsCreateProposalOpen(false)}>
             <DialogHeader>
               <DialogTitle>Create New Proposal</DialogTitle>
             </DialogHeader>
@@ -824,7 +824,7 @@ export default function ProposalsDecisionsPage() {
         </Dialog>
 
         <Dialog open={isCreateDecisionOpen} onOpenChange={setIsCreateDecisionOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onCloseClick={() => setIsCreateDecisionOpen(false)}>
             <DialogHeader>
               <DialogTitle>Create Decision from Proposal</DialogTitle>
             </DialogHeader>
@@ -934,7 +934,7 @@ export default function ProposalsDecisionsPage() {
 
         {/* Decision Details Modal */}
         <Dialog open={isDecisionDetailsOpen} onOpenChange={setIsDecisionDetailsOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onCloseClick={() => setIsDecisionDetailsOpen(false)}>
             <DialogHeader>
               <DialogTitle className="text-xl">
                 {isEditMode ? 'Edit Decision' : 'Decision Details'}
@@ -1111,7 +1111,7 @@ export default function ProposalsDecisionsPage() {
 
         {/* Proposal Details Modal */}
         <Dialog open={isProposalDetailsOpen} onOpenChange={setIsProposalDetailsOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onCloseClick={() => setIsProposalDetailsOpen(false)}>
             <DialogHeader>
               <DialogTitle className="text-xl">
                 {isProposalEditMode ? 'Edit Proposal' : 'Proposal Details'}

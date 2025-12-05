@@ -40,6 +40,10 @@ class Database:
                 ("audit_logs", "/entity_type"),
                 ("submissions", "/id"),
                 ("platform_docs", "/category"),
+                ("allowed_users", "/id"),
+                ("access_requests", "/id"),
+                ("budgets", "/id"),
+                ("licenses", "/id"),
             ]
 
             # Create containers if not exists

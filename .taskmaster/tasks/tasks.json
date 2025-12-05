@@ -217,7 +217,7 @@
         "dependencies": [
           "6"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -459,7 +459,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-26T00:33:47.043Z"
+        "updatedAt": "2025-12-03T03:52:31.378Z"
       },
       {
         "id": "8",
@@ -677,7 +677,7 @@
         "id": "13",
         "title": "Implement Microsoft SSO Authentication with Entra ID to Replace Shared API Key and Enable User Identification, Task Assignment, and Role-Based Access Control",
         "description": "Integrate Microsoft Entra ID for SSO authentication using MSAL (Microsoft Authentication Library) with OAuth 2.0/OIDC, replacing the shared API key, and enable proper user identification, task assignment, and role-based access control.",
-        "status": "blocked",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "This is a foundational authentication task that can be worked on independently in parallel with other features. Implementation uses MSAL with OAuth 2.0/OIDC instead of SAML for modern authentication flow.\n\n**Key Components:**\n1. **Azure App Registration with MSAL Configuration**:\n   - Register application in Microsoft Entra admin center\n   - Configure OAuth 2.0/OIDC settings with appropriate redirect URIs\n   - Set up API permissions and scopes for user authentication\n   - Generate client ID and configure tenant settings\n\n2. **Backend: Python MSAL Integration with JWT Token Validation**:\n   - Implement MSAL authentication flow in Python backend\n   - Add JWT token validation middleware for all API endpoints\n   - Extract user claims (email, name, roles) from JWT tokens\n   - Replace shared API key authentication with Bearer token validation\n\n3. **Frontend: @azure/msal-react Integration**:\n   - Integrate @azure/msal-react library for React frontend\n   - Implement login/logout components and authentication context\n   - Handle token acquisition and renewal automatically\n   - Protect routes based on authentication state\n\n4. **User Model in Cosmos DB**:\n   - Create user collection in Cosmos DB to store user profiles\n   - Map Entra ID user identities to application users\n   - Store user roles and permissions for RBAC implementation\n   - Sync user data from Entra ID claims\n\n5. **Replace Shared API Key with Bearer Token Authentication**:\n   - Remove all shared API key references from codebase\n   - Update all API endpoints to require Bearer token authentication\n   - Implement proper error handling for authentication failures\n   - Ensure secure token storage and transmission\n\nRefer to detailed implementation guide at .taskmaster/docs/microsoft-sso-auth-prd.md for complete specifications.",
@@ -755,9 +755,34 @@
             "status": "pending",
             "testStrategy": "Execute full authentication flow tests, validate security measures, test performance under load, verify error handling completeness",
             "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "Configure Custom Domain for Azure Static Web App",
+            "description": "Set up custom domain (e.g., agent-arch.fourth.com) for the frontend Azure Static Web App to replace auto-generated URL.",
+            "dependencies": [
+              1
+            ],
+            "details": "**Requires IT/Admin action:**\n1. Request DNS CNAME record: agent-arch.fourth.com -> witty-coast-0e5f72203.3.azurestaticapps.net\n2. After DNS propagation, run: az staticwebapp hostname set --name agent-arch-web-prod --hostname agent-arch.fourth.com\n3. Azure provides free SSL certificate automatically\n4. Update frontend redirect URIs in Entra app registration\n\n**Current URL:** witty-coast-0e5f72203.3.azurestaticapps.net\n**Target:** agent-arch.fourth.com (or similar)",
+            "status": "blocked",
+            "testStrategy": "Verify DNS resolution, test HTTPS certificate, validate redirect URIs",
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "Configure Production Redirect URIs in Entra App Registration",
+            "description": "Add production Azure Static Web App domain(s) as valid redirect URIs in the Entra ID app registration.",
+            "dependencies": [
+              1,
+              7
+            ],
+            "details": "**Requires IT/Admin action:**\n1. Microsoft Entra ID -> App registrations -> Fourth AI Portal - Agent Architecture Guide\n2. Authentication -> Add production redirect URIs:\n   - https://witty-coast-0e5f72203.3.azurestaticapps.net/auth/callback\n   - https://agent-arch.fourth.com/auth/callback (if custom domain)\n3. Click Save",
+            "status": "blocked",
+            "testStrategy": "Test OAuth login flow redirects correctly to production URLs",
+            "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-24T21:24:50.600Z"
+        "updatedAt": "2025-12-05T01:00:34.965Z"
       },
       {
         "id": "14",
@@ -938,7 +963,7 @@
         "description": "Execute comprehensive persona-based testing of AI Guide using 7 defined user personas (Developer, Architect, AI Director, CTO, BizOps VP, IT Personnel, Security) with 35 test scenarios to validate intent classification, query handling, and response quality",
         "details": "Execute persona-based testing framework defined in .taskmaster/docs/ai-guide-persona-tests.md. Each persona represents a key stakeholder with distinct query patterns and expected behaviors.\n\n**Personas:**\n1. DEVELOPER (Michael Roberts) - Technical tasks, code patterns, assigned work\n2. ARCHITECT (Sarah Chen) - System design, tier classifications, governance\n3. AI ENABLEMENT DIRECTOR (Emma Wilson) - Portfolio metrics, adoption tracking, compliance\n4. CTO (James Anderson) - Executive summaries, strategic decisions, risk awareness\n5. BIZOPS VP (Jennifer Martinez) - Operational metrics, productivity, workload\n6. IT PERSONNEL (David Hayes) - Infrastructure, Azure resources, deployments\n7. SECURITY TEAM - Security decisions, compliance, audit trails\n\n**Test Categories per Persona (5 tests each):**\n- Intent classification accuracy\n- Query filter application\n- Aggregation correctness\n- Response relevance\n- Action suggestion appropriateness\n\n**Success Metrics:**\n- Query accuracy rate (correct intent classification)\n- Response relevance score (1-5)\n- Action suggestion appropriateness\n- Response time (<2s target)\n\n**Report Output:** Generate comprehensive test report with per-persona results, feature coverage, issues found, and recommendations.",
         "testStrategy": "Execute all 35 test scenarios via API calls to /api/agent/query endpoint. For each test: 1) Send query with persona context, 2) Validate intent classification matches expected, 3) Verify response contains relevant data, 4) Check suggestions are appropriate, 5) Measure response time. Generate pass/fail report with aggregated metrics.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "16"
         ],
@@ -1033,7 +1058,7 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-11-25T23:00:00.000Z"
+        "updatedAt": "2025-12-03T03:52:42.110Z"
       },
       {
         "id": "18",
@@ -1161,7 +1186,7 @@
         "description": "Improve AI Guide functionality identified in persona testing: better aggregation intent classification, relative date filtering ('this month/week'), and agent integration status tracking.",
         "details": "**Problem Context:**\nPersona testing revealed 3 functionality gaps:\n1. Aggregation queries like 'breakdown agents by status' return correct data but intent shows 'list' instead of 'aggregation'\n2. CTO-04 'major decisions this month' returned empty despite November decisions existing\n3. IT-05 'integration issues' returned inference-based response due to no explicit integration tracking\n\n**Business Impact:**\n- Aggregation intent affects UI presentation (could trigger charts/graphs)\n- Date filtering is common executive query pattern\n- IT team needs visibility into agent integration health\n\n**Success Criteria:**\n- Aggregation queries return intent='aggregation'\n- 'This month/week' queries return correct date-filtered results\n- Integration status visible for agents",
         "testStrategy": "Re-run affected persona tests: AID-01, CTO-04, IT-05. Verify intent classification and data accuracy.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "18"
         ],
@@ -1236,7 +1261,7 @@
             "parentId": "19"
           }
         ],
-        "updatedAt": "2025-11-26T00:11:47.304Z"
+        "updatedAt": "2025-12-03T03:53:30.016Z"
       },
       {
         "id": "20",
@@ -1441,7 +1466,19 @@
             "id": 12,
             "title": "Generate Comprehensive Test Report",
             "description": "Compile results from all persona tests into actionable report",
-            "dependencies": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
             "details": "**Report Structure:**\n1. Executive Summary - Overall pass rate, key findings\n2. Persona Results - Score by persona, best/worst scenarios\n3. Query Analysis - Which query types succeed/fail\n4. Failure Patterns - Common issues identified\n5. Recommendations - Priority fixes needed\n6. Data Accuracy - Count verification results\n7. Response Quality - Relevance/actionability scores\n\n**Scoring:**\n- Relevance: 1-5 (Does it answer the question?)\n- Accuracy: 1-5 (Is the data correct?)\n- Actionability: 1-5 (Can user act on it?)\n- Overall: Average of above\n\n**Output:** Markdown report with tables and recommendations",
             "status": "done",
             "testStrategy": "Generate report after all tests complete",
@@ -1456,8 +1493,10 @@
         "description": "Implement improvements to address low relevance (7 queries, 12.7%) and low actionability (17 queries, 30.9%) issues identified in persona testing. Target: Relevance 3.95→4.5+, Actionability 3.38→4.2+",
         "details": "**Root Cause Analysis:**\n- Accuracy is strong (4.87/5) but understanding (3.95/5) and actionability (3.38/5) need improvement\n- Intent patterns missing: risks, blockers, bottlenecks, ownership, learning-friendly\n- AI system prompt lacks actionability guidance\n- Data model missing: complexity, owner, timeline fields\n- No historical data for comparisons\n\n**Implementation Phases:**\n- Phase 1 (1-2 days): Quick wins - expand intent patterns, enhance AI prompt (subtasks 1-8)\n- Phase 2 (3-5 days): Data model enhancements - complexity, owner fields (subtasks 9-13)\n- Phase 3 (5-7 days): Historical snapshots for trend queries (subtasks 14-17)\n- Phase 4 (3-5 days): Response templates by intent (subtasks 18-21)\n- Phase 5 (Enhancement): Date parser, session memory, proactive insights, quick actions (subtasks 22-25) - merged from Task 16\n\n**Files to Modify:**\n- backend/src/main.py (lines 732-798, 1242-1349, 1691-1792)\n- backend/src/ai_client.py (lines 218-231)\n- backend/src/models.py\n\n**Reference:** See AI_Guide_Improvement_Plan.md for detailed analysis",
         "testStrategy": "Re-run all 55 persona tests after each phase. Phase 1 Success: 0 queries with R<=2, <10 queries with Act<=2. Phase 2 Success: Learning/timeline queries score R>=4. Phase 3 Success: Comparison queries score R>=4, Act>=3.",
-        "status": "in-progress",
-        "dependencies": ["21"],
+        "status": "done",
+        "dependencies": [
+          "21"
+        ],
         "priority": "high",
         "subtasks": [
           {
@@ -1524,7 +1563,9 @@
             "id": 7,
             "title": "Phase 1.7: Add Action Hints to AI Context",
             "description": "Pass action suggestions to AI as context hints",
-            "dependencies": [6],
+            "dependencies": [
+              6
+            ],
             "details": "**DONE:** Added _generate_action_hints() function (main.py:1103-1151) and integrated into query flow (main.py:1833-1839)\n\n**Implementation:**\n- New function generates intent-specific hints based on query type and data count\n- Hints include: contact suggestions, pattern highlighting, urgency guidance\n- Hints added to full_context before AI call as [Suggested Response Actions]\n\n**Purpose:** Help AI include actionable next steps in responses",
             "status": "done",
             "testStrategy": "Verify AI responses include relevant action suggestions",
@@ -1534,7 +1575,15 @@
             "id": 8,
             "title": "Phase 1 Validation: Re-run All 55 Persona Tests",
             "description": "Validate Phase 1 improvements with full test suite",
-            "dependencies": [1, 2, 3, 4, 5, 6, 7],
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
             "details": "**DONE:** Phase 1 validation complete!\n\n**Results (Before → After):**\n| Metric | Before | After | Improvement |\n|--------|--------|-------|-------------|\n| Relevance | 3.95 | 4.18 | +5.8% |\n| Accuracy | 4.87 | 4.76 | -2.3% (within variance) |\n| Actionability | 3.38 | 4.45 | +31.7% |\n| Overall | 4.07 | 4.47 | +9.8% |\n\n**Key improvements:**\n- 'What are the key risks or blockers?' R: 1→4\n- 'Any bottlenecks in delivery?' R: 2→5\n- 'Who owns the backend service?' R: 2→5\n- Actionability dramatically improved due to Next Steps guidance\n\n**Report:** AI_Guide_Persona_Test_Report.md",
             "status": "done",
             "testStrategy": "Full persona test suite execution",
@@ -1544,7 +1593,9 @@
             "id": 9,
             "title": "Phase 2.1: Add Task Complexity Fields to Data Model",
             "description": "Add complexity, learning_friendly, skills_required fields to Task model",
-            "dependencies": [8],
+            "dependencies": [
+              8
+            ],
             "details": "**DONE:** Added to models.py:115-147\n\n**Added:**\n- TaskComplexity enum: beginner, intermediate, advanced\n- Task.complexity: Optional[TaskComplexity]\n- Task.learning_friendly: bool = False\n- Task.skills_required: List[str] = []\n\n**Test Result:** 'Show me low priority tasks good for learning' R: 2→5",
             "status": "done",
             "testStrategy": "Verify model accepts new fields, migration completes without errors",
@@ -1554,7 +1605,9 @@
             "id": 10,
             "title": "Phase 2.2: Add Agent Timeline Fields to Data Model",
             "description": "Add target_deployment_date, deployment_blockers, next_milestone fields to Agent model",
-            "dependencies": [8],
+            "dependencies": [
+              8
+            ],
             "details": "**DONE:** Added to models.py:161-167\n\n**Added to Agent model:**\n- target_deployment_date: Optional[datetime]\n- deployment_blockers: List[str] = []\n- next_milestone: Optional[str]\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Test Result:** 'What's the agent deployment timeline?' R: 2→4",
             "status": "done",
             "testStrategy": "Verify model accepts new fields, test timeline queries",
@@ -1564,7 +1617,9 @@
             "id": 11,
             "title": "Phase 2.3: Add Owner/Contact Fields to All Models",
             "description": "Add owner_name, owner_contact, team fields to relevant models",
-            "dependencies": [8],
+            "dependencies": [
+              8
+            ],
             "details": "**DONE:** Added to models.py\n\n**Task model (lines 142-145):**\n- owner_name: Optional[str]\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Agent model (lines 165-167):**\n- owner_contact: Optional[str]\n- team: Optional[str]\n\n**Test Result:** 'Who owns the backend service?' R: 2→4",
             "status": "done",
             "testStrategy": "Verify ownership queries return contact info",
@@ -1574,7 +1629,11 @@
             "id": 12,
             "title": "Phase 2.4: Update Query Builder for New Fields",
             "description": "Update _build_cosmos_query to filter/sort by new fields",
-            "dependencies": [9, 10, 11],
+            "dependencies": [
+              9,
+              10,
+              11
+            ],
             "details": "**DONE:** Updated main.py\n\n**_build_cosmos_query (lines 1394-1414):**\n- learning_friendly filter\n- complexity filter\n- owner filter (searches owner, owner_name, assigned_to)\n- team filter\n\n**_classify_intent (lines 883-911):**\n- Learning pattern extraction → learning_friendly, complexity params\n- Ownership subject extraction\n- Timeline flag extraction\n\n**_generate_action_hints (lines 1155-1191):**\n- Enhanced hints for learning queries\n- Enhanced hints for ownership queries\n- Timeline hints for agent lists",
             "status": "done",
             "testStrategy": "Verify queries return correctly filtered results",
@@ -1584,7 +1643,9 @@
             "id": 13,
             "title": "Phase 2 Validation: Re-run Targeted Tests",
             "description": "Validate Phase 2 improvements with targeted tests",
-            "dependencies": [12],
+            "dependencies": [
+              12
+            ],
             "details": "**DONE:** Phase 2 validation complete!\n\n**Key Query Improvements:**\n| Query | Before | After |\n|-------|--------|-------|\n| 'Show me low priority tasks good for learning' | R=2 | R=5 |\n| 'What's the agent deployment timeline?' | R=2 | R=4 |\n| 'Who owns the backend service?' | R=2 | R=4 |\n\n**Overall Metrics (Post Phase 2):**\n- Relevance: 4.13/5\n- Accuracy: 4.58/5\n- Actionability: 4.51/5\n- Overall: 4.41/5\n- All 55 tests passed (100%)",
             "status": "done",
             "testStrategy": "Run targeted tests for affected queries",
@@ -1594,7 +1655,9 @@
             "id": 14,
             "title": "Phase 3.1: Create Snapshot Service",
             "description": "Build service to capture daily/weekly snapshots for trend analysis",
-            "dependencies": [13],
+            "dependencies": [
+              13
+            ],
             "details": "**DONE:** Created backend/src/snapshot_service.py (280 lines)\n\n**SnapshotService class features:**\n- capture_daily_snapshot(): Captures metrics for tasks, agents, decisions, meetings\n- _get_task_metrics(): Counts by status, priority, overdue\n- _get_agent_metrics(): Counts by status, tier, production/development\n- _get_decision_metrics(): Counts by category\n- _get_meeting_metrics(): Counts by status\n- get_snapshot_by_id(): Retrieve specific snapshot\n- get_snapshot(days_ago): Get historical snapshot\n- get_snapshots_range(): Get snapshots in date range\n- clear_all_snapshots(): Delete all snapshots (for test→prod transition)\n- format_comparison(): Format comparison text for AI context\n\n**CosmosDB:** Auto-creates 'snapshots' container with partition key /snapshot_type",
             "status": "done",
             "testStrategy": "Verify snapshots are created and stored correctly",
@@ -1604,7 +1667,9 @@
             "id": 15,
             "title": "Phase 3.2: Implement COMPARISON Intent Handler",
             "description": "Add handler to fetch and format historical comparisons",
-            "dependencies": [14],
+            "dependencies": [
+              14
+            ],
             "details": "**DONE:** Added COMPARISON intent handler to main.py:1879-1912\n\n**Implementation:**\n- Detects time period from query: 'last week' (7 days), 'last month' (30 days), 'yesterday' (1 day)\n- Calls snapshot_service.capture_daily_snapshot() for current state\n- Calls snapshot_service.get_snapshot(days_ago) for historical state\n- Uses snapshot_service.format_comparison() to create AI context\n- Returns comparison_status: 'full', 'partial', or 'none'\n\n**Context Added to AI:**\n- **Comparison with Previous Period:** section\n- Task totals with deltas (+/-)\n- Agent status breakdown with changes\n- Production/development counts comparison",
             "status": "done",
             "testStrategy": "Create test snapshots, verify comparison output",
@@ -1614,7 +1679,9 @@
             "id": 16,
             "title": "Phase 3.3: Snapshot API Endpoints",
             "description": "Add REST API endpoints for snapshot management",
-            "dependencies": [14],
+            "dependencies": [
+              14
+            ],
             "details": "**DONE:** Added snapshot endpoints to main.py:1994-2086\n\n**Endpoints Created:**\n1. POST /api/snapshots/capture - Manual snapshot capture (returns full snapshot data)\n2. GET /api/snapshots/{snapshot_id} - Get specific snapshot by ID\n3. GET /api/snapshots/compare/{days_ago} - Compare current vs N days ago\n4. GET /api/snapshots - List recent snapshots (default limit 30)\n5. DELETE /api/snapshots - Clear all snapshots (for test→prod transition)\n\n**Note:** Implemented as on-demand API instead of scheduled task. Snapshots captured:\n- Automatically on COMPARISON queries\n- Manually via POST /api/snapshots/capture\n- Can schedule externally via cron/Azure Functions calling the API",
             "status": "done",
             "testStrategy": "Verify endpoints return correct data via curl/Postman",
@@ -1624,7 +1691,10 @@
             "id": 17,
             "title": "Phase 3 Validation: Test Comparison Queries + UI",
             "description": "Validate historical comparison functionality and management UI",
-            "dependencies": [15, 16],
+            "dependencies": [
+              15,
+              16
+            ],
             "details": "**DONE:** Phase 3 validation complete!\n\n**API Testing:**\n- POST /api/snapshots/capture - Working, returns full snapshot data\n- GET /api/snapshots/compare/7 - Returns partial status (no historical data yet)\n- DELETE /api/snapshots - Working, returns deleted_count\n\n**Frontend UI Added (audit/page.tsx):**\n- Historical Snapshots card on Audit Trail page\n- Shows snapshot count and latest capture date\n- Clear Snapshots button with confirmation dialog\n- AlertDialog explains when to clear (test→prod transition)\n\n**New Components:**\n- Created components/ui/alert-dialog.tsx (shadcn/ui AlertDialog)\n- Added @radix-ui/react-alert-dialog dependency\n\n**Fixes Applied:**\n- HTML hydration fix: AlertDialogDescription uses asChild with <div> wrapper\n\n**Note:** Full comparison scoring requires historical snapshot accumulation over time",
             "status": "done",
             "testStrategy": "Run comparison queries, verify accuracy",
@@ -1634,7 +1704,9 @@
             "id": 18,
             "title": "Phase 4.1: Create Response Templates by Intent",
             "description": "Build structured response templates for each intent type",
-            "dependencies": [17],
+            "dependencies": [
+              17
+            ],
             "details": "**DONE:** Added RESPONSE_TEMPLATES dict to main.py:1133-1226\n\n**Templates Created (9 total):**\n- STATUS_CHECK: Status summary, top 3 items, attention section, next steps\n- AGGREGATION: Headline number, breakdown table, key insight, recommendation\n- LIST: Count, formatted items, summary, next steps\n- ACTION_GUIDANCE: Recommendation, rationale, who to contact, getting started\n- OWNERSHIP: Direct answer, contact details, team, reach suggestion\n- COMPARISON: Headline change, +/- indicators, trend, implication\n- EXPLANATION: Definition, context, examples, related concepts\n- AUDIT: Time context, chronological activities, patterns, notable items\n- DETAIL: Entity name, organized sections, related items, actions\n\n**Integration:** main.py:2125-2134 - templates injected into AI context",
             "status": "done",
             "testStrategy": "Verify templates produce consistent, actionable responses",
@@ -1644,7 +1716,9 @@
             "id": 19,
             "title": "Phase 4.2: Add Contact Information Enhancement",
             "description": "Auto-enhance responses with relevant contact information",
-            "dependencies": [18],
+            "dependencies": [
+              18
+            ],
             "details": "**DONE:** Added _extract_contact_info() function to main.py:1300-1383\n\n**Features:**\n- Extracts contacts from: assigned_to, owner, owner_contact, facilitator, made_by\n- Prioritizes contacts for blocked/urgent items (marked NEEDS ATTENTION)\n- Shows up to 5 contacts with role, contact details, team affiliation\n- Limits output to top 3 urgent + 2 others\n- Groups by name to avoid duplicates\n\n**Integration:** main.py:2128-2136 - contact info injected into AI context\n\n**Test Results:** Queries now include relevant contacts in Next Steps section",
             "status": "done",
             "testStrategy": "Verify responses include relevant contacts",
@@ -1654,17 +1728,22 @@
             "id": 20,
             "title": "Phase 4.3: Enhanced Test Suite Implementation",
             "description": "Implement comprehensive test suite for production readiness",
-            "dependencies": [18, 19],
+            "dependencies": [
+              18,
+              19
+            ],
             "details": "**DONE:** Created 7 new test files in backend/tests/\n\n**Files Created:**\n1. conftest.py - Shared fixtures (query_guide, helpers, assertions)\n2. test_template_compliance.py - 7 test classes, validates response format by intent\n3. test_contact_extraction.py - 4 test classes, contact surfacing accuracy\n4. test_comparison_queries.py - 5 test classes, historical/trend query handling\n5. test_edge_cases.py - 6 test classes, error handling, ambiguity, security\n6. test_fourth_terminology.py - 5 test classes, company-specific terminology\n7. test_response_quality.py - 5 test classes, length/structure/tone/consistency\n\n**Total New Tests:** ~80 test methods across 32 test classes\n\n**Coverage Areas:**\n- Response template compliance by intent type\n- Contact extraction and prioritization\n- Historical comparison handling\n- Edge cases (empty results, long queries, typos, injection)\n- Fourth terminology (tiers, lifecycle, governance)\n- Response quality metrics (length, structure, tone)",
             "status": "done",
             "testStrategy": "pytest backend/tests/ --verbose",
             "parentId": "22"
           },
           {
-            "id": "20b",
+            "id": 20,
             "title": "Phase 4 Final Validation: Run Full Test Suite",
             "description": "Execute complete test suite to validate all improvements",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**Target Scores:**\n| Metric | Before | After | Improvement |\n|--------|--------|-------|-------------|\n| Relevance | 3.95 | 4.5+ | +14% |\n| Accuracy | 4.87 | 4.9+ | +1% (maintain) |\n| Actionability | 3.38 | 4.2+ | +24% |\n| Overall | 4.07 | 4.5+ | +11% |\n\n**Success Criteria:**\n- 0 queries with R<=2\n- 0 queries with Act<=2\n- All personas avg 4.0+ overall",
             "status": "pending",
             "testStrategy": "Run all persona tests + new enhanced tests, generate final report",
@@ -1674,7 +1753,9 @@
             "id": 21,
             "title": "Generate Final Improvement Report",
             "description": "Document all changes and final test results",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**Report Contents:**\n1. Executive Summary - Before/after metrics\n2. Changes Implemented - By phase\n3. Test Results - All 55 queries with scores\n4. Code Changes - Files modified with line numbers\n5. Data Model Changes - New fields added\n6. Future Recommendations - Phase 5+ ideas\n\n**Output:** AI_Guide_Improvement_Final_Report.md",
             "status": "pending",
             "testStrategy": "Review report for completeness and accuracy",
@@ -1684,7 +1765,9 @@
             "id": 22,
             "title": "Phase 5.1: Implement Natural Date/Time Parser",
             "description": "Add date parsing for natural language time references in queries",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**DONE:** Enhanced _extract_date_references() in main.py:1386-1540\n\n**Patterns Added:**\n- last month, this quarter, last quarter\n- end of week (eow, by friday)\n- end of month (eom, by month end)\n- Specific weekday ('on Monday', 'by Tuesday')\n\n**Existing Patterns (already implemented):**\n- this week, last week, next week\n- today, yesterday, tomorrow\n- this month\n- overdue, due soon\n- last N days, next N days\n\n**Returns:** start_date, end_date, timeframe (ISO format, UTC)",
             "status": "done",
             "testStrategy": "Test all date expressions resolve to correct date ranges, verify timezone handling",
@@ -1694,7 +1777,9 @@
             "id": 23,
             "title": "Phase 5.2: Build Session-Based Conversation Memory",
             "description": "Track conversation context within session for follow-up questions",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**DONE:** Implemented conversation memory system\n\n**Backend (main.py:695-862):**\n- ConversationTurn dataclass: query, response, intent, entities, extracted_context\n- ConversationMemory class: sessions dict, 30min TTL, max 5 turns\n- _resolve_pronouns(): handles 'those', 'them', 'it' + 'which are overdue?' patterns\n- Integration in query_agent(): session_id handling, context injection, turn storage\n\n**Frontend (GuideProvider.tsx):**\n- generateSessionId(): unique session per widget open\n- sessionIdRef: persists during session, resets on close/clear\n- api.guide.query() updated with session_id parameter\n\n**Models (models.py:389):**\n- AgentQueryRequest.session_id: Optional[str]\n\n**API (api.ts):**\n- GuideQueryRequest.session_id added\n- api.guide.query() accepts sessionId parameter",
             "status": "done",
             "testStrategy": "Test follow-up queries use previous context, verify session isolation",
@@ -1704,7 +1789,9 @@
             "id": 24,
             "title": "Phase 5.3: Add Proactive Insights on Widget Open",
             "description": "Surface relevant insights automatically when user opens AI Guide widget",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**DONE:** Implemented proactive insights system\n\n**Backend (main.py:2445-2659):**\n- GET /api/agent/insights?page=X endpoint\n- InsightItem model: id, type (warning/info/action), title, description, count, action_label, action_query\n- Page-specific insights:\n  - tasks/dashboard: overdue, blocked, unassigned high-priority, due this week\n  - agents: integration issues, in development count\n  - meetings: next meeting, unprocessed transcripts\n  - governance: pending proposals, recent decisions\n\n**Frontend:**\n- api.ts: InsightItem, InsightsResponse types, api.guide.getInsights()\n- GuideProvider.tsx: insights state, 60s cache, fetchInsights on widget open\n- GuideInsightsBar.tsx: displays insights with dismiss/action buttons\n- GuideWidgetPanel.tsx: shows insights above empty state\n\n**Features:**\n- 60 second cache to reduce API calls\n- Dismissible cards\n- Action buttons that run suggested queries",
             "status": "done",
             "testStrategy": "Test insights are relevant per page, verify caching works, test dismissal",
@@ -1714,14 +1801,16 @@
             "id": 25,
             "title": "Phase 5.4: Implement Quick Actions System",
             "description": "Allow AI Guide to trigger read-only frontend actions",
-            "dependencies": [20],
+            "dependencies": [
+              20
+            ],
             "details": "**DONE:** Implemented quick actions system\n\n**Backend (already existed - main.py:1147-1280):**\n- _generate_action_suggestions() generates context-aware actions\n- ActionSuggestion model with action_type and params\n- Action types: query, filter, navigate, show_detail, export, create\n\n**Frontend:**\n- api.ts: ActionSuggestion type, ChatMessage.suggestions, GuideQueryResponse.suggestions\n- GuideProvider.tsx: executeAction() handles all action types:\n  - query: runs sendMessage()\n  - navigate: router.push()\n  - filter/show_detail/export: dispatches CustomEvents\n  - create: logged (read-only enforcement)\n- GuideActionSuggestions.tsx: displays action buttons with icons\n- GuideChatMessage.tsx: shows action suggestions below responses\n- GuideWidgetPanel/GuideWidget: passes executeAction through component tree\n\n**Read-Only Enforcement:**\n- create actions filtered out in UI\n- Only query, navigate, filter, show_detail, export are actionable",
             "status": "done",
             "testStrategy": "Test each action type executes correctly, verify read-only constraint",
             "parentId": "22"
           }
         ],
-        "updatedAt": "2025-11-30T12:00:00.000Z"
+        "updatedAt": "2025-12-03T03:52:53.287Z"
       },
       {
         "id": "23",
@@ -1730,7 +1819,9 @@
         "details": "**Context:** Current AI Guide uses custom pipeline:\n- Pattern-based intent classification\n- Direct CosmosDB queries\n- Azure AI Search for RAG\n- Azure OpenAI GPT-4 for response generation\n\n**Why Evaluate Migration:**\n1. Reduced maintenance - framework handles conversation flow\n2. Multi-turn memory - built-in conversation state management\n3. Tool/plugin ecosystem - pre-built integrations\n4. Enterprise features - observability, guardrails, evaluation\n5. Future-proofing - align with Microsoft AI stack\n\n**Framework Options:**\n\n| Framework | Pros | Cons | Fit |\n|-----------|------|------|-----|\n| Semantic Kernel | .NET/Python, Microsoft supported, Tool calling, Memory plugins | Learning curve, Abstraction overhead | HIGH |\n| AutoGen | Multi-agent patterns, Async conversations, Code execution | Complex for single-agent, Beta features | MEDIUM |\n| Azure AI Agent Service | Managed service, Built-in memory, Easy deployment | Preview, Limited customization, Vendor lock-in | HIGH |\n| LangChain | Largest ecosystem, Many connectors | Python-focused, Frequent breaking changes | MEDIUM |\n\n**Recommended Approach:**\n1. Start with Semantic Kernel (same Azure stack)\n2. Create proof-of-concept with existing guide functionality\n3. Compare performance, latency, cost\n4. Gradual migration if successful",
         "testStrategy": "POC comparison: same 55 persona queries on both architectures, measure latency/accuracy/cost",
         "priority": "medium",
-        "dependencies": ["22"],
+        "dependencies": [
+          "22"
+        ],
         "status": "pending",
         "subtasks": [
           {
@@ -1747,7 +1838,9 @@
             "id": 2,
             "title": "Build Semantic Kernel POC",
             "description": "Create proof-of-concept AI Guide using Semantic Kernel",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "**POC Scope:**\n- Same intent classification via SK native functions\n- CosmosDB query tool as SK plugin\n- Azure AI Search as SK memory store\n- GPT-4 via SK chat completion\n- Session memory via SK conversation history\n\n**Files:** backend/src/sk_guide_poc.py (new)",
             "status": "pending",
             "testStrategy": "Run 10 representative queries, compare to current implementation",
@@ -1757,7 +1850,9 @@
             "id": 3,
             "title": "Performance and Cost Comparison",
             "description": "Benchmark POC against current implementation",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "**Metrics:**\n- Response latency (p50, p95, p99)\n- Token usage per query\n- Response quality (manual scoring)\n- Code complexity/maintainability\n- Operational cost projection\n\n**Deliverable:** Comparison report with migration recommendation",
             "status": "pending",
             "testStrategy": "Run full test suite on both, aggregate metrics",
@@ -1767,7 +1862,9 @@
             "id": 4,
             "title": "Migration Decision and Roadmap",
             "description": "Make go/no-go decision and create migration plan if proceeding",
-            "dependencies": [3],
+            "dependencies": [
+              3
+            ],
             "details": "**Decision Criteria:**\n- Quality >= current (no regression)\n- Latency <= current + 20%\n- Cost <= current + 30%\n- Maintainability improvement\n\n**If GO:** Create phased migration plan\n**If NO-GO:** Document learnings, revisit in 6 months",
             "status": "pending",
             "testStrategy": "Stakeholder review and sign-off",
@@ -1783,8 +1880,10 @@
         "details": "**Objective:** Deploy the complete platform (Frontend + Backend + Infrastructure) to Azure so the Fourth team can begin using it.\n\n**Architecture Overview:**\n- Frontend: Next.js app → Azure Static Web Apps or App Service\n- Backend: FastAPI (Python) → Azure App Service or Container Apps\n- Database: Azure Cosmos DB (already provisioned)\n- Search: Azure AI Search (already provisioned)\n- AI: Azure OpenAI GPT-4 (already provisioned)\n- Auth: Microsoft Entra ID (SSO)\n- Storage: Azure Blob Storage (transcripts)\n\n**Key Considerations:**\n1. Single-tenant auth (Fourth Limited only)\n2. Production redirect URIs\n3. Environment variable management (Key Vault)\n4. CORS configuration for production domains\n5. SSL/TLS certificates\n6. Monitoring and logging setup\n7. CI/CD pipeline configuration",
         "testStrategy": "Pre-deployment checklist validation, smoke tests in staging, SSO login verification, API endpoint health checks, end-to-end user journey test",
         "priority": "high",
-        "dependencies": ["22"],
-        "status": "pending",
+        "dependencies": [
+          "22"
+        ],
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1800,7 +1899,9 @@
             "id": 2,
             "title": "Environment Configuration and Secrets Management",
             "description": "Set up Azure Key Vault and migrate all secrets from local .env files",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "**Key Vault Setup:**\n1. Create Azure Key Vault in same resource group\n2. Configure access policies (App Service managed identity)\n3. Migrate secrets from backend/.env:\n   - COSMOS_ENDPOINT, COSMOS_KEY\n   - AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY\n   - AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY\n   - AZURE_STORAGE_CONNECTION_STRING\n   - ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET, ENTRA_TENANT_ID\n   - JWT_SECRET_KEY\n4. Create environment-specific configs (dev, staging, prod)\n\n**Files to Update:**\n- backend/src/config.py - add Key Vault integration\n- Create azure-keyvault-secrets.json reference\n\n**Security:**\n- Enable soft-delete and purge protection\n- Set up access logging",
             "status": "pending",
             "testStrategy": "Test secret retrieval from Key Vault using managed identity",
@@ -1810,7 +1911,9 @@
             "id": 3,
             "title": "Backend Deployment Configuration",
             "description": "Prepare FastAPI backend for Azure App Service deployment",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "**CAN DO NOW - Deployment Artifacts:**\n1. Create requirements.txt freeze (production deps only)\n2. Create startup.sh script for App Service\n3. Configure gunicorn/uvicorn for production\n4. Set up health check endpoint (/health)\n5. Configure CORS for production frontend domain\n\n**Files to Create/Update:**\n- backend/startup.sh\n- backend/gunicorn.conf.py\n- backend/.deployment (Azure deployment config)\n- backend/web.config (IIS configuration if needed)\n\n**App Service Configuration:**\n- Python 3.11 runtime\n- B2 or P1v2 plan (minimum for production)\n- Always On: enabled\n- HTTPS Only: enabled\n- Managed Identity: enabled\n\n**Environment Variables (from Key Vault):**\n- @Microsoft.KeyVault(VaultName=...;SecretName=...)\n\n**Entra Placeholder Approach:**\n- Use existing dev Entra values for now\n- Key Vault references ready for prod values when available\n- Auth will work with localhost redirects until Task 13 complete",
             "status": "pending",
             "testStrategy": "Local docker build test, deploy to staging slot first",
@@ -1820,7 +1923,9 @@
             "id": 4,
             "title": "Frontend Build and Deployment Configuration",
             "description": "Prepare Next.js frontend for Azure Static Web Apps or App Service deployment",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "**CAN DO NOW - Build Configuration:**\n1. Update next.config.js for production\n2. Configure environment variables for production API URL\n3. Set up static export or SSR mode\n4. Optimize bundle size (analyze with @next/bundle-analyzer)\n\n**Environment Variables:**\n- NEXT_PUBLIC_API_URL=https://api.{yourdomain}.azurewebsites.net\n- NEXT_PUBLIC_ENTRA_CLIENT_ID (use dev value for now)\n- NEXT_PUBLIC_ENTRA_TENANT_ID (use dev value for now)\n\n**Static Web Apps Configuration:**\n- Create staticwebapp.config.json\n- Configure routing rules\n- Set up custom domain (if available)\n\n**Or App Service Configuration:**\n- Node.js 20 LTS runtime\n- PM2 ecosystem file for process management\n- Custom startup command\n\n**Entra Placeholder Approach:**\n- Build and deploy work with any valid Entra config\n- Auth redirect URIs updated in Task 5 when admin provides access",
             "status": "pending",
             "testStrategy": "Production build locally, test all routes work with static export",
@@ -1830,7 +1935,10 @@
             "id": 5,
             "title": "Microsoft Entra ID Production Configuration",
             "description": "Update app registration with production redirect URIs and verify SSO",
-            "dependencies": [3, 4],
+            "dependencies": [
+              3,
+              4
+            ],
             "details": "**⚠️ BLOCKED: Requires Task 13 completion (Admin/IT access to Entra ID)**\n\n**When unblocked - App Registration Updates:**\n1. Add production redirect URIs:\n   - https://{frontend-domain}/auth/callback\n   - https://{frontend-domain}/api/auth/callback\n2. Update logout URLs\n3. Review and tighten API permissions\n4. Generate new client secret for production (shorter expiry)\n\n**Conditional Access (optional):**\n- Require MFA for all users\n- Block non-corporate IPs\n- Require compliant devices\n\n**Testing:**\n- Test SSO flow end-to-end\n- Verify token claims include required user info\n- Test session expiry and refresh\n\n**Prerequisite:** Task 13 - Azure App Registration Setup (awaiting IT admin)",
             "status": "pending",
             "testStrategy": "Full SSO login/logout cycle in staging environment",
@@ -1840,7 +1948,10 @@
             "id": 6,
             "title": "CI/CD Pipeline Setup",
             "description": "Configure GitHub Actions or Azure DevOps for automated deployments",
-            "dependencies": [3, 4],
+            "dependencies": [
+              3,
+              4
+            ],
             "details": "**GitHub Actions Workflows:**\n\n1. Backend CI/CD (.github/workflows/backend-deploy.yml):\n   - Trigger: push to main (backend/** changes)\n   - Jobs: lint, test, build, deploy to App Service\n   - Use azure/webapps-deploy@v2\n   - Secrets: AZURE_WEBAPP_PUBLISH_PROFILE\n\n2. Frontend CI/CD (.github/workflows/frontend-deploy.yml):\n   - Trigger: push to main (frontend/** changes)\n   - Jobs: lint, build, deploy to Static Web Apps\n   - Use Azure/static-web-apps-deploy@v1\n\n**Deployment Slots:**\n- staging slot for preview deployments\n- Swap to production after validation\n\n**Branch Protection:**\n- Require PR reviews for main\n- Require status checks to pass",
             "status": "pending",
             "testStrategy": "Trigger test deployment via PR, verify staging deployment works",
@@ -1850,7 +1961,10 @@
             "id": 7,
             "title": "Monitoring and Observability Setup",
             "description": "Configure Application Insights, logging, and alerting",
-            "dependencies": [3, 4],
+            "dependencies": [
+              3,
+              4
+            ],
             "details": "**Application Insights:**\n1. Create App Insights resource\n2. Add instrumentation to backend (opentelemetry-instrumentation-fastapi)\n3. Add frontend monitoring (applicationinsights-react)\n4. Configure sampling rate\n\n**Logging:**\n- Structured logging (JSON format)\n- Log levels: INFO in prod, DEBUG in staging\n- Correlation IDs for request tracing\n\n**Alerts:**\n- 5xx error rate > 1%\n- Response time p95 > 3s\n- Failed dependencies\n- App Service health degradation\n\n**Dashboard:**\n- Create Azure Dashboard with key metrics\n- Request rate, error rate, latency\n- Cosmos DB RU consumption\n- OpenAI token usage",
             "status": "pending",
             "testStrategy": "Verify telemetry flows to App Insights, test alert triggers",
@@ -1860,7 +1974,9 @@
             "id": 8,
             "title": "Security Hardening (Non-Auth)",
             "description": "Apply security best practices that don't require Entra ID access",
-            "dependencies": [2],
+            "dependencies": [
+              2
+            ],
             "details": "**Network Security (can do now):**\n- Enable Azure Private Endpoints for Cosmos DB, Storage\n- Configure App Service access restrictions (if VPN/corporate network)\n- Enable DDoS protection (basic included)\n\n**Application Security (can do now):**\n- Verify all secrets in Key Vault (no hardcoded secrets)\n- Enable HTTPS redirect\n- Configure security headers (CSP, HSTS, X-Frame-Options)\n- Review CORS policy (production domains only)\n\n**Data Protection (can do now):**\n- Verify Cosmos DB encryption at rest (default)\n- Enable TLS 1.2+ only\n- Review PII handling in logs\n\n**Compliance (can do now):**\n- Document data residency (UK South region)\n- Review for GDPR compliance\n- Audit logging enabled\n\n**NOTE:** Auth-specific security (Conditional Access, MFA policies) deferred to subtask 5",
             "status": "pending",
             "testStrategy": "Security scan with Azure Security Center, run OWASP ZAP baseline",
@@ -1870,7 +1986,15 @@
             "id": 9,
             "title": "Pre-Deployment Checklist and Documentation (Draft)",
             "description": "Create deployment runbook - can draft most without Entra ID",
-            "dependencies": [1, 2, 3, 4, 6, 7, 8],
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8
+            ],
             "details": "**CAN DO NOW - Deployment Runbook:**\n1. Pre-deployment checklist (draft)\n2. Step-by-step deployment procedure\n3. Rollback procedure\n4. Post-deployment verification steps\n5. Contact escalation matrix\n\n**CAN DO NOW - Documentation Updates:**\n- Update README with production URLs (placeholders ok)\n- Create operations guide\n- Document known issues/workarounds\n- Create user onboarding guide (draft)\n\n**Pre-Deployment Checklist (mark what's ready):**\n- [ ] All Azure resources provisioned\n- [ ] Key Vault secrets populated (non-Entra)\n- [ ] ⏳ Entra ID configured with prod URIs (BLOCKED - Task 13)\n- [ ] CI/CD pipelines tested\n- [ ] Monitoring configured\n- [ ] Security review complete (non-auth parts)\n- [ ] Backup/DR plan documented\n- [ ] Stakeholder sign-off obtained\n\n**NOTE:** Final sign-off requires Entra ID completion",
             "status": "pending",
             "testStrategy": "Walkthrough checklist with team, simulate deployment in staging",
@@ -1880,7 +2004,9 @@
             "id": 10,
             "title": "Production Deployment and Verification",
             "description": "Execute deployment to production and verify all functionality",
-            "dependencies": [9],
+            "dependencies": [
+              9
+            ],
             "details": "**Deployment Steps:**\n1. Deploy backend to App Service (via CI/CD or manual)\n2. Verify backend health endpoint\n3. Deploy frontend to Static Web Apps\n4. Update DNS/custom domains if applicable\n5. Swap staging to production\n\n**Post-Deployment Verification:**\n- [ ] Frontend loads correctly\n- [ ] SSO login works\n- [ ] AI Guide responds to queries\n- [ ] Data displays correctly (tasks, agents, meetings)\n- [ ] All navigation works\n- [ ] No console errors\n- [ ] Monitoring data flows to App Insights\n\n**Smoke Test Scenarios:**\n1. Login via Microsoft SSO\n2. View dashboard\n3. Ask AI Guide a question\n4. Navigate to Agents page\n5. View a task detail\n6. Logout\n\n**Rollback Trigger Criteria:**\n- Critical functionality broken\n- Authentication failures\n- Data not loading\n- Error rate > 5%",
             "status": "pending",
             "testStrategy": "Execute smoke tests, monitor error rates for 1 hour post-deploy",
@@ -1890,21 +2016,287 @@
             "id": 11,
             "title": "Team Onboarding and Handoff",
             "description": "Onboard team members and establish support procedures",
-            "dependencies": [10],
+            "dependencies": [
+              10
+            ],
             "details": "**Team Onboarding:**\n1. Send access instructions to team\n2. Provide production URL\n3. Quick start guide / demo video\n4. Known limitations document\n\n**Support Procedures:**\n- Define support channels (Teams, email)\n- Create issue reporting template\n- Establish SLA expectations\n- Document common troubleshooting steps\n\n**Feedback Collection:**\n- Set up feedback form or channel\n- Schedule 2-week check-in\n- Plan iteration based on feedback\n\n**Success Metrics:**\n- Daily active users\n- AI Guide query volume\n- Error rate trends\n- User feedback scores",
             "status": "pending",
             "testStrategy": "Verify all team members can login and complete basic tasks",
             "parentId": "24"
           }
         ],
-        "updatedAt": "2025-11-30T12:00:00.000Z"
+        "updatedAt": "2025-12-03T03:53:04.666Z"
+      },
+      {
+        "id": "25",
+        "title": "Build Internal Ticketing & Idea Submission System",
+        "description": "Create comprehensive internal feedback hub for staff to submit bug reports, feature requests, and improvement ideas with upvoting, status tracking, admin triage, and task system integration",
+        "details": "## Backend Implementation (FastAPI)\n\n### 1. Database Schema (Cosmos DB - 'submissions' container)\n```python\nclass SubmissionCategory(str, Enum):\n    BUG_REPORT = \"Bug Report\"\n    FEATURE_REQUEST = \"Feature Request\"\n    IMPROVEMENT_IDEA = \"Improvement Idea\"\n    QUESTION = \"Question\"\n\nclass SubmissionStatus(str, Enum):\n    SUBMITTED = \"Submitted\"\n    UNDER_REVIEW = \"Under Review\"\n    IN_PROGRESS = \"In Progress\"\n    COMPLETED = \"Completed\"\n    DECLINED = \"Declined\"\n\nclass SubmissionPriority(str, Enum):\n    CRITICAL = \"Critical\"\n    HIGH = \"High\"\n    MEDIUM = \"Medium\"\n    LOW = \"Low\"\n\nclass Comment(BaseModel):\n    id: str\n    user: str\n    content: str\n    created_at: datetime\n\nclass Submission(BaseModel):\n    id: Optional[str]\n    title: str\n    description: str\n    category: SubmissionCategory\n    priority: SubmissionPriority\n    status: SubmissionStatus = SubmissionStatus.SUBMITTED\n    submitted_by: str  # User name\n    submitted_at: datetime\n    upvotes: List[str] = []  # List of user names who upvoted\n    upvote_count: int = 0\n    comments: List[Comment] = []\n    assigned_to: Optional[str] = None\n    tags: List[str] = []\n    linked_task_id: Optional[str] = None  # Reference to created task\n    resolved_at: Optional[datetime] = None\n    resolution_notes: Optional[str] = None\n```\n\n### 2. API Endpoints (src/routers/submissions.py)\n```python\n# Create router\nrouter = APIRouter(prefix=\"/api/submissions\", tags=[\"submissions\"])\n\n# Endpoints:\nPOST /api/submissions - Create new submission\nGET /api/submissions - List with filters (status, category, assignee, sort)\nGET /api/submissions/{id} - Get single submission\nPUT /api/submissions/{id} - Update submission (admin only for status/assignee)\nDELETE /api/submissions/{id} - Delete submission (admin only)\nPOST /api/submissions/{id}/upvote - Toggle upvote\nPOST /api/submissions/{id}/comments - Add comment\nPUT /api/submissions/{id}/comments/{comment_id} - Edit comment\nDELETE /api/submissions/{id}/comments/{comment_id} - Delete comment\nPOST /api/submissions/{id}/convert-to-task - Create task from submission\nGET /api/submissions/stats - Dashboard statistics\n```\n\n### 3. Key Backend Functions\n- **Upvote System**: Toggle user in upvotes array, update upvote_count atomically\n- **Notification Service**: Send email on status changes using Azure Communication Services or SendGrid\n- **Task Conversion**: Create Task object with submission details, link submission.linked_task_id\n- **Search Integration**: Index submissions in Azure AI Search for full-text search\n- **Access Control**: Admin-only routes for status updates, assignment, deletion\n\n### 4. Database Container Addition\nAdd to database.py container_definitions:\n```python\n(\"submissions\", \"/id\"),\n```\n\n## Frontend Implementation (Next.js/React)\n\n### 5. Submission Form Component (app/feedback/submit/page.tsx)\n- Form with title (Input), description (Textarea), category (Select), priority (Select)\n- Tags input (multi-select or comma-separated)\n- Submitted_by auto-populated from user context (TeamMemberSelect)\n- Validation: Required fields, max lengths\n- Success toast and redirect to submission detail\n\n### 6. Submissions List View (app/feedback/page.tsx)\n- Table/card view with columns: Title, Category, Priority, Status, Upvotes, Submitted By, Date\n- Filters: Category dropdown, Status dropdown, Priority dropdown, Search bar\n- Sort options: Most upvoted, Most recent, Priority, Status\n- Click row to open detail view\n- \"Submit New\" button → submission form\n- Pagination for large lists\n\n### 7. Submission Detail Page (app/feedback/[id]/page.tsx)\n- Display all submission details\n- Upvote button with count (disable if already upvoted)\n- Comments section with add/edit/delete\n- Status badge with color coding\n- Admin actions (conditional render):\n  - Status dropdown to change status\n  - Assign to team member (TeamMemberSelect)\n  - \"Convert to Task\" button\n  - Delete button with confirmation\n- Activity timeline showing status changes\n\n### 8. Admin Dashboard (app/feedback/admin/page.tsx or admin section)\n- Statistics cards: Total submissions, By status, By category, Avg resolution time\n- Triage queue: Submissions in \"Submitted\" status sorted by priority/upvotes\n- Bulk actions: Assign multiple, Change status\n- Filter by assignee to show \"My Assigned\"\n- Quick actions: Approve → In Progress, Decline with reason\n\n### 9. Notification System\n- Backend: Create notification_service.py with send_status_update_email()\n- Trigger on status change: Notify submitter and upvoters\n- Email template with submission title, new status, link to detail page\n- Optional: In-app notifications (toast on page load if user has updates)\n\n### 10. Integration with Existing Task System\n- \"Convert to Task\" button in admin view\n- Create Task with:\n  - title = submission.title\n  - description = submission.description + link to original submission\n  - priority = map submission priority to task priority\n  - category = inferred from submission tags or admin selected\n  - created_from_submission = submission.id\n- Update submission.linked_task_id and status to \"In Progress\"\n- Display linked task in submission detail with clickable link\n\n### 11. Search & Analytics\n- Integrate with Azure AI Search (index submissions like other entities)\n- Search bar in submissions list for full-text search\n- Analytics page:\n  - Submissions over time (line chart)\n  - Category breakdown (pie chart)\n  - Top requested features (by upvotes)\n  - Average time to resolution by category\n  - Most active submitters leaderboard\n\n## Technical Details\n\n### UI Components (Radix UI pattern)\n- SubmissionCard component (reusable)\n- SubmissionFilters component\n- CommentThread component\n- UpvoteButton component (with animation)\n- StatusBadge component (color-coded)\n- ConvertToTaskDialog component\n\n### State Management\n- Use React hooks (useState, useEffect)\n- API calls via lib/api.ts extension:\n```typescript\nsubmissions: {\n  list: (filters?) => GET /api/submissions\n  get: (id) => GET /api/submissions/{id}\n  create: (data) => POST /api/submissions\n  update: (id, data) => PUT /api/submissions/{id}\n  upvote: (id) => POST /api/submissions/{id}/upvote\n  addComment: (id, comment) => POST /api/submissions/{id}/comments\n  convertToTask: (id) => POST /api/submissions/{id}/convert-to-task\n}\n```\n\n### Styling\n- Follow existing card-based layout (similar to tasks/resources pages)\n- Color coding for categories: Bug (red), Feature (blue), Improvement (green), Question (yellow)\n- Status badges: Submitted (gray), Under Review (yellow), In Progress (blue), Completed (green), Declined (red)\n- Upvote button with heart/thumbs-up icon and count\n\n### Security & Permissions\n- All users can submit and upvote\n- Only admins can change status, assign, delete, convert to task\n- Backend validates user role from auth context\n- Rate limiting on upvotes to prevent abuse",
+        "testStrategy": "1. Backend API Testing: Test submission CRUD endpoints with valid/invalid data, verify enum validations, test upvote toggle idempotency, test comment operations, verify admin-only routes return 403 for non-admins, test task conversion creates correct Task object and links submission. 2. Database Testing: Verify submissions container creation, test atomic upvote_count updates, validate query performance with filters. 3. Frontend Form Testing: Test submission form validation, verify required fields, test category/priority selections, verify success redirect. 4. List View Testing: Test filtering by category/status/priority, verify search functionality, test sorting options, validate pagination. 5. Detail Page Testing: Test upvote button toggles correctly, verify comments display and CRUD, test admin actions visibility based on role, verify linked task displays. 6. Notification Testing: Trigger status changes and verify emails sent, test email content includes correct details, verify only submitter and upvoters notified. 7. Integration Testing: Convert submission to task and verify task created with correct fields, verify submission.linked_task_id updated, test task link clickable from submission detail. 8. Search Testing: Create submissions and verify indexed in Azure AI Search, test full-text search returns relevant results. 9. Analytics Testing: Submit various entries and verify statistics calculations, test charts render correctly. 10. Access Control Testing: Verify non-admin users cannot change status/assign/delete, test admin users have full access",
+        "status": "done",
+        "dependencies": [
+          "6"
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Submissions Database Schema and Models",
+            "description": "Define Pydantic models for submissions system with enums for Category, Status, and Priority, plus Comment and Submission models",
+            "dependencies": [],
+            "details": "Create models in backend/src/models.py: SubmissionCategory enum (Bug Report, Feature Request, Improvement Idea, Question), SubmissionStatus enum (Submitted, Under Review, In Progress, Completed, Declined), SubmissionPriority enum (Critical, High, Medium, Low). Create Comment BaseModel with id, user, content, created_at. Create Submission BaseModel with all fields from task details. Add 'submissions' container to database.py container_definitions with partition key '/id'. Pattern matches existing Task/Agent/Resource models in models.py and database container setup.",
+            "status": "pending",
+            "testStrategy": "Verify enum values match requirements, test Pydantic model validation with valid/invalid data, confirm container creation in Cosmos DB, test partition key configuration",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Build Backend API Endpoints for Submissions",
+            "description": "Create FastAPI router with all submission CRUD endpoints, upvote system, comments, and task conversion",
+            "dependencies": [
+              1
+            ],
+            "details": "Create backend/src/routers/submissions.py following pattern from resources.py. Implement endpoints: POST /api/submissions (create), GET /api/submissions (list with filters), GET /api/submissions/{id} (get single), PUT /api/submissions/{id} (update, admin-only status/assignee), DELETE /api/submissions/{id} (admin-only), POST /api/submissions/{id}/upvote (toggle upvote), POST /api/submissions/{id}/comments (add comment), PUT /api/submissions/{id}/comments/{comment_id} (edit), DELETE /api/submissions/{id}/comments/{comment_id} (delete), POST /api/submissions/{id}/convert-to-task (create linked task), GET /api/submissions/stats (dashboard stats). Use db.get_container('submissions') pattern. Implement upvote toggle by checking if user in upvotes array, add/remove atomically. Register router in main.py.",
+            "status": "pending",
+            "testStrategy": "Test all CRUD operations with Postman/curl, verify filter/sort/search functionality, test upvote idempotency (toggle on/off), test comment CRUD, verify admin-only routes return 403 for non-admins, test task conversion creates Task with correct fields and links submission.linked_task_id, test query parameters and pagination",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Create Frontend TypeScript API Client and Types",
+            "description": "Extend lib/api.ts with submissions interfaces and API methods following existing pattern",
+            "dependencies": [
+              2
+            ],
+            "details": "Add to frontend/lib/api.ts: Create Submission interface matching backend model (id, title, description, category, priority, status, submitted_by, submitted_at, upvotes, upvote_count, comments, assigned_to, tags, linked_task_id, resolved_at, resolution_notes). Create Comment interface. Add api.submissions object with methods: list(filters?), get(id), create(data), update(id, data), upvote(id), addComment(id, comment), deleteComment(id, commentId), convertToTask(id), getStats(). Follow pattern from api.tasks, api.agents, api.resources using apiFetch helper. All methods return Promise<T> with proper typing.",
+            "status": "pending",
+            "testStrategy": "Verify TypeScript types compile without errors, test API methods connect to backend endpoints correctly, validate request/response type safety, test error handling",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Build Submissions List and Detail Pages",
+            "description": "Create submission list view with filters/search and detail page with upvote/comments following tasks page pattern",
+            "dependencies": [
+              3
+            ],
+            "details": "Create frontend/app/feedback/page.tsx for list view with table/card layout showing title, category badge (color-coded: Bug=red, Feature=blue, Improvement=green, Question=yellow), priority, status badge (Submitted=gray, Under Review=yellow, In Progress=blue, Completed=green, Declined=red), upvotes, submitted_by, date. Add filter dropdowns for category, status, priority. Add search bar for title/description. Add sort options (most upvoted, most recent, priority). Add 'Submit New' button opening create dialog. Create frontend/app/feedback/[id]/page.tsx for detail view showing all fields, upvote button (heart icon with count, disabled if already upvoted), comments section with add/edit/delete, status badge, admin-only actions (status dropdown, TeamMemberSelect for assign, Convert to Task button, delete with confirmation). Use Radix UI components (Card, Dialog, Select, Badge) matching app/tasks/page.tsx pattern. Implement real-time upvote count updates.",
+            "status": "pending",
+            "testStrategy": "Test filter combinations work correctly, verify search filters results, test sort order changes, verify create dialog validation, test upvote button toggles correctly and updates count, test comment CRUD operations, verify admin actions only show for admins, test status badge color coding, verify responsive layout on mobile/desktop, test pagination if implemented",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement Admin Dashboard and Task Conversion Integration",
+            "description": "Create admin triage dashboard with stats and implement convert-to-task functionality linking submissions to task system",
+            "dependencies": [
+              4
+            ],
+            "details": "Create frontend/app/feedback/admin section (or integrate into existing admin area) with statistics cards: total submissions, by status, by category, avg resolution time. Add triage queue showing 'Submitted' status items sorted by priority/upvotes. Add bulk actions for assign/status change. Create ConvertToTaskDialog component that calls api.submissions.convertToTask(id), which backend implements by creating Task with title=submission.title, description=submission.description + link to submission, priority mapped from submission priority, category from tags/admin selection, created_from_submission=submission.id. Backend updates submission.linked_task_id and status to 'In Progress'. Display linked task in submission detail with clickable link to /tasks. Add notification system (optional): create notification_service.py to send emails on status changes using Azure Communication Services/SendGrid, trigger on status updates to notify submitter and upvoters.",
+            "status": "pending",
+            "testStrategy": "Test admin dashboard displays correct statistics, verify triage queue filters and sorts correctly, test bulk actions update multiple submissions, test convert-to-task creates Task with correct fields and links submission, verify linked task appears in submission detail with working link, test navigation between submission and linked task, if notifications implemented: test email triggers on status change and reaches correct recipients",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-03T03:53:14.032Z"
+      },
+      {
+        "id": "26",
+        "title": "MSFT Ecosystem Integration for Agent-Arch Platform with Azure AI Foundry and Microsoft Services",
+        "description": "Integrate the agent-arch platform with Azure AI Foundry and Microsoft services to enable end-to-end agent lifecycle management, including enhanced agent request intake, communication, auto-provisioning, and metrics reporting.",
+        "details": "1. Enhanced Agent Request System: Develop structured intake forms for staff and department submissions capturing requester information, problem statement, business impact, and approval workflow fields. Implement validation and role-based access controls.\n\n2. Built-in Communication/Messaging System: Create a messaging interface supporting back-and-forth discussions between requesters and AI architects. Features include @mentions, threaded conversations, and optional Microsoft Teams notifications leveraging Microsoft Graph API.\n\n3. Azure AI Foundry Auto-Provisioning: Implement automation triggered by agent status changes to 'Development' that programmatically creates Azure AI Foundry projects, configures necessary data connections, and links these projects back to the agent-arch platform. Use Azure SDKs and Foundry APIs with managed identities for secure provisioning.\n\n4. Metrics & Reporting Dashboard: Build a dashboard integrated into agent detail pages that aggregates usage statistics, cost data, performance metrics, and health status by pulling data from Azure Monitor and Microsoft Fabric APIs. Ensure real-time updates and role-based data visibility.\n\nImplementation should follow Microsoft best practices for security, scalability, and compliance, leveraging Azure services such as Logic Apps, Azure Functions, and Microsoft Entra ID for authentication and authorization. Use Microsoft Agent Framework and Model Context Protocol (MCP) standards for interoperability and governance. Ensure thorough logging and observability for all integrations.",
+        "testStrategy": "1. Validate structured intake forms for completeness, field validation, and correct workflow transitions.\n2. Test messaging system for correct delivery of messages, @mentions functionality, thread integrity, and Teams notification triggers.\n3. Simulate agent status changes to 'Development' and verify automatic provisioning of Azure AI Foundry projects, correct configuration of data connections, and linkage back to agent-arch.\n4. Verify metrics dashboard accuracy by comparing displayed data against Azure Monitor and Fabric source data; test real-time updates and access control.\n5. Conduct end-to-end integration tests covering the full agent lifecycle from request submission through provisioning to monitoring.\n6. Perform security and compliance audits on all new integrations.\n7. Use automated unit, integration, and UI tests to ensure robustness and regression prevention.",
+        "status": "pending",
+        "dependencies": [
+          "22",
+          "24"
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Develop Enhanced Agent Request Intake System",
+            "description": "Create structured intake forms for staff and department submissions capturing requester information, problem statement, business impact, and approval workflow fields with validation and role-based access controls.",
+            "dependencies": [],
+            "details": "Design and implement intake forms with fields for requester details, problem description, business impact, and approval workflow. Implement client-side and server-side validation. Enforce role-based access control to restrict form access and submission capabilities based on user roles.",
+            "status": "pending",
+            "testStrategy": "Validate form field completeness and correctness, test validation rules, verify role-based access restrictions, and simulate approval workflow transitions.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement Built-in Communication and Messaging System",
+            "description": "Create a messaging interface supporting threaded conversations, @mentions, and optional Microsoft Teams notifications using Microsoft Graph API for communication between requesters and AI architects.",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop a messaging UI with support for back-and-forth threaded discussions and @mentions. Integrate Microsoft Graph API to send optional notifications to Microsoft Teams channels or users. Ensure message delivery reliability and thread integrity.",
+            "status": "pending",
+            "testStrategy": "Test message sending and receiving, verify @mentions functionality, validate thread structure, and confirm Microsoft Teams notifications trigger correctly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Create Azure AI Foundry Management API Client Service",
+            "description": "Develop a client service to interact with Azure AI Foundry APIs for project creation, configuration, and management using Azure SDKs and Foundry APIs with managed identities for secure authentication.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Implement API client service to authenticate using managed identities, create and configure Azure AI Foundry projects, manage data connections based on agent data_sources, and handle project metadata storage. Follow Microsoft security best practices.",
+            "status": "pending",
+            "testStrategy": "Unit test API client methods, validate authentication flows, simulate project creation and configuration, and verify error handling.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement Auto-Provisioning Workflow Triggered by Agent Status Change",
+            "description": "Automate Azure AI Foundry project provisioning triggered when an agent's status changes to 'Development', including linking projects back to the agent-arch platform and tracking deployment status in the UI.",
+            "dependencies": [
+              3
+            ],
+            "details": "Develop event-driven workflow that listens for agent status changes to 'Development'. Trigger Azure AI Foundry project creation via API client service. Configure data connections dynamically. Store Foundry project IDs and URLs in agent records. Add UI components to display deployment status and progress.",
+            "status": "pending",
+            "testStrategy": "Simulate agent status changes, verify auto-provisioning triggers, confirm project creation and linkage, and test deployment status UI updates.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Build Metrics and Reporting Dashboard with Real-Time Updates",
+            "description": "Develop a dashboard integrated into agent detail pages that aggregates usage statistics, cost data, performance metrics, and health status by querying Azure Monitor, Microsoft Fabric, and Azure Cost Management APIs with role-based data visibility.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create data models and Cosmos DB containers for AgentMetrics. Implement polling and caching services for metrics retrieval. Integrate Azure Monitor Query API and Azure Cost Management API. Build dashboard UI with charts and alerts. Ensure real-time updates and enforce role-based access controls for data visibility.",
+            "status": "pending",
+            "testStrategy": "Test metrics data retrieval and caching, validate dashboard visualizations, verify cost tracking accuracy, test health status alerts, and confirm role-based data access enforcement.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "27",
+        "title": "Research and Redesign PERSONAS.md as Programmatic Subagent System",
+        "description": "Transform PERSONAS.md from passive guidance profiles into actionable subagent definitions that can be reliably triggered via hooks/auto-activation and integrated with the SuperClaude command system for autonomous task delegation.",
+        "details": "## Research Phase\n\n### 1. Investigate Current Persona Activation Mechanisms\n- **Manual Activation Analysis**: Document current `/persona:<name>` command pattern from PERSONAS.md, identifying why it requires explicit user invocation\n- **Hook System Investigation**: Examine .claude/settings.local.json permissions structure (lines 2-10) to understand current hook capabilities for auto-activation\n- **Trigger Pattern Analysis**: Analyze existing auto-activation patterns in PERSONAS.md (lines 173-180 in context) - file-based (*.tsx→frontend), keyword-based (bug|error→debugger), context-based (TypeError→trace)\n\n### 2. Benchmark Against ClaudeKit/Claude Agent SDK Code Review Agents\n- **Agent Architecture Research**: Use WebSearch to find Claude Agent SDK documentation on subagent patterns, specifically the 6-agent code review system mentioned in user query\n- **Comparison Matrix**: Create comparison table mapping current 9 personas (architect, frontend, backend, analyzer, security, mentor, refactorer, performance, qa) to ClaudeKit's agent specializations\n- **Identify Gaps**: Document differences in activation mechanisms, context sharing, and delegation patterns between current passive personas and SDK subagents\n\n### 3. Analyze Integration with SuperClaude Command System\n- **Command Integration Points**: Review CLAUDE.md auto-activation rules (files, keywords, context triggers) and how personas currently integrate with /user:<command> patterns\n- **MCP Integration**: Examine MCP.md persona preferences (lines mentioning architect→Sequential, frontend→Magic, etc.) to understand tool orchestration expectations\n- **Task Management Hooks**: Investigate how TodoWrite/TodoRead could trigger persona-based task delegation\n\n## Design Phase\n\n### 4. Define Programmatic Subagent Structure\nCreate new YAML-based schema for each persona in PERSONAS.md:\n\n```yaml\npersona_id: architect\nactivation:\n  auto_triggers:\n    file_patterns: [\"**/architecture/**/*\", \"**/*design*/**\"]\n    keywords: [\"design system\", \"architecture\", \"tier classification\", \"ddd\", \"bounded context\"]\n    context_signals: [\"architectural decision\", \"system design\", \"scalability\"]\n  manual_command: /persona:architect\n  hook_integration:\n    pre_task_hook: check_for_design_patterns\n    post_task_hook: suggest_architectural_improvements\ndelegation:\n  can_spawn_subagents: [analyzer, security, performance]\n  requires_approval: false\n  escalation_threshold: complexity_score >= 8\ntool_access:\n  mcp_tools: [Sequential, Context7]\n  native_tools: [Read, Grep, Glob, Edit]\n  tool_orchestration: \"long_form_sequential_analysis\"\noutput_format:\n  communication_style: \"diagrams, trade-offs, future scenarios\"\n  response_template: \"architectural_decision_record\"\n  context_retention: high\n```\n\n### 5. Define Hook-Based Activation System\n- **Pre-execution Hooks**: Create hooks that analyze incoming user requests and activate appropriate personas before task execution\n- **Context-based Routing**: Implement scoring system (0-100) for each persona based on query keywords, file context, and task complexity\n- **Multi-persona Coordination**: Design handoff protocol for sequential persona activation (e.g., analyzer→refactorer→performance from PERSONAS.md lines 131-135)\n\n### 6. Map Personas to Task Delegation Patterns\n- **Complexity-Based Delegation**: Define when personas should use Task tool with subagent_type parameter vs. executing directly\n- **Autonomous Decision Tree**: Create decision flowchart for personas to determine when to:\n  - Execute directly with native tools\n  - Spawn specialized subagent via Task tool\n  - Request user clarification\n  - Delegate to another persona\n- **Checkpoint Integration**: Define when personas should create git checkpoints before risky operations\n\n## Implementation Plan\n\n### 7. Restructure PERSONAS.md\n- **Header Section**: Add programmatic activation schema documentation with examples\n- **Per-Persona Sections**: Rewrite each of the 9 personas with new structure including:\n  - `activation` block with auto_triggers, hook_integration\n  - `delegation` block with subagent spawning rules\n  - `tool_access` block with MCP and native tool preferences\n  - `decision_logic` block with autonomous operation rules\n- **Collaboration Protocols**: Enhance existing collaboration section (lines 124-135) with programmatic handoff rules\n- **Integration Examples**: Add code examples showing how hooks trigger personas\n\n### 8. Create Hook Configuration Files\n- **New File**: `.claude/hooks/persona-router.json` defining pre-execution routing logic\n- **Schema**:\n```json\n{\n  \"pre_task_hooks\": {\n    \"persona_activation\": {\n      \"enabled\": true,\n      \"scoring_weights\": {\n        \"file_context\": 0.4,\n        \"keyword_match\": 0.3,\n        \"task_complexity\": 0.3\n      },\n      \"activation_threshold\": 70,\n      \"multi_persona_mode\": \"sequential\"\n    }\n  }\n}\n```\n\n### 9. Define Command System Integration\n- **Update CLAUDE.md**: Add persona auto-activation to command flags (--persona:architect, --auto-persona)\n- **Update MCP.md**: Enhance persona preferences with explicit MCP tool routing rules for each persona\n- **Task Tool Integration**: Define subagent_type mappings for each persona when using Task tool\n\n### 10. Create Validation Framework\n- **Test Scenarios**: Adapt test cases from .taskmaster/docs/ai-guide-persona-tests.md for validating persona auto-activation\n- **Metrics**: Define success criteria:\n  - Activation accuracy: correct persona triggered ≥90% of time\n  - Response time: persona activation adds <500ms overhead\n  - User satisfaction: reduction in manual /persona: commands ≥70%\n- **A/B Testing**: Create test harness comparing manual vs. auto-activation across 35 test scenarios\n\n## Documentation\n\n### 11. Update Related Documentation\n- **RULES.md**: Add persona auto-activation to Core Protocols section with severity [H:8]\n- **CLAUDE.md**: Add Auto-Activation section for personas with examples\n- **Create**: `.claude/docs/persona-subagent-guide.md` with implementation guide for custom personas\n\n### 12. Migration Guide\n- **Backward Compatibility**: Ensure /persona:<name> manual commands still work\n- **Gradual Rollout**: Define phases for enabling auto-activation (opt-in → default → mandatory)\n- **User Training**: Create quick reference showing new auto-activation behaviors",
+        "testStrategy": "### Validation Testing\n1. **Activation Accuracy Tests**: Execute 35 test scenarios from ai-guide-persona-tests.md, measuring correct persona activation rate (target: ≥90%)\n2. **Hook Performance Tests**: Measure overhead of persona-router hook on task execution time (target: <500ms added latency)\n3. **Multi-Persona Coordination Tests**: Test sequential activation patterns (analyzer→refactorer→perf) with 10 complex refactoring scenarios\n4. **Tool Orchestration Tests**: Verify each persona uses correct MCP tools (architect→Sequential+C7, frontend→Magic+Puppeteer+C7, etc.) across 20 tasks\n\n### Integration Testing\n5. **Command System Tests**: Verify /user:build, /user:analyze, /user:design commands trigger appropriate personas automatically\n6. **File Context Tests**: Open files matching persona patterns (*.tsx→frontend, *.test.*→qa) and verify auto-activation\n7. **Keyword Detection Tests**: Submit queries with persona-specific keywords and measure routing accuracy\n8. **Fallback Tests**: Test scenarios with ambiguous context to verify graceful degradation to user clarification\n\n### Regression Testing\n9. **Manual Override Tests**: Ensure explicit /persona:<name> commands still work and override auto-activation\n10. **Backward Compatibility**: Test existing workflows without persona system enabled\n11. **Performance Baseline**: Compare task completion time before/after persona system implementation (target: no degradation)\n\n### User Acceptance Testing\n12. **Reduction in Manual Activation**: Track /persona: command usage before/after (target: ≥70% reduction)\n13. **User Satisfaction Survey**: Collect feedback on autonomous persona activation helpfulness (target: ≥4/5 rating)\n14. **Error Rate Monitoring**: Track persona mis-activations requiring user correction (target: <5% of tasks)",
+        "status": "pending",
+        "dependencies": [
+          "17",
+          "21"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "28",
+        "title": "Transform PERSONAS.md into Programmatic Subagent System with Hook-Based Auto-Activation",
+        "description": "Redesign PERSONAS.md from passive guidance profiles into actionable subagent definitions that integrate with Claude Code's hook system, settings.json trigger patterns, and the SuperClaude command infrastructure for autonomous activation during development workflows.",
+        "details": "## Research Phase\n\n### 1. Analyze Current Hook & Activation Systems\n**Goal:** Understand how .claude/settings.json hooks work and how they can trigger persona activation\n\n**Investigation Tasks:**\n- Examine `.claude/settings.json:2-46` hook structure (UserPromptSubmit, PreToolUse, Stop hooks)\n- Study existing skill trigger patterns in `settings.json:33-46` (systematic-debugging, databases, code-review skills)\n- Map `settings.json` matcher patterns to persona activation conditions\n- Document SuperClaude command system integration points from CLAUDE.md/MCP.md\n- Review Task 17's 35 persona test scenarios in `.taskmaster/docs/ai-guide-persona-tests.md` for activation patterns\n\n**Key Questions:**\n1. Can hooks execute `/persona:<name>` commands or must they invoke Task tool subagents?\n2. What's the latency of hook-based activation vs. manual command execution?\n3. How to pass context from hook matcher to persona invocation?\n\n### 2. ClaudeKit 6-Agent Code Review Mapping\n**Goal:** Map PERSONAS.md archetypes to specialized code review subagent roles\n\n**Mapping Exercise:**\n```yaml\nClaudeKit_Agent_1_Syntax: → refactorer (code quality, complexity reduction)\nClaudeKit_Agent_2_Logic: → analyzer (root cause, evidence-based reasoning)\nClaudeKit_Agent_3_Security: → security (threat models, vulnerability scanning)\nClaudeKit_Agent_4_Performance: → performance (bottleneck identification, optimization)\nClaudeKit_Agent_5_Architecture: → architect (system design, long-term maintainability)\nClaudeKit_Agent_6_Testing: → qa (edge cases, test coverage, defect detection)\n```\n\n**Analysis:**\n- Identify gaps between 9 PERSONAS.md archetypes and 6 ClaudeKit agents\n- Determine if frontend/backend/mentor personas need separate invocation patterns\n- Map MCP tool preferences per persona (from PERSONAS.md lines 185-218)\n\n### 3. Optimal Persona Structure for Programmatic Invocation\n**Goal:** Design persona definition schema that enables autonomous delegation\n\n**Current PERSONAS.md Structure (Passive):**\n```yaml\npersona_name:\n  Core_Belief: [philosophical statement]\n  Primary_Question: [guiding question]\n  Decision_Pattern: [trade-off preferences]\n  Risk_Tolerance: [approach to uncertainty]\n  Success_Metric: [outcome measurement]\n  Communication_Style: [output formatting]\n  Problem_Solving: [methodology]\n  MCP_Tools: [tool preferences]\n```\n\n**Proposed Structure (Actionable):**\n```yaml\npersona_name:\n  # Invocation Configuration\n  triggers:\n    keywords: [bug|error|fix] # Regex patterns for auto-activation\n    file_patterns: [\"*.test.*\", \"*spec*\"] # Glob patterns\n    context_signals: [\"TypeError\", \"Module error\"] # Error signatures\n    command_flags: [\"--qa\", \"--test\"] # Explicit flags\n  \n  # Subagent Behavior\n  task_delegation:\n    agent_type: \"Explore\" | \"Plan\" | \"general-purpose\" # Task tool subagent_type\n    thinking_mode: \"think\" | \"think-hard\" | \"ultrathink\" # Complexity level\n    model_preference: \"haiku\" | \"sonnet\" | \"opus\" # Cost optimization\n  \n  # Execution Parameters\n  behavior_profile:\n    core_belief: [...]\n    decision_pattern: [...]\n    problem_solving_approach: [...]\n    mcp_tool_preferences: [Sequential, Context7] # From MCP.md\n  \n  # Integration Hooks\n  pre_execution_checks: [\"read skill file\", \"validate context\"]\n  post_execution_actions: [\"update audit log\", \"checkpoint work\"]\n  parallel_personas: [\"security\", \"qa\"] # Which personas can run concurrently\n```\n\n### 4. Hook System Integration Patterns\n\n**Pattern A: Direct Persona Invocation via Hooks**\n```json\n// .claude/settings.json enhancement\n{\n  \"hooks\": {\n    \"UserPromptSubmit\": [\n      {\n        \"matcher\": \"optimize|performance|slow|bottleneck\",\n        \"command\": \"/persona:performance --auto-invoked\"\n      },\n      {\n        \"matcher\": \"security|vulnerability|auth|xss|injection\",\n        \"command\": \"/persona:security --context=${MATCHED_TEXT}\"\n      }\n    ]\n  }\n}\n```\n\n**Pattern B: Persona Router Hook (Recommended)**\n```json\n{\n  \"hooks\": {\n    \"UserPromptSubmit\": [\n      {\n        \"matcher\": \".*\", // Match all prompts\n        \"command\": \"claude-code persona-router --analyze-intent\"\n      }\n    ]\n  }\n}\n```\n\n**Persona Router Logic:**\n1. Analyze user prompt intent\n2. Check context signals (files, errors, recent commands)\n3. Select optimal persona(s) from PERSONAS.md\n4. Invoke via Task tool or direct command\n5. Pass control to persona subagent\n\n**Pattern C: Multi-Persona Orchestration**\n```yaml\n# For complex tasks requiring multiple perspectives\ncode_review_workflow:\n  sequential: [architect, refactorer, security, qa]\n  parallel: [frontend, backend]\n  handoff_protocol: \"Share findings → Checkpoint → Cumulative → Document\"\n```\n\n## Implementation Phase\n\n### 5. PERSONAS.md Restructuring\n\n**File Structure:**\n```markdown\n# PERSONAS.md - Programmatic Subagent Definitions\n\n## Core Archetypes (9 personas)\n\n### architect\ninvocation:\n  triggers:\n    keywords: \"design|architecture|system|scale|maintainability\"\n    file_patterns: [\"docs/architecture/**\", \"*.architecture.md\"]\n    context_signals: [\"breaking change\", \"API design\"]\n    command_flags: [\"--design\", \"--architecture\"]\n  \n  delegation:\n    subagent_type: \"Plan\"\n    thinking_mode: \"think-hard\"\n    model: \"sonnet\"\n  \n  behavior:\n    [existing Core_Belief, Decision_Pattern, etc.]\n  \n  mcp_integration:\n    primary_tools: [\"Sequential\", \"Context7\"]\n    research_first: true  # Always lookup patterns before implementation\n  \n  collaboration:\n    works_with: [\"security\", \"performance\", \"qa\"]\n    handoff_to: [\"frontend\", \"backend\"]\n\n[Repeat for all 9 personas...]\n```\n\n### 6. Settings Integration\n\n**Create `.claude/personas/router.sh`:**\n```bash\n#!/bin/bash\n# Persona Router Hook Script\n\nUSER_PROMPT=\"$1\"\nCONTEXT_FILES=\"$2\"\nRECENT_ERRORS=\"$3\"\n\n# Analyze prompt and select persona\nif echo \"$USER_PROMPT\" | grep -qiE 'bug|error|debug|broken'; then\n    echo \"[PERSONA ACTIVATION] analyzer + systematic-debugging skill\"\n    exit 0\nfi\n\nif echo \"$USER_PROMPT\" | grep -qiE 'optimize|performance|slow'; then\n    echo \"[PERSONA ACTIVATION] performance persona\"\n    exit 0\nfi\n\n# Default: no persona override\nexit 0\n```\n\n**Update `.claude/settings.json`:**\n```json\n{\n  \"hooks\": {\n    \"UserPromptSubmit\": [\n      {\n        \"matcher\": \".*\",\n        \"command\": \"bash .claude/personas/router.sh '${USER_PROMPT}' '${CONTEXT_FILES}' '${RECENT_ERRORS}'\"\n      }\n    ]\n  },\n  \"personas\": {\n    \"architect\": {\n      \"triggers\": [\"design\", \"architecture\", \"scale\"],\n      \"path\": \"~/.claude/PERSONAS.md#architect\"\n    },\n    \"analyzer\": {\n      \"triggers\": [\"bug\", \"error\", \"debug\", \"broken\"],\n      \"path\": \"~/.claude/PERSONAS.md#analyzer\"\n    },\n    [... all 9 personas ...]\n  }\n}\n```\n\n### 7. SuperClaude Command Enhancement\n\n**Add to CLAUDE.md:**\n```yaml\nPersona_Invocation:\n  Manual: /persona:<name> [--flags]\n  Auto: Triggered by hooks based on context\n  Multi: /persona:sequence architect,security,qa\n  Parallel: /persona:parallel frontend,backend\n  \nFlags:\n  --auto: Invoked by hook (skip confirmation)\n  --context=<text>: Pass specific context\n  --with=<persona>: Parallel invocation\n  --after=<persona>: Sequential chaining\n```\n\n### 8. Task Tool Integration\n\n**Modify Task tool invocation patterns:**\n```python\n# When Task tool is called, check if persona should be activated\nif task_involves_architecture():\n    activate_persona(\"architect\")\n    # architect persona guides Task tool with:\n    # - Long-term thinking mode\n    # - Sequential MCP for system design\n    # - DDD patterns from Context7\n\nif task_involves_debugging():\n    activate_persona(\"analyzer\")\n    load_skill(\"systematic-debugging\")\n    # analyzer persona ensures root cause analysis\n```\n\n## Validation Phase\n\n### 9. Testing Framework\n\n**Create `.taskmaster/docs/persona-activation-tests.md`:**\n```markdown\n# Persona Activation Test Suite\n\n## Test Scenarios (35 total from Task 17 + 20 new activation tests)\n\n### Auto-Activation Tests\n1. User types \"why is this slow?\" → performance persona activates\n2. User types \"review this code\" → qa + refactorer personas activate\n3. User opens *.test.ts file → qa persona activates\n4. Error: \"SQL injection vulnerability detected\" → security persona activates\n\n### Multi-Persona Tests\n5. /persona:sequence architect,security,qa → Sequential execution\n6. /persona:parallel frontend,backend → Parallel execution with merge\n\n### Hook Performance Tests\n7. Measure persona-router latency (target: <500ms)\n8. Test hook activation accuracy (target: 90%+ correct persona)\n```\n\n**Acceptance Criteria:**\n- ✅ 90%+ correct persona activation from natural language prompts\n- ✅ <500ms overhead from persona-router hook\n- ✅ Seamless integration with existing Task tool workflows\n- ✅ MCP tool preferences honored (Sequential for architect, etc.)\n- ✅ Multi-persona orchestration works (sequential + parallel)\n\n## Documentation Phase\n\n### 10. Migration Guide\n\n**Create `.claude/docs/persona-migration-guide.md`:**\n```markdown\n# Migrating from Manual to Programmatic Personas\n\n## Before (Manual Activation)\nUser: /persona:architect\nUser: Design a new API\n\n## After (Auto-Activation)\nUser: Design a new API\n[Hook detects \"design\" keyword]\n[Persona-router activates architect persona]\n[Architect persona invokes Task tool with Plan subagent]\n[Sequential thinking + Context7 lookup for API patterns]\n[Implementation proceeds with architect guidance]\n\n## Configuration\n1. Update .claude/settings.json with persona triggers\n2. Install persona-router hook script\n3. Test with persona-activation-tests.md scenarios\n```\n\n## Technical Specifications\n\n### File Changes Required:\n1. **PERSONAS.md**: Add `invocation`, `delegation`, `mcp_integration` sections to each persona\n2. **.claude/settings.json**: Add `personas` config block + persona-router hook\n3. **.claude/personas/router.sh**: New persona selection script\n4. **CLAUDE.md**: Add Persona_Invocation command documentation\n5. **MCP.md**: Add Persona_Preferences integration (line 10-15)\n6. **.taskmaster/docs/persona-activation-tests.md**: New test framework\n\n### Integration Points:\n- `settings.json:2-10` hooks → Persona activation\n- `settings.json:33-46` skills → Persona skill loading\n- `MCP.md:10-50` Decision Matrix → Persona MCP preferences\n- `Task tool` subagent_type → Persona delegation patterns\n- `.taskmaster/docs/ai-guide-persona-tests.md` → Validation scenarios",
+        "testStrategy": "### Validation Testing\n\n1. **Activation Accuracy Tests**: Execute 35 test scenarios from ai-guide-persona-tests.md, measuring correct persona activation rate (target: ≥90%)\n\n2. **Hook Performance Tests**: Measure overhead of persona-router hook on task execution time (target: <500ms added latency)\n\n3. **Multi-Persona Orchestration Tests**:\n   - Sequential workflow: architect → security → qa (verify handoff protocol)\n   - Parallel workflow: frontend + backend (verify context merging)\n   - Verify collaboration patterns from PERSONAS.md:235-244\n\n4. **MCP Tool Preference Tests**: Validate each persona uses correct MCP tools (Sequential for architect/analyzer, Magic for frontend, Puppeteer for qa)\n\n5. **Command System Integration Tests**:\n   - `/persona:architect --design --think-hard` → Verify flags propagate to Task tool\n   - Test SuperClaude command parsing from CLAUDE.md\n   - Verify --uc (UltraCompressed) mode works with persona responses\n\n6. **Skill Integration Tests**: Verify personas auto-load skills from settings.json:33-46 (security loads code-review skill, analyzer loads systematic-debugging)\n\n7. **Regression Testing**: Run all 35 persona-based queries from `.taskmaster/docs/ai-guide-persona-tests.md` to ensure no functionality breaks\n\n8. **Real-World Scenario Tests**:\n   - User requests \"optimize database queries\" → Performance + databases skill activate\n   - User requests \"review PR #123\" → qa + refactorer + security activate in sequence\n   - User opens .test.tsx file → qa + frontend personas activate\n\n9. **Error Handling Tests**: Verify graceful degradation when persona-router fails, falling back to manual activation\n\n10. **Documentation Verification**: Ensure all persona triggers are documented in updated PERSONAS.md and activation examples work as described",
+        "status": "cancelled",
+        "dependencies": [
+          "17",
+          "21"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-12-03T03:53:38.665Z"
+      },
+      {
+        "id": "29",
+        "title": "Feature Bundle: Task Delete, Decisions Modal, Proposal Creation Fix",
+        "description": "Implement task deletion functionality with confirmation dialog, create enhanced decision details modal with view/edit/delete capabilities, and fix 422 validation error occurring during proposal creation.",
+        "details": "## 1. Task Delete Functionality\n\n### Frontend Implementation (frontend/app/tasks/page.tsx)\n- Add delete button to task detail modal (line 933-945 area, alongside Edit button)\n- Create confirmation dialog using AlertDialog component from Radix UI:\n  - Title: \"Delete Task?\"\n  - Content: \"Are you sure you want to delete '{task.title}'? This action cannot be undone.\"\n  - Two buttons: Cancel (outline) and Delete (destructive variant)\n- Implement handleDeleteTask function:\n  - Call api.tasks.delete(taskId)\n  - Close detail modal on success\n  - Reload task list via loadTasks()\n  - Show error alert on failure\n- Add loading state during deletion (isDeleting boolean)\n\n### Backend Implementation (backend/src/main.py)\n- DELETE endpoint already exists at line 334-342: `/api/tasks/{task_id}`\n- Performs hard delete from Cosmos DB\n- Returns {\"success\": True}\n\n### API Client (frontend/lib/api.ts)\n- Add delete method to api.tasks object (line 292-305):\n```typescript\ndelete: (id: string) =>\n  apiFetch<void>(`/api/tasks/${id}`, {\n    method: 'DELETE',\n  }),\n```\n\n---\n\n## 2. Enhanced Decisions Modal\n\n### Current State Analysis\n- Decision details modal exists (line 883-1062 in decisions/page.tsx)\n- Has view/edit modes and delete functionality already implemented\n- Modal is opened via openDecisionDetails() function (line 111-116)\n- Edit mode toggles between view and form (line 917-1005)\n- Delete implemented with confirmation (line 130-142)\n\n### Improvements Needed\n- **Make modal larger**: Change max-w-2xl to max-w-4xl (already done at line 884)\n- **Wire \"View Details\" button**: Currently at line 630-632, button exists but doesn't call openDecisionDetails()\n  - Update onClick handler: `onClick={() => openDecisionDetails(decision)}`\n- **Enhance content display**:\n  - Add stakeholders section if available in Decision model\n  - Add timeline/key dates section\n  - Format rationale and impact with better typography (whitespace-pre-wrap already present)\n  - Add metadata section showing created/updated timestamps (already present at line 1053-1056)\n\n### Frontend Changes\n1. Connect \"View Details\" button in decisions list card (line 630) to openDecisionDetails()\n2. Add stakeholder field to Decision interface if needed (frontend/lib/api.ts line 90-103)\n3. Enhance modal content sections with richer formatting\n\n---\n\n## 3. Fix Proposal Creation 422 Error\n\n### Investigation Steps\n1. **Check backend Proposal model** (backend/src/models.py):\n   - Verify all required fields match frontend payload\n   - Check field validation rules (string lengths, enum values, etc.)\n   \n2. **Check frontend payload** (frontend/app/decisions/page.tsx line 144-156):\n   - Current fields sent: title, description, proposer, department, team_member, category, status, rationale, impact\n   - Verify all required fields are marked correctly in create dialog\n   \n3. **Common 422 causes**:\n   - Missing required field (proposer, department, or department validation)\n   - Invalid category enum value\n   - Invalid status enum value (hardcoded to 'Proposed')\n   - Empty string vs undefined/null handling (team_member uses `|| undefined`)\n\n### Backend Endpoint Analysis (backend/src/main.py line 446-464)\n- POST /api/proposals accepts Proposal model\n- Auto-generates ID if not provided\n- Sets created_at and updated_at timestamps\n- Creates in Cosmos DB \"proposals\" container\n\n### Likely Fix\n- **Issue**: Frontend validation (line 764) requires all fields: `!newProposal.title || !newProposal.description || !newProposal.proposer || !newProposal.department`\n- **But**: department is a text Input field that could be empty string instead of falsy\n- **Solution**: Add `.trim()` checks or verify backend model allows empty strings\n- Add error response logging to see exact validation message from API\n- Check that all enum values match exactly between frontend and backend\n\n### Implementation\n1. Add try-catch error logging in handleCreateProposal (line 144):\n   - Log full error response body\n   - Display specific validation errors to user\n2. Verify Proposal model required fields in backend\n3. Add defensive validation in frontend before API call\n4. Consider adding field-level validation feedback",
+        "testStrategy": "## Testing Plan\n\n### 1. Task Delete Functionality\n- **Unit Tests**:\n  - Test api.tasks.delete() API client method\n  - Test confirmation dialog opens with correct task title\n  - Test dialog cancel closes without deletion\n  - Test successful deletion closes modal and reloads list\n- **Integration Tests**:\n  - Create test task, open detail modal, click delete\n  - Verify confirmation dialog appears\n  - Cancel and verify task still exists\n  - Delete and verify task removed from list and database\n  - Verify audit log records deletion event\n- **Edge Cases**:\n  - Test delete with network error\n  - Test delete of task with dependencies\n  - Test concurrent deletion (two users deleting same task)\n\n### 2. Enhanced Decisions Modal\n- **Functional Tests**:\n  - Click \"View Details\" button on decision card\n  - Verify modal opens with full content displayed\n  - Test edit mode toggle and save changes\n  - Test delete functionality with confirmation\n  - Verify modal dimensions (max-w-4xl) on various screen sizes\n- **Content Tests**:\n  - Verify all decision fields display correctly (title, description, rationale, impact)\n  - Check date formatting for decision_date, created_at, updated_at\n  - Test with decisions that have missing optional fields (rationale, impact)\n  - Verify related meeting/proposal links if present\n- **UI/UX Tests**:\n  - Test modal scroll behavior with long content\n  - Verify edit form validation\n  - Test modal close on outside click and ESC key\n\n### 3. Proposal Creation Fix\n- **Diagnosis Tests**:\n  - Attempt proposal creation, capture exact 422 error message\n  - Log request payload before API call\n  - Use browser DevTools Network tab to inspect request/response\n  - Test with minimal required fields only\n- **Fix Validation**:\n  - Create proposal with all fields populated\n  - Create proposal with only required fields\n  - Test each category enum value\n  - Test with empty vs undefined optional fields\n  - Verify team_member field with empty string\n- **Regression Tests**:\n  - After fix, test proposal creation workflow end-to-end\n  - Test proposal → decision conversion flow\n  - Verify all proposal status transitions work\n  - Test proposal listing and filtering\n  \n### 4. Cross-Feature Integration\n- Test task delete from task created via meeting transcript\n- Test decision delete that was created from proposal\n- Verify audit logs capture all CRUD operations\n- Test all functionality in both light/dark modes\n- Verify responsive behavior on mobile/tablet/desktop",
+        "status": "done",
+        "dependencies": [
+          "4",
+          "12"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-12-05T01:04:08.607Z"
+      },
+      {
+        "id": "30",
+        "title": "Budget & Cost Tracking System with Azure Cost Management Integration",
+        "description": "Implement comprehensive AI tooling cost tracking system integrating Azure Cost Management API for real-time cost data from 7 Resource Groups, with backend service, budget CRUD endpoints, license management, and frontend dashboard UI.",
+        "details": "## Architecture Overview\nBuild full-stack cost tracking system connecting Azure Cost Management API to provide real-time budget visibility for AI infrastructure spend across multiple subscriptions and resource groups.\n\n## Backend Implementation\n\n### 1. Data Models (backend/src/models.py)\nAdd new Pydantic models following existing patterns (lines 1-727):\n\n```python\nclass BudgetCategory(str, Enum):\n    AZURE_SERVICE = \"Azure Service\"\n    SOFTWARE_LICENSE = \"Software License\"\n    CUSTOM_ALLOCATION = \"Custom Allocation\"\n\nclass BudgetStatus(str, Enum):\n    ON_TRACK = \"On Track\"\n    WARNING = \"Warning\"\n    CRITICAL = \"Critical\"\n    EXCEEDED = \"Exceeded\"\n\nclass Budget(BaseModel):\n    id: Optional[str] = None\n    name: str\n    category: BudgetCategory\n    resource_group: Optional[str] = None  # For Azure services\n    azure_service_type: Optional[str] = None  # OpenAI, CosmosDB, AI Search, Blob Storage\n    amount: float\n    spent: float = 0.0\n    currency: str = \"USD\"\n    period: str = \"monthly\"  # monthly, quarterly, annual\n    status: BudgetStatus = BudgetStatus.ON_TRACK\n    threshold_warning: float = 75.0  # Percent\n    threshold_critical: float = 90.0\n    start_date: datetime\n    end_date: Optional[datetime] = None\n    notes: Optional[str] = None\n    created_at: datetime = Field(default_factory=datetime.utcnow)\n    updated_at: datetime = Field(default_factory=datetime.utcnow)\n\nclass License(BaseModel):\n    id: Optional[str] = None\n    name: str  # M365 Copilot, GitHub Copilot\n    license_type: str  # Subscription, Pay-as-you-go\n    seats: Optional[int] = None\n    cost_per_seat: Optional[float] = None\n    total_monthly_cost: float\n    renewal_date: Optional[datetime] = None\n    vendor: str\n    status: str = \"active\"  # active, expiring, expired\n    notes: Optional[str] = None\n    created_at: datetime = Field(default_factory=datetime.utcnow)\n    updated_at: datetime = Field(default_factory=datetime.utcnow)\n\nclass CostDataPoint(BaseModel):\n    date: str\n    cost: float\n    resource_group: str\n    service_type: Optional[str] = None\n```\n\n### 2. Azure Cost Management Service (backend/src/cost_management_service.py)\nCreate new service following azure_resources_service.py pattern (lines 1-85):\n\n```python\nfrom azure.identity import DefaultAzureCredential\nfrom azure.mgmt.costmanagement import CostManagementClient\nfrom azure.mgmt.costmanagement.models import QueryDefinition, QueryTimePeriod, QueryDataset, QueryAggregation, QueryGrouping\nfrom datetime import datetime, timedelta\nimport logging\nimport os\n\nlogger = logging.getLogger(__name__)\n\nclass CostManagementService:\n    def __init__(self):\n        self.credential = DefaultAzureCredential()\n        self.subscription_id = os.getenv(\"AZURE_SUBSCRIPTION_ID\")\n        self.client = CostManagementClient(self.credential)\n        self.resource_groups = [\n            \"rg-agent-architecture\",\n            \"mb-ai-foundry\",\n            \"mb-ai-foundry-hub\",\n            \"fourth-ai-prod\",\n            \"ai-dev-education\",\n            \"personal-agent-rg\",\n            \"boyan-ai-experiments\"\n        ]\n        self._cache = {}\n        self._cache_timestamp = None\n        self._cache_duration = timedelta(hours=6)  # 6-hour cache\n\n    async def get_resource_group_costs(self, resource_group: str, start_date: datetime, end_date: datetime):\n        \"\"\"Query costs for a specific resource group within date range.\"\"\"\n        scope = f\"/subscriptions/{self.subscription_id}/resourceGroups/{resource_group}\"\n        \n        query = QueryDefinition(\n            type=\"ActualCost\",\n            timeframe=\"Custom\",\n            time_period=QueryTimePeriod(from_property=start_date.isoformat(), to=end_date.isoformat()),\n            dataset=QueryDataset(\n                granularity=\"Daily\",\n                aggregation={\n                    \"totalCost\": QueryAggregation(name=\"Cost\", function=\"Sum\")\n                },\n                grouping=[\n                    QueryGrouping(type=\"Dimension\", name=\"ServiceName\"),\n                    QueryGrouping(type=\"Dimension\", name=\"ResourceId\")\n                ]\n            )\n        )\n        \n        try:\n            result = self.client.query.usage(scope=scope, parameters=query)\n            return self._parse_cost_response(result, resource_group)\n        except Exception as e:\n            logger.error(f\"Error querying costs for {resource_group}: {e}\")\n            return []\n\n    def _parse_cost_response(self, response, resource_group: str):\n        \"\"\"Parse Azure Cost Management API response into structured data.\"\"\"\n        costs = []\n        if hasattr(response, 'rows') and response.rows:\n            for row in response.rows:\n                costs.append({\n                    \"cost\": row[0],\n                    \"service_name\": row[1] if len(row) > 1 else \"Unknown\",\n                    \"resource_id\": row[2] if len(row) > 2 else \"\",\n                    \"date\": row[3] if len(row) > 3 else datetime.now().isoformat(),\n                    \"resource_group\": resource_group\n                })\n        return costs\n\n    async def get_all_costs(self, force_refresh: bool = False):\n        \"\"\"Get costs for all configured resource groups with caching.\"\"\"\n        if not force_refresh and self._cache_timestamp and (datetime.now() - self._cache_timestamp) < self._cache_duration:\n            return self._cache.get(\"all_costs\", [])\n\n        end_date = datetime.now()\n        start_date = end_date.replace(day=1)  # Start of current month\n        \n        all_costs = []\n        for rg in self.resource_groups:\n            rg_costs = await self.get_resource_group_costs(rg, start_date, end_date)\n            all_costs.extend(rg_costs)\n        \n        self._cache[\"all_costs\"] = all_costs\n        self._cache_timestamp = datetime.now()\n        return all_costs\n\n    async def get_service_type_totals(self):\n        \"\"\"Aggregate costs by Azure service type (OpenAI, CosmosDB, etc.).\"\"\"\n        all_costs = await self.get_all_costs()\n        service_totals = {}\n        \n        for cost_entry in all_costs:\n            service = cost_entry[\"service_name\"]\n            if service not in service_totals:\n                service_totals[service] = 0.0\n            service_totals[service] += cost_entry[\"cost\"]\n        \n        return service_totals\n\ncost_management_service = CostManagementService()\n```\n\n### 3. Budget Router (backend/src/routers/budget.py)\nCreate new router following existing patterns (see meetings.py, tasks.py):\n\n```python\nfrom fastapi import APIRouter, HTTPException, Depends\nfrom typing import List, Optional\nfrom src.models import Budget, License, CostDataPoint\nfrom src.database import db\nfrom src.cost_management_service import cost_management_service\nfrom datetime import datetime\nimport logging\n\nlogger = logging.getLogger(__name__)\nrouter = APIRouter(prefix=\"/api/budget\", tags=[\"budget\"])\n\n# Budget CRUD endpoints\n@router.get(\"/budgets\", response_model=List[Budget])\nasync def list_budgets():\n    \"\"\"List all budgets from Cosmos DB.\"\"\"\n    try:\n        query = \"SELECT * FROM c WHERE c.type = 'budget' ORDER BY c.created_at DESC\"\n        budgets = await db.query_items(\"budgets\", query)\n        return [Budget(**b) for b in budgets]\n    except Exception as e:\n        logger.error(f\"Error listing budgets: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.post(\"/budgets\", response_model=Budget)\nasync def create_budget(budget: Budget):\n    \"\"\"Create new budget.\"\"\"\n    try:\n        budget_dict = budget.dict()\n        budget_dict[\"type\"] = \"budget\"\n        result = await db.create_item(\"budgets\", budget_dict)\n        return Budget(**result)\n    except Exception as e:\n        logger.error(f\"Error creating budget: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.put(\"/budgets/{budget_id}\", response_model=Budget)\nasync def update_budget(budget_id: str, budget: Budget):\n    \"\"\"Update existing budget.\"\"\"\n    try:\n        existing = await db.get_item(\"budgets\", budget_id)\n        if not existing:\n            raise HTTPException(status_code=404, detail=\"Budget not found\")\n        \n        budget_dict = budget.dict()\n        budget_dict[\"id\"] = budget_id\n        budget_dict[\"updated_at\"] = datetime.utcnow().isoformat()\n        result = await db.update_item(\"budgets\", budget_id, budget_dict)\n        return Budget(**result)\n    except HTTPException:\n        raise\n    except Exception as e:\n        logger.error(f\"Error updating budget: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.delete(\"/budgets/{budget_id}\")\nasync def delete_budget(budget_id: str):\n    \"\"\"Delete budget.\"\"\"\n    try:\n        await db.delete_item(\"budgets\", budget_id)\n        return {\"message\": \"Budget deleted successfully\"}\n    except Exception as e:\n        logger.error(f\"Error deleting budget: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n# License CRUD endpoints (similar pattern)\n@router.get(\"/licenses\", response_model=List[License])\nasync def list_licenses():\n    \"\"\"List all software licenses.\"\"\"\n    try:\n        query = \"SELECT * FROM c WHERE c.type = 'license' ORDER BY c.name\"\n        licenses = await db.query_items(\"budgets\", query)\n        return [License(**lic) for lic in licenses]\n    except Exception as e:\n        logger.error(f\"Error listing licenses: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.post(\"/licenses\", response_model=License)\nasync def create_license(license: License):\n    \"\"\"Create new license entry.\"\"\"\n    # Similar to create_budget\n\n@router.put(\"/licenses/{license_id}\", response_model=License)\nasync def update_license(license_id: str, license: License):\n    \"\"\"Update license.\"\"\"\n    # Similar to update_budget\n\n@router.delete(\"/licenses/{license_id}\")\nasync def delete_license(license_id: str):\n    \"\"\"Delete license.\"\"\"\n    # Similar to delete_budget\n\n# Azure Cost Management integration endpoints\n@router.get(\"/costs/current\")\nasync def get_current_costs():\n    \"\"\"Get current month costs from Azure Cost Management API.\"\"\"\n    try:\n        costs = await cost_management_service.get_all_costs()\n        return {\"costs\": costs, \"total\": sum(c[\"cost\"] for c in costs)}\n    except Exception as e:\n        logger.error(f\"Error fetching current costs: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.get(\"/costs/by-service\")\nasync def get_costs_by_service():\n    \"\"\"Get cost breakdown by Azure service type.\"\"\"\n    try:\n        service_totals = await cost_management_service.get_service_type_totals()\n        return service_totals\n    except Exception as e:\n        logger.error(f\"Error fetching service costs: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.get(\"/costs/resource-group/{rg_name}\")\nasync def get_resource_group_costs(rg_name: str):\n    \"\"\"Get costs for specific resource group.\"\"\"\n    try:\n        end_date = datetime.now()\n        start_date = end_date.replace(day=1)\n        costs = await cost_management_service.get_resource_group_costs(rg_name, start_date, end_date)\n        return {\"resource_group\": rg_name, \"costs\": costs, \"total\": sum(c[\"cost\"] for c in costs)}\n    except Exception as e:\n        logger.error(f\"Error fetching RG costs: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n\n@router.post(\"/sync-budgets\")\nasync def sync_budgets_with_actual_costs():\n    \"\"\"Sync budget spent amounts with actual Azure costs.\"\"\"\n    try:\n        budgets = await list_budgets()\n        service_totals = await cost_management_service.get_service_type_totals()\n        \n        updated_count = 0\n        for budget in budgets:\n            if budget.azure_service_type and budget.azure_service_type in service_totals:\n                actual_cost = service_totals[budget.azure_service_type]\n                budget.spent = actual_cost\n                \n                # Update status based on thresholds\n                percent_used = (actual_cost / budget.amount) * 100 if budget.amount > 0 else 0\n                if percent_used >= 100:\n                    budget.status = \"Exceeded\"\n                elif percent_used >= budget.threshold_critical:\n                    budget.status = \"Critical\"\n                elif percent_used >= budget.threshold_warning:\n                    budget.status = \"Warning\"\n                else:\n                    budget.status = \"On Track\"\n                \n                await update_budget(budget.id, budget)\n                updated_count += 1\n        \n        return {\"message\": f\"Synced {updated_count} budgets with actual costs\"}\n    except Exception as e:\n        logger.error(f\"Error syncing budgets: {e}\")\n        raise HTTPException(status_code=500, detail=str(e))\n```\n\n### 4. Register Router (backend/src/main.py)\nAdd budget router import and registration following existing pattern (see azure_resources router registration):\n\n```python\nfrom src.routers import budget\napp.include_router(budget.router)\n```\n\n### 5. Database Setup\nCreate Cosmos DB container \"budgets\" with partition key \"/type\" to store Budget and License documents, following existing container patterns.\n\n## Frontend Implementation\n\n### 1. API Client (frontend/lib/api.ts)\nAdd budget API methods following existing patterns (lines 1-100):\n\n```typescript\nexport interface Budget {\n  id: string;\n  name: string;\n  category: 'Azure Service' | 'Software License' | 'Custom Allocation';\n  resource_group?: string;\n  azure_service_type?: string;\n  amount: number;\n  spent: number;\n  currency: string;\n  period: string;\n  status: 'On Track' | 'Warning' | 'Critical' | 'Exceeded';\n  threshold_warning: number;\n  threshold_critical: number;\n  start_date: string;\n  end_date?: string;\n  notes?: string;\n  created_at: string;\n  updated_at: string;\n}\n\nexport interface License {\n  id: string;\n  name: string;\n  license_type: string;\n  seats?: number;\n  cost_per_seat?: number;\n  total_monthly_cost: number;\n  renewal_date?: string;\n  vendor: string;\n  status: string;\n  notes?: string;\n  created_at: string;\n  updated_at: string;\n}\n\nexport const api = {\n  // ... existing methods\n  budget: {\n    list: async (): Promise<Budget[]> => {\n      const res = await fetch(`${API_URL}/api/budget/budgets`, {\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to fetch budgets');\n      return res.json();\n    },\n    create: async (budget: Partial<Budget>): Promise<Budget> => {\n      const res = await fetch(`${API_URL}/api/budget/budgets`, {\n        method: 'POST',\n        headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' },\n        body: JSON.stringify(budget)\n      });\n      if (!res.ok) throw new Error('Failed to create budget');\n      return res.json();\n    },\n    update: async (id: string, budget: Partial<Budget>): Promise<Budget> => {\n      const res = await fetch(`${API_URL}/api/budget/budgets/${id}`, {\n        method: 'PUT',\n        headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' },\n        body: JSON.stringify(budget)\n      });\n      if (!res.ok) throw new Error('Failed to update budget');\n      return res.json();\n    },\n    delete: async (id: string): Promise<void> => {\n      const res = await fetch(`${API_URL}/api/budget/budgets/${id}`, {\n        method: 'DELETE',\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to delete budget');\n    },\n    getCurrentCosts: async () => {\n      const res = await fetch(`${API_URL}/api/budget/costs/current`, {\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to fetch current costs');\n      return res.json();\n    },\n    syncBudgets: async () => {\n      const res = await fetch(`${API_URL}/api/budget/sync-budgets`, {\n        method: 'POST',\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to sync budgets');\n      return res.json();\n    }\n  },\n  licenses: {\n    list: async (): Promise<License[]> => {\n      const res = await fetch(`${API_URL}/api/budget/licenses`, {\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to fetch licenses');\n      return res.json();\n    },\n    create: async (license: Partial<License>): Promise<License> => {\n      const res = await fetch(`${API_URL}/api/budget/licenses`, {\n        method: 'POST',\n        headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' },\n        body: JSON.stringify(license)\n      });\n      if (!res.ok) throw new Error('Failed to create license');\n      return res.json();\n    },\n    update: async (id: string, license: Partial<License>): Promise<License> => {\n      const res = await fetch(`${API_URL}/api/budget/licenses/${id}`, {\n        method: 'PUT',\n        headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json' },\n        body: JSON.stringify(license)\n      });\n      if (!res.ok) throw new Error('Failed to update license');\n      return res.json();\n    },\n    delete: async (id: string): Promise<void> => {\n      const res = await fetch(`${API_URL}/api/budget/licenses/${id}`, {\n        method: 'DELETE',\n        headers: { 'X-API-Key': API_KEY }\n      });\n      if (!res.ok) throw new Error('Failed to delete license');\n    }\n  }\n};\n```\n\n### 2. Replace Mock UI (frontend/app/(authenticated)/budget/page.tsx)\nReplace existing mock implementation (lines 1-355) with real data integration:\n\n- Remove mockBudgetData (lines 32-75) and licenses (lines 77-102) constants\n- Replace with useState hooks loading data from api.budget.list() and api.licenses.list()\n- Add useEffect to fetch data on component mount\n- Add loading states and error handling\n- Implement CRUD dialogs using existing patterns from tasks/meetings pages\n- Add \"Sync with Azure\" button calling api.budget.syncBudgets()\n- Keep existing UI structure (summary cards lines 153-239, service-level tracking 241-287, license management 289-350)\n- Add create/edit/delete dialogs for budgets and licenses using Radix UI Dialog component\n- Implement resource group drill-down pages at /budget/[resource-group] route\n\n### 3. Resource Group Detail Pages\nCreate frontend/app/(authenticated)/budget/[resource-group]/page.tsx for per-RG cost breakdown:\n\n- Display costs filtered by resource group\n- Show service-level breakdown within that RG\n- Historical cost chart using recharts library\n- Link back to main budget dashboard\n\n## Configuration Requirements\n\n### Azure Setup\n1. Ensure Azure service principal has \"Cost Management Reader\" role on subscription\n2. Set environment variable AZURE_SUBSCRIPTION_ID in backend/.env\n3. DefaultAzureCredential will use existing AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET\n\n### Cosmos DB\nCreate \"budgets\" container with partition key \"/type\" in existing Cosmos DB account\n\n## Security & Permissions\n- Cost Management API requires \"Cost Management Reader\" RBAC role on subscription or resource groups\n- Verify service principal has required permissions before testing\n- Budget/license CRUD operations require X-API-Key authentication (existing pattern)\n\n## Dependencies\n- Backend: azure-mgmt-costmanagement==4.0.1 (already in requirements.txt line 16)\n- Frontend: No new dependencies needed (uses existing UI components)",
+        "testStrategy": "## Testing Strategy\n\n### Backend Testing\n\n**1. Cost Management Service Tests**\n- Test connection to Azure Cost Management API with valid credentials\n- Test get_resource_group_costs() with each of 7 resource groups\n- Verify cost data parsing from Azure API response format\n- Test caching mechanism (6-hour cache duration)\n- Test force_refresh parameter bypasses cache\n- Mock Azure API responses for unit tests to avoid actual API calls\n- Test error handling for invalid resource groups, API failures, credential issues\n\n**2. Budget Router Endpoint Tests**\n- Test GET /api/budget/budgets returns all budgets from Cosmos DB\n- Test POST /api/budget/budgets creates budget with correct fields\n- Test PUT /api/budget/budgets/{id} updates existing budget\n- Test DELETE /api/budget/budgets/{id} removes budget\n- Test GET /api/budget/licenses returns all licenses\n- Test CRUD operations for licenses (create, update, delete)\n- Test GET /api/budget/costs/current returns aggregated costs from all RGs\n- Test GET /api/budget/costs/by-service groups costs by Azure service type\n- Test GET /api/budget/costs/resource-group/{name} filters by specific RG\n- Test POST /api/budget/sync-budgets updates budget.spent from actual costs and recalculates status (On Track, Warning, Critical, Exceeded) based on thresholds\n- Verify authentication with X-API-Key header required for all endpoints\n\n**3. Integration Tests**\n- Test end-to-end flow: create budget → sync with Azure → verify spent amount updated\n- Test budget status calculation logic (thresholds at 75%, 90%, 100%)\n- Test querying costs for non-existent resource group returns empty/error\n- Test Cosmos DB storage and retrieval of Budget and License models\n- Verify Budget.status updates correctly when spent crosses threshold_warning (75%) and threshold_critical (90%)\n\n### Frontend Testing\n\n**4. API Client Tests**\n- Test api.budget.list() fetches and parses budget data correctly\n- Test api.budget.create() sends correct request body\n- Test api.licenses.list() returns license data\n- Test api.budget.syncBudgets() calls sync endpoint and handles response\n- Test error handling for network failures, 404, 500 responses\n\n**5. UI Component Tests**\n- Test budget dashboard loads and displays summary cards with correct totals\n- Test service-level budget list renders with progress bars showing correct percentages\n- Test status badges display correct colors (green On Track, orange Warning, red Critical/Exceeded)\n- Test time period selector (week, month, quarter, year) affects displayed data\n- Test \"Sync with Azure\" button triggers sync and refreshes data\n- Test create budget dialog opens, validates input, submits data\n- Test edit budget dialog pre-fills existing data\n- Test delete budget confirmation dialog prevents accidental deletion\n- Test license management section displays licenses with seats, costs, renewal dates\n- Test resource group drill-down navigation to /budget/[resource-group]\n\n**6. E2E Testing Scenarios**\n- Load budget page → verify mock data replaced with real API data\n- Create new budget for \"Azure OpenAI\" in \"rg-agent-architecture\" with $5000 amount\n- Sync budgets → verify spent amount updates from Azure Cost Management API\n- Verify budget status changes from \"On Track\" to \"Warning\" when spent > 75%\n- Create license entry for \"GitHub Copilot\" with 50 seats at $19/seat\n- Edit license to update seat count and verify total cost recalculates\n- Delete budget → confirm dialog → verify removed from list\n- Navigate to /budget/rg-agent-architecture → verify filtered cost view\n\n**7. Azure RBAC Verification**\n- Test with service principal that has Cost Management Reader role → succeeds\n- Test with service principal without Cost Management Reader role → returns 403 error with helpful message\n- Verify AZURE_SUBSCRIPTION_ID environment variable is set correctly\n- Test DefaultAzureCredential authentication flow in Azure environment\n\n**8. Performance & Reliability**\n- Test cost API response time with 7 resource groups (should complete within 10 seconds)\n- Test cache effectiveness (second request within 6 hours should be instant)\n- Test handling of Azure API rate limits with retry logic\n- Test behavior when one resource group query fails (should not block others)\n- Load test with 50+ budgets and 20+ licenses to verify UI performance",
+        "status": "pending",
+        "dependencies": [
+          "4",
+          "12"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Budget and License Data Models to backend/src/models.py",
+            "description": "Create Pydantic models for Budget, License, BudgetCategory, BudgetStatus, and CostDataPoint enums following existing model patterns",
+            "dependencies": [],
+            "details": "Add new enums: BudgetCategory (Azure Service, Software License, Custom Allocation), BudgetStatus (On Track, Warning, Critical, Exceeded). Add Budget model with fields: id, name, category, resource_group, azure_service_type, amount, spent, currency, period, status, threshold_warning (75.0), threshold_critical (90.0), start_date, end_date, notes, created_at, updated_at. Add License model with fields: id, name, license_type, seats, cost_per_seat, total_monthly_cost, renewal_date, vendor, status (active/expiring/expired), notes, created_at, updated_at. Add CostDataPoint model with fields: date, cost, resource_group, service_type. Follow existing patterns from Meeting/Task/Agent models (lines 93-727 in models.py).",
+            "status": "pending",
+            "testStrategy": "Validate model instantiation with all required fields. Test enum values. Verify default values (status=On Track, threshold_warning=75.0, threshold_critical=90.0). Test optional fields can be None.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Create Azure Cost Management Service (backend/src/cost_management_service.py)",
+            "description": "Build service integrating Azure Cost Management API to fetch real-time cost data from 7 resource groups with 6-hour caching",
+            "dependencies": [
+              1
+            ],
+            "details": "Create CostManagementService class using azure-mgmt-costmanagement SDK (already in requirements.txt line 16). Initialize with DefaultAzureCredential and subscription ID from env var AZURE_SUBSCRIPTION_ID. Define resource_groups list: ['rg-agent-architecture', 'mb-ai-foundry', 'mb-ai-foundry-hub', 'fourth-ai-prod', 'ai-dev-education', 'personal-agent-rg', 'boyan-ai-experiments']. Implement get_resource_group_costs(rg, start_date, end_date) using QueryDefinition with ActualCost type, Daily granularity, Cost aggregation, grouping by ServiceName and ResourceId. Implement get_all_costs() with 6-hour cache (_cache_duration=timedelta(hours=6)). Implement get_service_type_totals() aggregating by service name. Follow azure_resources_service.py pattern (lines 1-85). Export singleton instance cost_management_service.",
+            "status": "pending",
+            "testStrategy": "Test Azure credential authentication. Test get_resource_group_costs() returns data for each of 7 RGs. Verify cache mechanism works (first call hits API, second uses cache within 6 hours). Test get_service_type_totals() aggregates correctly. Validate error handling for API failures.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Create Budget Router with CRUD and Azure Cost Sync Endpoints (backend/src/routers/budget.py)",
+            "description": "Implement FastAPI router with budget/license CRUD endpoints and Azure Cost Management integration endpoints",
+            "dependencies": [
+              2
+            ],
+            "details": "Create router with prefix '/api/budget'. Implement endpoints: GET /budgets (list all from Cosmos DB 'budgets' container where type='budget'), POST /budgets (create with type='budget'), PUT /budgets/{id} (update with updated_at timestamp), DELETE /budgets/{id}. Implement same pattern for licenses (type='license'). Add GET /costs/current (calls cost_management_service.get_all_costs()), GET /costs/by-service (calls get_service_type_totals()), GET /costs/resource-group/{rg_name} (calls get_resource_group_costs). Implement POST /sync-budgets: fetches all budgets, gets service_totals from Azure, updates budget.spent with actual costs, calculates status based on thresholds (>=100%=Exceeded, >=threshold_critical=Critical, >=threshold_warning=Warning, else On Track), saves updated budgets. Follow patterns from azure_resources.py router. Use db.query_items, db.create_item, db.update_item, db.delete_item from database.py.",
+            "status": "pending",
+            "testStrategy": "Test all CRUD endpoints with valid/invalid data. Test /costs/current returns data structure with costs array and total. Test /costs/by-service aggregates correctly. Test /costs/resource-group/{rg} for each RG. Test /sync-budgets updates budget.spent and status correctly based on thresholds. Verify error handling (404 for missing budget, 500 for DB/API errors).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Register Budget Router and Create Cosmos DB Container",
+            "description": "Add budget router to main.py and create 'budgets' Cosmos DB container with partition key '/type'",
+            "dependencies": [
+              3
+            ],
+            "details": "In backend/src/main.py line 10, add import: from src.routers import budget. After existing router registrations (after line with azure_resources), add: app.include_router(budget.router). In backend/src/database.py line 31-45, add to container_definitions list: ('budgets', '/type'). The container will store both Budget (type='budget') and License (type='license') documents using partition key '/type' for efficient querying. Follow existing patterns from meetings/tasks/agents containers.",
+            "status": "pending",
+            "testStrategy": "Verify backend starts without errors. Test container creation by checking Azure Cosmos DB portal shows 'budgets' container with partition key '/type'. Test creating budget document with type='budget' succeeds. Test query 'SELECT * FROM c WHERE c.type = \"budget\"' returns only budgets.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Add Budget API Client Methods to frontend/lib/api.ts",
+            "description": "Extend api.ts with TypeScript interfaces and methods for budget, license, and cost endpoints",
+            "dependencies": [
+              4
+            ],
+            "details": "Add Budget interface matching backend model (id, name, category, resource_group, azure_service_type, amount, spent, currency, period, status, threshold_warning, threshold_critical, start_date, end_date, notes, created_at, updated_at). Add License interface matching backend model. Add api.budget object with methods: list() -> Promise<Budget[]>, create(budget: Partial<Budget>) -> Promise<Budget>, update(id, budget) -> Promise<Budget>, delete(id) -> Promise<void>, getCurrentCosts() -> Promise<{costs: any[], total: number}>, syncBudgets() -> Promise<{message: string}>. Add api.licenses with similar CRUD methods. All methods use fetch with ${API_URL}/api/budget/* endpoints, X-API-Key header from API_KEY constant (line 6), handle errors with throw new Error(). Follow existing patterns from api.meetings/api.tasks (lines 8-100).",
+            "status": "pending",
+            "testStrategy": "Test each API method with TypeScript type checking. Verify fetch calls use correct endpoints and headers. Test error handling with network failures. Validate Budget/License interfaces match backend Pydantic models exactly.",
+            "parentId": "undefined"
+          }
+        ]
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-30T12:00:00.000Z",
-      "taskCount": 24,
-      "completedCount": 12,
+      "lastModified": "2025-12-05T01:04:08.612Z",
+      "taskCount": 30,
+      "completedCount": 20,
       "tags": [
         "master"
       ]

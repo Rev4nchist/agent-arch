@@ -77,7 +77,7 @@ services:
       - agent-arch-network
     # No ports exposed - only accessible via reverse-proxy
     expose:
-      - "8001"
+      - "8000"
     restart: unless-stopped
 
 networks:
