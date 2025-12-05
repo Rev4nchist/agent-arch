@@ -642,3 +642,218 @@ class ContextResult(BaseModel):
     context: str
     sources: List[str] = []
     intent: QueryIntent = QueryIntent.GENERAL
+
+
+class UserRole(str, Enum):
+    """User role enum for access control."""
+
+    ADMIN = "admin"
+    USER = "user"
+
+
+class UserStatus(str, Enum):
+    """User status enum."""
+
+    ACTIVE = "active"
+    PENDING = "pending"
+    DENIED = "denied"
+
+
+class AccessRequestStatus(str, Enum):
+    """Access request status enum."""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    DENIED = "denied"
+
+
+class AllowedUser(BaseModel):
+    """Allowed user for platform access control."""
+
+    id: Optional[str] = None
+    email: str
+    name: str
+    role: UserRole = UserRole.USER
+    status: UserStatus = UserStatus.ACTIVE
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AllowedUserCreate(BaseModel):
+    """Request model for creating an allowed user."""
+
+    email: str
+    name: str
+    role: UserRole = UserRole.USER
+
+
+class AllowedUserUpdate(BaseModel):
+    """Request model for updating an allowed user."""
+
+    name: Optional[str] = None
+    role: Optional[UserRole] = None
+    status: Optional[UserStatus] = None
+
+
+class AccessRequest(BaseModel):
+    """Access request for users requesting platform access."""
+
+    id: Optional[str] = None
+    email: str
+    name: str
+    reason: Optional[str] = None
+    status: AccessRequestStatus = AccessRequestStatus.PENDING
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AccessRequestCreate(BaseModel):
+    """Request model for creating an access request."""
+
+    email: str
+    name: str
+    reason: Optional[str] = None
+
+
+class AccessVerifyResponse(BaseModel):
+    """Response model for access verification."""
+
+    authorized: bool
+    role: Optional[str] = None
+    user_id: Optional[str] = None
+    name: Optional[str] = None
+
+
+class BudgetCategory(str, Enum):
+    """Budget category enum."""
+
+    AZURE_SERVICE = "Azure Service"
+    SOFTWARE_LICENSE = "Software License"
+    CUSTOM_ALLOCATION = "Custom Allocation"
+
+
+class BudgetStatus(str, Enum):
+    """Budget status enum."""
+
+    ON_TRACK = "On Track"
+    WARNING = "Warning"
+    CRITICAL = "Critical"
+    EXCEEDED = "Exceeded"
+
+
+class LicenseType(str, Enum):
+    """License type enum."""
+
+    SUBSCRIPTION = "Subscription"
+    PAY_AS_YOU_GO = "Pay-as-you-go"
+    PERPETUAL = "Perpetual"
+    ENTERPRISE = "Enterprise"
+
+
+class LicenseStatus(str, Enum):
+    """License status enum."""
+
+    ACTIVE = "Active"
+    EXPIRING = "Expiring"
+    EXPIRED = "Expired"
+    SUSPENDED = "Suspended"
+
+
+class Budget(BaseModel):
+    """Budget allocation model."""
+
+    id: Optional[str] = None
+    name: str
+    category: BudgetCategory
+    resource_groups: List[str] = Field(default_factory=list)
+    azure_service_type: Optional[str] = None
+    amount: float
+    spent: float = 0.0
+    currency: str = "USD"
+    period: str = "monthly"
+    status: BudgetStatus = BudgetStatus.ON_TRACK
+    threshold_warning: float = 75.0
+    threshold_critical: float = 90.0
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    owner: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class BudgetCreate(BaseModel):
+    """Request model for creating a budget."""
+
+    name: str
+    category: BudgetCategory
+    resource_groups: List[str] = Field(default_factory=list)
+    azure_service_type: Optional[str] = None
+    amount: float
+    currency: str = "USD"
+    period: str = "monthly"
+    threshold_warning: float = 75.0
+    threshold_critical: float = 90.0
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    owner: Optional[str] = None
+
+
+class License(BaseModel):
+    """Software license model."""
+
+    id: Optional[str] = None
+    name: str
+    vendor: str
+    license_type: LicenseType
+    seats: Optional[int] = None
+    cost_per_seat: Optional[float] = None
+    monthly_cost: float
+    annual_cost: Optional[float] = None
+    renewal_date: Optional[datetime] = None
+    status: LicenseStatus = LicenseStatus.ACTIVE
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class LicenseCreate(BaseModel):
+    """Request model for creating a license."""
+
+    name: str
+    vendor: str
+    license_type: LicenseType
+    seats: Optional[int] = None
+    cost_per_seat: Optional[float] = None
+    monthly_cost: float
+    annual_cost: Optional[float] = None
+    renewal_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+
+class CostSummary(BaseModel):
+    """Cost summary model."""
+
+    total_cost: float
+    currency: str = "USD"
+    resource_groups_count: int
+    period: str
+    period_start: str
+    period_end: str
+    by_resource_group: List[dict]
+    top_services: List[dict]
+
+
+class ResourceGroupCost(BaseModel):
+    """Resource group cost model."""
+
+    resource_group: str
+    total_cost: float
+    currency: str = "USD"
+    services: List[dict]
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    error: Optional[str] = None

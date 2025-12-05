@@ -1,29 +1,83 @@
 {
   "deployment": {
-    "method": "github-actions",
-    "trigger": "git push to main branch",
-    "backend": {
-      "type": "Azure Container Apps",
-      "name": "agent-arch-api",
-      "acr": "agentarchacr.azurecr.io",
-      "image": "agent-arch-api",
-      "workflowFile": ".github/workflows/backend-deploy.yml",
-      "manualDeploy": "cd backend && docker build -t agentarchacr.azurecr.io/agent-arch-api:latest . && az acr login --name agentarchacr && docker push agentarchacr.azurecr.io/agent-arch-api:latest && az containerapp update --name agent-arch-api --resource-group rg-agent-architecture --image agentarchacr.azurecr.io/agent-arch-api:latest"
+    "environments": {
+      "local": {
+        "description": "Local Docker Compose development environment",
+        "url": "http://localhost:8080",
+        "commands": {
+          "start": "cd C:/agent-arch && docker compose up -d",
+          "stop": "cd C:/agent-arch && docker compose down",
+          "rebuild": "cd C:/agent-arch && docker compose down && docker compose build --no-cache && docker compose up -d",
+          "logs": "cd C:/agent-arch && docker compose logs -f"
+        }
+      },
+      "production": {
+        "description": "Azure production environment",
+        "frontend": {
+          "type": "Azure Static Web Apps",
+          "name": "agent-arch-web-prod",
+          "url": "https://witty-coast-0e5f72203.3.azurestaticapps.net",
+          "resourceGroup": "rg-agent-architecture"
+        },
+        "backend": {
+          "type": "Azure Container Apps",
+          "name": "agent-arch-api",
+          "url": "https://agent-arch-api.icyplant-75ca2495.westeurope.azurecontainerapps.io",
+          "acr": "agentarchacr.azurecr.io",
+          "image": "agent-arch-api",
+          "resourceGroup": "rg-agent-architecture"
+        }
+      }
     },
-    "frontend": {
-      "type": "Azure Static Web Apps",
-      "name": "agent-arch-web-prod",
-      "url": "witty-coast-0e5f72203.3.azurestaticapps.net",
-      "workflowFile": ".github/workflows/frontend-deploy.yml",
-      "manualDeploy": "cd frontend && npm run build && cp staticwebapp.config.json out/ && npx swa deploy out --deployment-token <TOKEN> --env production"
+    "procedures": {
+      "frontend": {
+        "critical": [
+          "MUST move .env.local before build: mv frontend/.env.local frontend/.env.local.bak",
+          "Build uses .env.production which has correct API URL",
+          "MUST restore after build: mv frontend/.env.local.bak frontend/.env.local",
+          "MUST copy staticwebapp.config.json to out/ folder"
+        ],
+        "steps": [
+          "cd C:/agent-arch/frontend",
+          "mv .env.local .env.local.bak",
+          "npm run build",
+          "mv .env.local.bak .env.local",
+          "cp staticwebapp.config.json out/",
+          "npx @azure/static-web-apps-cli deploy out --deployment-token \"$(az staticwebapp secrets list --name agent-arch-web-prod --resource-group rg-agent-architecture --query 'properties.apiKey' -o tsv)\" --env production"
+        ],
+        "verification": [
+          "grep 'agent-arch-api' out/_next/static/chunks/*.js - must find API URL",
+          "After deploy: hard refresh browser, check Network tab for correct API calls"
+        ]
+      },
+      "backend": {
+        "steps": [
+          "cd C:/agent-arch/backend",
+          "docker build -t agentarchacr.azurecr.io/agent-arch-api:latest .",
+          "az acr login --name agentarchacr",
+          "docker push agentarchacr.azurecr.io/agent-arch-api:latest",
+          "az containerapp update --name agent-arch-api --resource-group rg-agent-architecture --image agentarchacr.azurecr.io/agent-arch-api:latest"
+        ],
+        "verification": [
+          "curl https://agent-arch-api.icyplant-75ca2495.westeurope.azurecontainerapps.io/health"
+        ]
+      }
     },
-    "resourceGroup": "rg-agent-architecture"
+    "githubActions": {
+      "backend": ".github/workflows/backend-deploy.yml",
+      "frontend": ".github/workflows/frontend-deploy.yml",
+      "requiredSecrets": ["AZURE_CREDENTIALS", "AZURE_STATIC_WEB_APPS_API_TOKEN"]
+    }
   },
   "hooks": {
     "UserPromptSubmit": [
       {
         "matcher": "bug|error|fix|debug|broken|issue|crash|fail",
         "command": "echo '[SKILL ACTIVATION] Debugging context detected - applying systematic-debugging framework'"
+      },
+      {
+        "matcher": "deploy|deployment|push to prod|ship|release",
+        "command": "powershell -Command \"Write-Host '[DEPLOYMENT] Read C:/agent-arch/.claude/settings.json deployment.procedures BEFORE deploying' -ForegroundColor Yellow\""
       }
     ],
     "PreToolUse": [

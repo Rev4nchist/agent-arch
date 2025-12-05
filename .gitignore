@@ -53,3 +53,19 @@ NUL
 
 # Root level env (use .env.example)
 .env
+
+# Deployment artifacts and logs
+*.zip
+deploy-check/
+logs/
+logs-*/
+webapp-logs/
+
+# Secrets (never commit)
+github-secret-*.txt
+*-secret*.txt
+*.secret
+
+# Taskmaster docs (personal)
+.taskmaster/docs/*.pdf
+.taskmaster/docs/*.png

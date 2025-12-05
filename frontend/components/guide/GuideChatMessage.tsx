@@ -81,13 +81,13 @@ export function GuideChatMessage({ message, compact = false, onExecuteAction }: 
                   components={{
                     // Headings
                     h1: ({ children }) => (
-                      <h1 style={{ fontWeight: 600 }} className="text-lg text-[#1a1a1a] mt-4 mb-2 first:mt-0">{children}</h1>
+                      <h1 className="text-lg font-semibold text-[#1a1a1a] mt-4 mb-2 first:mt-0">{children}</h1>
                     ),
                     h2: ({ children }) => (
-                      <h2 style={{ fontWeight: 600 }} className="text-base text-[#1a1a1a] mt-3 mb-2 first:mt-0">{children}</h2>
+                      <h2 className="text-base font-semibold text-[#1a1a1a] mt-3 mb-2 first:mt-0">{children}</h2>
                     ),
                     h3: ({ children }) => (
-                      <h3 style={{ fontWeight: 600 }} className="text-sm text-[#1a1a1a] mt-2 mb-1 first:mt-0">{children}</h3>
+                      <h3 className="text-sm font-semibold text-[#1a1a1a] mt-2 mb-1 first:mt-0">{children}</h3>
                     ),
                     // Paragraphs
                     p: ({ children }) => (
@@ -95,7 +95,7 @@ export function GuideChatMessage({ message, compact = false, onExecuteAction }: 
                     ),
                     // Bold and italic
                     strong: ({ children }) => (
-                      <strong style={{ fontWeight: 600 }} className="text-[#1a1a1a]">{children}</strong>
+                      <strong className="font-semibold text-[#1a1a1a]">{children}</strong>
                     ),
                     em: ({ children }) => (
                       <em className="italic">{children}</em>
@@ -107,12 +107,21 @@ export function GuideChatMessage({ message, compact = false, onExecuteAction }: 
                     ol: ({ children }) => (
                       <ol className="list-decimal list-inside space-y-1.5 mb-3 last:mb-0 marker:text-[#6b7280]">{children}</ol>
                     ),
-                    li: ({ children }) => (
-                      <li className="text-[15px] text-[#1a1a1a] leading-[1.6] flex items-start gap-2">
-                        <span className="text-[#00A693] mt-1.5 text-xs">●</span>
-                        <span className="flex-1">{children}</span>
-                      </li>
-                    ),
+                    li: ({ children }) => {
+                      const text = typeof children === 'string' ? children :
+                        Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '';
+                      const emojiHeaderPattern = /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+                      const isEmojiHeader = emojiHeaderPattern.test(text.trim());
+                      return (
+                        <li className={cn(
+                          "text-[15px] text-[#1a1a1a] leading-[1.6] flex items-start gap-2",
+                          isEmojiHeader && "font-semibold"
+                        )}>
+                          <span className="text-[#00A693] mt-1.5 text-xs">●</span>
+                          <span className="flex-1">{children}</span>
+                        </li>
+                      );
+                    },
                     // Inline code
                     code: ({ className, children, ...props }) => {
                       const isBlock = className?.includes('language-');

@@ -25,10 +25,10 @@ export const PAGE_CONTEXT_MAP: Record<string, PageContextConfig> = {
     displayName: 'Dashboard',
     contextPrompt: 'User is on the main dashboard viewing platform statistics, recent activity, and quick action cards.',
     suggestions: [
+      'What can I ask you about?',
       'What are my most urgent tasks?',
       'Summarize recent meeting outcomes',
       'Show agents needing attention',
-      'What proposals are pending review?',
     ],
   },
   '/meetings': {
@@ -69,10 +69,10 @@ export const PAGE_CONTEXT_MAP: Record<string, PageContextConfig> = {
     displayName: 'Proposals & Decisions',
     contextPrompt: 'User is viewing governance proposals and approved decisions with status tracking and decision rationale.',
     suggestions: [
+      'What can I ask you about?',
       'What proposals are awaiting review?',
       'Show recent architecture decisions',
       'Find licensing-related proposals',
-      'Who made the most decisions?',
     ],
   },
   '/governance': {
@@ -146,8 +146,8 @@ export const PAGE_CONTEXT_MAP: Record<string, PageContextConfig> = {
     displayName: 'AI Guide',
     contextPrompt: 'User is on the full AI Guide chat interface for in-depth platform queries and assistance.',
     suggestions: [
-      'Help me understand the agent tiers',
       'What can I ask you about?',
+      'Help me understand the agent tiers',
       'Summarize platform activity this week',
       'How do I create a new agent?',
     ],
