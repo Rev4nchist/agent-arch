@@ -1,0 +1,159 @@
+name: Staging Deploy
+
+# Manual staging deployment workflow
+# Run this to deploy current branch to staging environment before merging to main
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_frontend:
+        description: 'Deploy frontend to staging'
+        required: true
+        default: 'true'
+        type: boolean
+      deploy_backend:
+        description: 'Deploy backend to staging'
+        required: true
+        default: 'true'
+        type: boolean
+
+env:
+  ACR_NAME: agentarchacr
+  ACR_LOGIN_SERVER: agentarchacr.azurecr.io
+  IMAGE_NAME: agent-arch-api
+  CONTAINER_APP_NAME: agent-arch-api
+  RESOURCE_GROUP: rg-agent-architecture
+
+jobs:
+  staging-frontend:
+    if: ${{ inputs.deploy_frontend }}
+    runs-on: ubuntu-latest
+    name: Deploy Frontend to Staging
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for Staging
+        run: npm run build
+        env:
+          # Use staging API URL (same as prod for now, could use revision label)
+          NEXT_PUBLIC_API_URL: 'https://agent-arch-api.icyplant-75ca2495.westeurope.azurecontainerapps.io'
+          NEXT_PUBLIC_API_KEY: 'dev-test-key-123'
+
+      - name: Copy staticwebapp.config.json
+        run: cp staticwebapp.config.json out/
+
+      - name: Deploy to Azure Static Web Apps (Preview)
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: 'frontend/out'
+          skip_app_build: true
+          skip_api_build: true
+          deployment_environment: 'staging'
+
+    outputs:
+      static_web_app_url: ${{ steps.deploy.outputs.static_web_app_url }}
+
+  staging-backend:
+    if: ${{ inputs.deploy_backend }}
+    runs-on: ubuntu-latest
+    name: Deploy Backend to Staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push Docker image with staging tag
+        working-directory: backend
+        run: |
+          STAGING_TAG="staging-${{ github.sha }}"
+          FULL_IMAGE="${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${STAGING_TAG}"
+
+          echo "Building staging image: ${FULL_IMAGE}"
+          docker build -t ${FULL_IMAGE} .
+          docker push ${FULL_IMAGE}
+
+          echo "STAGING_TAG=${STAGING_TAG}" >> $GITHUB_ENV
+          echo "FULL_IMAGE=${FULL_IMAGE}" >> $GITHUB_ENV
+
+      - name: Deploy staging revision
+        run: |
+          echo "Deploying staging revision: ${{ env.FULL_IMAGE }}"
+          az containerapp revision copy \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.FULL_IMAGE }} \
+            --revision-suffix staging \
+            --query properties.configuration.ingress.fqdn -o tsv
+
+      - name: Get staging URL
+        id: staging-url
+        run: |
+          STAGING_URL=$(az containerapp revision show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --revision ${{ env.CONTAINER_APP_NAME }}--staging \
+            --query "properties.fqdn" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$STAGING_URL" ]; then
+            echo "Staging URL: https://${STAGING_URL}"
+            echo "staging_url=https://${STAGING_URL}" >> $GITHUB_OUTPUT
+          else
+            echo "Using main app URL for staging verification"
+          fi
+
+      - name: Verify staging deployment
+        run: |
+          echo "Waiting for staging deployment..."
+          sleep 20
+
+          APP_URL=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          echo "Checking health at: https://${APP_URL}/health"
+          curl -sf "https://${APP_URL}/health" && echo "Health check passed!"
+
+  summary:
+    needs: [staging-frontend, staging-backend]
+    if: always()
+    runs-on: ubuntu-latest
+    name: Staging Summary
+
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Staging Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.staging-frontend.result == 'success' && '✅ Deployed' || needs.staging-frontend.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.staging-backend.result == 'success' && '✅ Deployed' || needs.staging-backend.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
