@@ -11,6 +11,7 @@ from src.routers import transcripts, azure_resources, resources, audit, submissi
 from src.context_service import context_service
 from src.audit_middleware import AuditMiddleware
 from src.search_service import initialize_search_index, get_search_service
+from src.hmlr import HMLRService, SuggestionOrchestrator, SuggestionResponse
 from src.models import (
     Meeting,
     Task,
@@ -874,6 +875,12 @@ class ConversationMemory:
 # Global conversation memory instance
 conversation_memory = ConversationMemory()
 
+# Global HMLR memory service instance
+hmlr_service = HMLRService(ai_client=ai_client)
+
+# Global suggestion orchestrator (uses HMLR for personalization)
+suggestion_orchestrator = SuggestionOrchestrator(hmlr_service=hmlr_service)
+
 
 def _resolve_pronouns(query: str, session_id: str) -> Tuple[str, Dict[str, Any]]:
     """
@@ -1360,7 +1367,70 @@ def _generate_action_suggestions(
             params={"entity": "audit_logs", "field": "user_id"}
         ))
 
-    return suggestions[:4]
+    return suggestions[:6]
+
+
+async def _generate_action_suggestions_with_hmlr(
+    classified: ClassifiedIntent,
+    results: List[Dict[str, Any]],
+    response_text: str,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
+) -> List[ActionSuggestion]:
+    """
+    Generate follow-up suggestions with HMLR personalization.
+    Blends intent-based suggestions with memory-driven personalization.
+    Falls back to static suggestions if HMLR unavailable.
+    """
+    base_suggestions = _generate_action_suggestions(classified, results, response_text)
+
+    if not user_id or suggestion_orchestrator is None:
+        return base_suggestions
+
+    try:
+        hmlr_suggestions = await suggestion_orchestrator.get_followup_suggestions(
+            user_id=user_id,
+            intent=classified.intent.value,
+            response_text=response_text[:500] if response_text else None,
+            session_id=session_id
+        )
+
+        if not hmlr_suggestions:
+            return base_suggestions
+
+        converted = []
+        for ps in hmlr_suggestions[:2]:
+            source = ps.source if isinstance(ps.source, str) else ps.source.value
+            if source == "open_loop":
+                action_type = "query"
+                params = {"query": ps.metadata.get("original_text", ps.text)}
+            elif source == "intent":
+                action_type = "query"
+                params = {"query": ps.text}
+            else:
+                action_type = "query"
+                params = {"query": ps.text}
+
+            converted.append(ActionSuggestion(
+                label=ps.text[:40] + "..." if len(ps.text) > 40 else ps.text,
+                action_type=action_type,
+                params=params
+            ))
+
+        combined = converted + base_suggestions
+        seen = set()
+        unique = []
+        for s in combined:
+            key = s.label.lower().strip()
+            if key not in seen:
+                seen.add(key)
+                unique.append(s)
+
+        return unique[:6]
+
+    except Exception as e:
+        logger.warning(f"HMLR followup suggestions failed, using base: {e}")
+        return base_suggestions
 
 
 # =============================================================================
@@ -2349,6 +2419,26 @@ async def query_agent(request: AgentQueryRequest):
             f"Entities: {classified.entities} | Params: {classified.parameters} | Confidence: {classified.confidence}"
         )
 
+        # HMLR: Route query and get memory context
+        hmlr_decision = None
+        hmlr_context = None
+        user_id = request.user_id or "anonymous"
+        if settings.hmlr_enabled and session_id != "default":
+            try:
+                hmlr_decision, hmlr_hydrated = await hmlr_service.route_query(
+                    user_id=user_id,
+                    session_id=session_id,
+                    query=request.query,
+                    intent=classified.intent.value,
+                    entities=classified.entities
+                )
+                hmlr_context = hmlr_hydrated.full_context
+                if hmlr_context:
+                    context = f"{hmlr_context}\n\n{context}" if context else hmlr_context
+                    logger.info(f"HMLR: Added memory context ({hmlr_hydrated.token_estimate} tokens)")
+            except Exception as hmlr_error:
+                logger.warning(f"HMLR routing failed, continuing without memory: {hmlr_error}")
+
         # Add intent metadata to help AI understand query type
         intent_context = f"\n[Query Analysis]\nIntent: {classified.intent.value}\nTarget: {', '.join(classified.entities)}"
         if classified.parameters:
@@ -2492,8 +2582,11 @@ async def query_agent(request: AgentQueryRequest):
         result['intent'] = classified.intent.value
         result['confidence'] = classified.confidence
 
-        # Generate action suggestions based on query results
-        suggestions = _generate_action_suggestions(classified, live_items, result.get('response', ''))
+        # Generate action suggestions based on query results (with HMLR personalization)
+        suggestions = await _generate_action_suggestions_with_hmlr(
+            classified, live_items, result.get('response', ''),
+            user_id=request.user_id, session_id=session_id
+        )
         result['suggestions'] = [s.model_dump() for s in suggestions]
 
         # Add data basis metadata for UI confidence indicators
@@ -2521,6 +2614,22 @@ async def query_agent(request: AgentQueryRequest):
                 extracted_context=extracted_context
             )
             logger.info(f"Session {session_id[:8]}...: Stored conversation turn")
+
+            # HMLR: Store turn for persistent memory (triggers background fact extraction)
+            if settings.hmlr_enabled and hmlr_decision:
+                try:
+                    await hmlr_service.store_turn(
+                        user_id=user_id,
+                        session_id=session_id,
+                        query=request.query,
+                        response=result.get('response', ''),
+                        decision=hmlr_decision,
+                        intent=classified.intent.value,
+                        entities=classified.entities
+                    )
+                    logger.info(f"HMLR: Stored turn in block (scenario={hmlr_decision.scenario})")
+                except Exception as hmlr_store_error:
+                    logger.warning(f"HMLR store_turn failed: {hmlr_store_error}")
 
         return AgentQueryResponse(**result)
     except Exception as e:
@@ -2631,8 +2740,11 @@ async def query_agent_stream(request: AgentQueryRequest):
         if action_hints:
             full_context = f"{full_context}\n{action_hints}"
 
-        # Generate suggestions
-        suggestions = _generate_action_suggestions(classified, live_items, "")
+        # Generate suggestions (with HMLR personalization)
+        suggestions = await _generate_action_suggestions_with_hmlr(
+            classified, live_items, "",
+            user_id=request.user_id, session_id=session_id
+        )
         platform_docs_context = platform_context_result.context if platform_context_result else None
 
         def generate():
@@ -2920,6 +3032,52 @@ async def get_proactive_insights(page: str = "dashboard"):
     except Exception as e:
         logger.error(f"Error generating insights: {e}", exc_info=True)
         return InsightsResponse(page=page, insights=[], generated_at=datetime.utcnow().isoformat())
+
+
+@app.get("/api/guide/suggestions")
+async def get_personalized_suggestions(
+    page_type: str = "dashboard",
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
+):
+    """
+    Get personalized suggestions for the AI Guide.
+    Uses HMLR memory for personalization with static fallback.
+    """
+    from src.hmlr.suggestion_providers import VALID_PAGE_TYPES
+    if page_type not in VALID_PAGE_TYPES:
+        logger.warning(f"Invalid page_type '{page_type}', defaulting to 'unknown'")
+        page_type = "unknown"
+
+    def format_suggestion_response(result):
+        return {
+            "suggestions": [
+                {
+                    "id": f"suggestion-{i}",
+                    "text": s.text,
+                    "source": s.source,
+                    "priority": s.priority,
+                    "confidence": s.confidence,
+                    "metadata": s.metadata
+                }
+                for i, s in enumerate(result.suggestions)
+            ],
+            "is_personalized": result.is_personalized,
+            "fallback_reason": result.fallback_reason,
+            "page_type": result.page_type
+        }
+
+    try:
+        result = await suggestion_orchestrator.get_initial_suggestions(
+            user_id=user_id,
+            page_type=page_type,
+            session_id=session_id
+        )
+        return format_suggestion_response(result)
+    except Exception as e:
+        logger.error(f"Error getting personalized suggestions: {e}", exc_info=True)
+        result = suggestion_orchestrator._static_fallback(page_type, f"endpoint_error: {str(e)}")
+        return format_suggestion_response(result)
 
 
 class SearchRequest(PydanticBaseModel):

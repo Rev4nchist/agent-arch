@@ -44,6 +44,11 @@ class Database:
                 ("access_requests", "/id"),
                 ("budgets", "/id"),
                 ("licenses", "/id"),
+                # HMLR Memory System - Bridge Blocks (per-session topic organization)
+                ("bridge_blocks", "/session_id"),
+                # HMLR Memory System - User Profiles and Facts
+                ("user_profiles", "/user_id"),
+                ("user_facts", "/user_id"),
             ]
 
             # Create containers if not exists

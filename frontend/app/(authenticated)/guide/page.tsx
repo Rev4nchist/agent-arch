@@ -71,10 +71,28 @@ export default function GuidePage() {
                 <h2 className="text-lg font-medium mb-2">
                   How can I help you today?
                 </h2>
-                <p className="text-sm text-muted-foreground max-w-md mb-6">
+                <p className="text-sm text-muted-foreground max-w-md mb-4">
                   I can help you navigate the platform, explain features, guide you through workflows,
                   and query your data like tasks, agents, and meetings.
                 </p>
+
+                {/* HMLR Memory System Feature Highlight */}
+                <div className="bg-gradient-to-r from-[#00A693]/10 to-[#008577]/10 border border-[#00A693]/20 rounded-lg p-4 max-w-lg mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-[#00A693] animate-pulse" />
+                    <span className="text-xs font-medium text-[#00A693] uppercase tracking-wide">New: Intelligent Memory</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    I now remember context across your conversations. I learn facts you share,
+                    track topic switches seamlessly, and recall previous discussions to provide
+                    more personalized and contextual assistance.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="text-xs px-2 py-1 bg-background rounded-md border">Topic Tracking</span>
+                    <span className="text-xs px-2 py-1 bg-background rounded-md border">Fact Learning</span>
+                    <span className="text-xs px-2 py-1 bg-background rounded-md border">Context Resumption</span>
+                  </div>
+                </div>
 
                 <GuideSuggestionBar
                   suggestions={suggestions}

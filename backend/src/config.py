@@ -51,6 +51,15 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     session_expiry_hours: str = "8"
 
+    # HMLR Memory System Configuration
+    hmlr_enabled: bool = True
+    hmlr_sql_connection_string: str = ""
+    hmlr_max_blocks_per_session: int = 10
+    hmlr_block_inactive_minutes: int = 15
+    hmlr_fact_extraction_enabled: bool = True
+    hmlr_profile_update_enabled: bool = True
+    hmlr_topic_similarity_threshold: float = 0.7
+
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from comma-separated string."""

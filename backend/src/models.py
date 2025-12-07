@@ -403,6 +403,7 @@ class AgentQueryRequest(BaseModel):
     context: Optional[str] = None
     page_context: Optional[PageContext] = None
     session_id: Optional[str] = None  # Phase 5.2: Session-based conversation memory
+    user_id: Optional[str] = None  # HMLR: User identifier for persistent memory
 
 
 class ActionSuggestion(BaseModel):

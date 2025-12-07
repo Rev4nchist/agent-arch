@@ -202,3 +202,240 @@ def sample_queries():
             "Progress since yesterday"
         ]
     }
+
+
+# =============================================================================
+# HMLR Test Fixtures and Factories
+# =============================================================================
+
+from unittest.mock import MagicMock, AsyncMock, patch
+from datetime import datetime, timedelta, timezone
+import uuid
+
+
+def create_test_block(
+    block_id: str = None,
+    session_id: str = "test-session",
+    user_id: str = "test-user",
+    topic_label: str = "Test Topic",
+    status: str = "ACTIVE",
+    open_loops: List[str] = None,
+    turns: List[Dict] = None,
+    decisions_made: List[str] = None,
+    keywords: List[str] = None,
+    summary: str = None,
+    created_at: datetime = None,
+    last_activity: datetime = None
+) -> Dict[str, Any]:
+    """Factory for creating test BridgeBlock data."""
+    now = datetime.now(timezone.utc)
+    return {
+        "id": block_id or f"bb_test_{uuid.uuid4().hex[:8]}",
+        "session_id": session_id,
+        "user_id": user_id,
+        "topic_label": topic_label,
+        "status": status,
+        "open_loops": open_loops or [],
+        "turns": turns or [],
+        "decisions_made": decisions_made or [],
+        "keywords": keywords or [],
+        "summary": summary or "",
+        "created_at": (created_at or now).isoformat(),
+        "last_activity": (last_activity or now).isoformat()
+    }
+
+
+def create_test_fact(
+    user_id: str = "test-user",
+    key: str = "test_key",
+    value: str = "test_value",
+    category: str = "Definition",
+    confidence: float = 0.9,
+    verified: bool = True,
+    fact_id: int = None
+) -> Dict[str, Any]:
+    """Factory for creating test Fact data."""
+    return {
+        "fact_id": fact_id or 1,
+        "user_id": user_id,
+        "key": key,
+        "value": value,
+        "category": category,
+        "confidence": confidence,
+        "verified": verified,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+def create_test_profile(
+    user_id: str = "test-user",
+    preferences: Dict = None,
+    common_queries: List[str] = None,
+    known_entities: List[Dict] = None,
+    interaction_patterns: Dict = None
+) -> Dict[str, Any]:
+    """Factory for creating test UserProfile data."""
+    return {
+        "user_id": user_id,
+        "preferences": preferences or {"response_style": "concise"},
+        "common_queries": common_queries or [],
+        "known_entities": known_entities or [],
+        "interaction_patterns": interaction_patterns or {
+            "total_queries": 50,
+            "technical_queries": 30
+        }
+    }
+
+
+def create_test_turn(
+    index: int = 0,
+    query: str = "Test query",
+    response_summary: str = "Test response",
+    intent: str = None,
+    entities: List[str] = None
+) -> Dict[str, Any]:
+    """Factory for creating test Turn data."""
+    return {
+        "index": index,
+        "query": query,
+        "response_summary": response_summary,
+        "intent": intent,
+        "entities": entities or [],
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@pytest.fixture
+def mock_cosmos_container():
+    """Mock Cosmos DB container for HMLR tests."""
+    container = MagicMock()
+    container.create_item = MagicMock()
+    container.read_item = MagicMock()
+    container.replace_item = MagicMock()
+    container.delete_item = MagicMock()
+    container.upsert_item = MagicMock()
+    container.query_items = MagicMock(return_value=iter([]))
+    return container
+
+
+@pytest.fixture
+def mock_database(mock_cosmos_container):
+    """Mock database with containers for HMLR tests."""
+    db = MagicMock()
+    db.get_container = MagicMock(return_value=mock_cosmos_container)
+    db.initialize = MagicMock()
+    db.containers = {
+        "bridge_blocks": mock_cosmos_container,
+        "user_profiles": mock_cosmos_container,
+        "user_facts": mock_cosmos_container
+    }
+    return db
+
+
+@pytest.fixture
+def mock_sql_client():
+    """Mock SQL client for HMLR tests."""
+    client = MagicMock()
+    client.save_fact = MagicMock(return_value=1)
+    client.get_facts_by_user = MagicMock(return_value=[])
+    client.search_facts = MagicMock(return_value=[])
+    client.get_fact_by_key = MagicMock(return_value=None)
+    client.delete_fact = MagicMock(return_value=True)
+    client.get_user_profile = MagicMock(return_value=None)
+    client.save_user_profile = MagicMock(return_value=True)
+    client.update_profile_field = MagicMock(return_value=True)
+    client.close = MagicMock()
+    return client
+
+
+@pytest.fixture
+def mock_ai_client():
+    """Mock AI client for LLM operations in HMLR tests."""
+    client = AsyncMock()
+    client.complete = AsyncMock(return_value={"content": '{"facts": []}'})
+    return client
+
+
+@pytest.fixture
+def sample_blocks():
+    """Sample blocks with various states for testing."""
+    now = datetime.now(timezone.utc)
+    return [
+        create_test_block(
+            block_id="bb_active_1",
+            session_id="session-1",
+            topic_label="Active Topic",
+            status="ACTIVE",
+            open_loops=["Pending item 1", "Pending item 2"],
+            last_activity=now
+        ),
+        create_test_block(
+            block_id="bb_paused_1",
+            session_id="session-1",
+            topic_label="Paused Topic",
+            status="PAUSED",
+            open_loops=["Old pending item"],
+            last_activity=now - timedelta(hours=2)
+        ),
+        create_test_block(
+            block_id="bb_paused_2",
+            session_id="session-2",
+            topic_label="Cross-Session Topic",
+            status="PAUSED",
+            open_loops=["Cross-session pending"],
+            last_activity=now - timedelta(days=1)
+        )
+    ]
+
+
+@pytest.fixture
+def sample_profile():
+    """Sample user profile for testing."""
+    return create_test_profile(
+        user_id="david.hayes",
+        common_queries=[
+            "What tasks are blocked?",
+            "Show agent development status"
+        ],
+        known_entities=[
+            {"name": "AI Guide", "type": "project"},
+            {"name": "HMLR", "type": "system"}
+        ],
+        interaction_patterns={
+            "total_queries": 150,
+            "technical_queries": 120,
+            "topics_by_frequency": {
+                "agent development": 45,
+                "governance": 30
+            }
+        }
+    )
+
+
+@pytest.fixture
+def sample_facts():
+    """Sample facts for testing."""
+    return [
+        create_test_fact(
+            key="HMLR",
+            value="Hierarchical Memory Lookup and Routing",
+            category="Acronym"
+        ),
+        create_test_fact(
+            key="Tech Stack",
+            value="Next.js, FastAPI, CosmosDB",
+            category="Definition"
+        )
+    ]
+
+
+@pytest.fixture
+def hmlr_test_user_id():
+    """Standard test user ID for HMLR tests."""
+    return f"test-user-{uuid.uuid4().hex[:8]}"
+
+
+@pytest.fixture
+def hmlr_test_session_id():
+    """Standard test session ID for HMLR tests."""
+    return f"test-session-{uuid.uuid4().hex[:8]}"

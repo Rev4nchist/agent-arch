@@ -34,25 +34,60 @@ import {
   Pencil,
   Trash2,
   X,
+  Bot,
+  Database,
+  Search,
+  HardDrive,
+  Server,
+  Container,
+  Factory,
+  Brain,
+  Zap,
+  Cloud,
+  ShieldCheck,
+  Globe,
+  Github,
+  MessageSquare,
+  Sparkles,
+  Building2,
+  FileText,
 } from 'lucide-react';
 import { api, BudgetDashboard, ResourceGroupCost, License, LicenseCreate } from '@/lib/api';
 
-const SERVICE_ICONS: Record<string, string> = {
-  'azure openai': '🤖',
-  'openai': '🤖',
-  'cosmos db': '🗄️',
-  'cosmosdb': '🗄️',
-  'azure ai search': '🔍',
-  'search': '🔍',
-  'blob storage': '💾',
-  'storage': '💾',
-  'app service': '⚙️',
-  'container apps': '📦',
-  'ai foundry': '🏭',
-  'machine learning': '🧠',
-  'cognitive services': '🧠',
-  'functions': '⚡',
-  'default': '☁️',
+const ServiceIcon = ({ name, className = "h-4 w-4" }: { name: string; className?: string }) => {
+  const lower = name.toLowerCase();
+  if (lower.includes('openai') || lower.includes('ai')) return <Bot className={className} />;
+  if (lower.includes('cosmos') || lower.includes('database')) return <Database className={className} />;
+  if (lower.includes('search')) return <Search className={className} />;
+  if (lower.includes('storage') || lower.includes('blob')) return <HardDrive className={className} />;
+  if (lower.includes('app service') || lower.includes('web app')) return <Server className={className} />;
+  if (lower.includes('container')) return <Container className={className} />;
+  if (lower.includes('foundry') || lower.includes('factory')) return <Factory className={className} />;
+  if (lower.includes('machine learning') || lower.includes('cognitive')) return <Brain className={className} />;
+  if (lower.includes('function')) return <Zap className={className} />;
+  if (lower.includes('key vault')) return <ShieldCheck className={className} />;
+  if (lower.includes('static web')) return <Globe className={className} />;
+  return <Cloud className={className} />;
+};
+
+const LicenseIcon = ({ vendor, className = "h-5 w-5" }: { vendor: string; className?: string }) => {
+  const v = vendor.toLowerCase();
+  if (v.includes('github')) return <Github className={className} />;
+  if (v.includes('openai')) return <MessageSquare className={className} />;
+  if (v.includes('anthropic')) return <Sparkles className={className} />;
+  if (v.includes('microsoft')) return <Building2 className={className} />;
+  return <FileText className={className} />;
+};
+
+const RG_SERVICE_TEMPLATES: Record<string, string[]> = {
+  'rg-agent-architecture': ['Azure OpenAI', 'Cosmos DB', 'Container Apps', 'Blob Storage', 'AI Search'],
+  'mb-ai-foundry': ['Azure OpenAI', 'AI Foundry', 'Machine Learning', 'Storage'],
+  'mb-ai-foundry-hub': ['AI Foundry', 'Machine Learning', 'Key Vault', 'Storage'],
+  'fourth-ai-prod': ['Azure OpenAI', 'Cognitive Services', 'App Service', 'Storage'],
+  'ai-dev-education': ['Azure OpenAI', 'Cosmos DB', 'Static Web Apps', 'Storage'],
+  'personal-agent-rg': ['Azure OpenAI', 'Cosmos DB', 'Container Apps', 'Storage'],
+  'boyan-ai-experiments': ['Azure OpenAI', 'Machine Learning', 'Storage'],
+  'default': ['Azure OpenAI', 'Cosmos DB', 'Storage', 'App Service'],
 };
 
 const LICENSE_PRESETS = [
@@ -68,22 +103,6 @@ const LICENSE_PRESETS = [
   { name: 'Custom License', vendor: '', type: 'Subscription', costPerSeat: 0 },
 ];
 
-function getServiceIcon(serviceName: string): string {
-  const lower = serviceName.toLowerCase();
-  for (const [key, icon] of Object.entries(SERVICE_ICONS)) {
-    if (lower.includes(key)) return icon;
-  }
-  return SERVICE_ICONS.default;
-}
-
-function getLicenseIcon(vendor: string): string {
-  const v = vendor.toLowerCase();
-  if (v.includes('github')) return '🐙';
-  if (v.includes('openai')) return '🤖';
-  if (v.includes('anthropic')) return '🧠';
-  if (v.includes('microsoft')) return '🪟';
-  return '📄';
-}
 
 export default function BudgetPage() {
   const [timePeriod, setTimePeriod] = useState('month');
@@ -275,7 +294,35 @@ export default function BudgetPage() {
     return acc;
   }, {} as Record<string, { name: string; cost: number; count: number }>);
 
-  const topServices = Object.values(serviceAggregates)
+  const getTemplateServices = (rgName: string | null) => {
+    if (!rgName) {
+      const allTemplates = new Set<string>();
+      Object.values(RG_SERVICE_TEMPLATES).forEach(services => {
+        services.forEach(s => allTemplates.add(s));
+      });
+      return Array.from(allTemplates).map(name => ({ name, cost: 0, count: 0 }));
+    }
+    const template = RG_SERVICE_TEMPLATES[rgName] || RG_SERVICE_TEMPLATES.default;
+    return template.map(name => ({ name, cost: 0, count: 0 }));
+  };
+
+  const aggregatedServices = Object.values(serviceAggregates);
+  const templateServices = getTemplateServices(selectedRG);
+
+  const mergedServices = templateServices.map(template => {
+    const existing = aggregatedServices.find(
+      s => s.name.toLowerCase() === template.name.toLowerCase()
+    );
+    return existing || template;
+  });
+
+  aggregatedServices.forEach(service => {
+    if (!mergedServices.find(s => s.name.toLowerCase() === service.name.toLowerCase())) {
+      mergedServices.push(service);
+    }
+  });
+
+  const topServices = mergedServices
     .sort((a, b) => b.cost - a.cost)
     .slice(0, 10);
 
@@ -465,31 +512,37 @@ export default function BudgetPage() {
               <div className="space-y-4">
                 {topServices.map((service) => {
                   const maxCost = Math.max(...topServices.map(s => s.cost), 1);
-                  const percentage = (service.cost / maxCost) * 100;
+                  const percentage = service.cost > 0 ? (service.cost / maxCost) * 100 : 0;
+                  const hasData = service.cost > 0;
 
                   return (
                     <div key={service.name} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">{getServiceIcon(service.name)}</span>
-                          <span className="text-sm font-medium truncate max-w-[180px]">
+                          <div className={`p-1.5 rounded ${hasData ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                            <ServiceIcon name={service.name} className="h-4 w-4" />
+                          </div>
+                          <span className={`text-sm font-medium truncate max-w-[180px] ${!hasData ? 'text-gray-400' : ''}`}>
                             {service.name}
                           </span>
                         </div>
-                        <span className="text-sm font-semibold">
-                          ${service.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className={`text-sm ${hasData ? 'font-semibold' : 'text-gray-400 italic'}`}>
+                          {hasData
+                            ? `$${service.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : 'awaiting data'
+                          }
                         </span>
                       </div>
-                      <Progress value={percentage} className="h-2" />
+                      <Progress value={percentage} className={`h-2 ${!hasData ? 'opacity-30' : ''}`} />
                     </div>
                   );
                 })}
-                {topServices.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-4">
-                    {selectedRG ? 'No service data for this resource group' : 'No service cost data available'}
-                  </p>
-                )}
               </div>
+              {selectedRG && (
+                <p className="text-xs text-gray-500 mt-4 text-center">
+                  Cost data requires Azure RBAC permissions
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -517,7 +570,9 @@ export default function BudgetPage() {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{getLicenseIcon(license.vendor)}</span>
+                        <div className="p-1.5 rounded bg-purple-50 text-purple-600">
+                          <LicenseIcon vendor={license.vendor} className="h-4 w-4" />
+                        </div>
                         <h4 className="font-semibold text-sm">{license.name}</h4>
                         <Badge
                           variant={license.status === 'Active' ? 'default' : 'secondary'}
@@ -526,7 +581,7 @@ export default function BudgetPage() {
                           {license.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-600 ml-7">
+                      <div className="flex items-center gap-4 text-xs text-gray-600 ml-9">
                         <span>{license.vendor}</span>
                         <span>{license.license_type}</span>
                         {license.seats && <span>{license.seats} seats</span>}
@@ -605,7 +660,7 @@ export default function BudgetPage() {
       </div>
 
       <Dialog open={isLicenseDialogOpen} onOpenChange={setIsLicenseDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" onCloseClick={() => setIsLicenseDialogOpen(false)}>
           <DialogHeader>
             <DialogTitle>
               {editingLicense ? 'Edit License' : 'Add License'}
@@ -619,16 +674,36 @@ export default function BudgetPage() {
                   <SelectValue placeholder="Choose a preset..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="GitHub Copilot Business">🐙 GitHub Copilot Business ($19/seat)</SelectItem>
-                  <SelectItem value="GitHub Copilot Enterprise">🐙 GitHub Copilot Enterprise ($39/seat)</SelectItem>
-                  <SelectItem value="ChatGPT Plus">🤖 ChatGPT Plus ($20/seat)</SelectItem>
-                  <SelectItem value="ChatGPT Team">🤖 ChatGPT Team ($25/seat)</SelectItem>
-                  <SelectItem value="ChatGPT Enterprise">🤖 ChatGPT Enterprise (Custom)</SelectItem>
-                  <SelectItem value="Claude Pro">🧠 Claude Pro ($20/seat)</SelectItem>
-                  <SelectItem value="Claude Team">🧠 Claude Team ($25/seat)</SelectItem>
-                  <SelectItem value="Claude Enterprise">🧠 Claude Enterprise (Custom)</SelectItem>
-                  <SelectItem value="M365 Copilot">🪟 M365 Copilot ($30/seat)</SelectItem>
-                  <SelectItem value="Custom License">📄 Custom License</SelectItem>
+                  <SelectItem value="GitHub Copilot Business">
+                    <span className="flex items-center gap-2"><Github className="h-4 w-4" /> GitHub Copilot Business ($19/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="GitHub Copilot Enterprise">
+                    <span className="flex items-center gap-2"><Github className="h-4 w-4" /> GitHub Copilot Enterprise ($39/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="ChatGPT Plus">
+                    <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> ChatGPT Plus ($20/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="ChatGPT Team">
+                    <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> ChatGPT Team ($25/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="ChatGPT Enterprise">
+                    <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4" /> ChatGPT Enterprise (Custom)</span>
+                  </SelectItem>
+                  <SelectItem value="Claude Pro">
+                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Claude Pro ($20/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="Claude Team">
+                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Claude Team ($25/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="Claude Enterprise">
+                    <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Claude Enterprise (Custom)</span>
+                  </SelectItem>
+                  <SelectItem value="M365 Copilot">
+                    <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> M365 Copilot ($30/seat)</span>
+                  </SelectItem>
+                  <SelectItem value="Custom License">
+                    <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> Custom License</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

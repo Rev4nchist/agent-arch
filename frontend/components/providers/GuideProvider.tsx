@@ -1,10 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { ChatMessage, ChatSource, InsightItem, ActionSuggestion, api, PageContext as ApiPageContext, StreamMetadataChunk } from '@/lib/api';
+import { ChatMessage, ChatSource, InsightItem, ActionSuggestion, api, PageContext as ApiPageContext, StreamMetadataChunk, PersonalizedSuggestion } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { getPageContext, getSuggestionsForPage, PageContext, Suggestion } from '@/lib/guide-context';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15);
@@ -24,6 +25,8 @@ interface GuideContextState {
   isExpanded: boolean;
   currentPage: PageContext;
   suggestions: Suggestion[];
+  suggestionsPersonalized: boolean;
+  suggestionsLoading: boolean;
   insights: InsightItem[];  // Phase 5.3
   insightsLoading: boolean;  // Phase 5.3
   sendMessage: (query: string) => Promise<void>;
@@ -47,7 +50,9 @@ interface GuideProviderProps {
 
 export function GuideProvider({ children }: GuideProviderProps) {
   const pathname = usePathname();
-  const router = useRouter();  // Phase 5.4
+  const router = useRouter();
+  const { user } = useAuth();
+  const userId = useMemo(() => user?.username?.split('@')[0] || undefined, [user?.username]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,8 +68,76 @@ export function GuideProvider({ children }: GuideProviderProps) {
   const [insightsLoading, setInsightsLoading] = useState(false);
   const insightsCacheRef = useRef<{ page: string; data: InsightItem[]; timestamp: number } | null>(null);
 
+  // HMLR Personalized suggestions
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsPersonalized, setSuggestionsPersonalized] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const suggestionsCacheRef = useRef<{ page: string; data: Suggestion[]; personalized: boolean; timestamp: number } | null>(null);
+
   const currentPage = getPageContext(pathname);
-  const suggestions = getSuggestionsForPage(pathname);
+  const staticSuggestions = getSuggestionsForPage(pathname);
+
+  // Fetch personalized suggestions when widget opens
+  useEffect(() => {
+    if (!isWidgetOpen || isMinimized) return;
+
+    const fetchSuggestions = async () => {
+      const pageType = currentPage.pageType;
+      const now = Date.now();
+
+      // Check cache (30 second TTL)
+      if (
+        suggestionsCacheRef.current &&
+        suggestionsCacheRef.current.page === pageType &&
+        now - suggestionsCacheRef.current.timestamp < 30000
+      ) {
+        setSuggestions(suggestionsCacheRef.current.data);
+        setSuggestionsPersonalized(suggestionsCacheRef.current.personalized);
+        return;
+      }
+
+      setSuggestionsLoading(true);
+      try {
+        const response = await api.guide.getSuggestions(
+          pageType,
+          userId,
+          sessionIdRef.current
+        );
+
+        // Convert PersonalizedSuggestion to Suggestion format
+        const converted: Suggestion[] = response.suggestions.map((s) => ({
+          id: s.id,
+          text: s.text,
+          pageType: pageType,
+        }));
+
+        setSuggestions(converted);
+        setSuggestionsPersonalized(response.is_personalized);
+        suggestionsCacheRef.current = {
+          page: pageType,
+          data: converted,
+          personalized: response.is_personalized,
+          timestamp: now
+        };
+      } catch (err) {
+        console.error('Failed to fetch personalized suggestions:', err);
+        // Fallback to static suggestions
+        setSuggestions(staticSuggestions);
+        setSuggestionsPersonalized(false);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [isWidgetOpen, isMinimized, currentPage.pageType, staticSuggestions, userId]);
+
+  // Initialize with static suggestions
+  useEffect(() => {
+    if (suggestions.length === 0) {
+      setSuggestions(staticSuggestions);
+    }
+  }, [staticSuggestions]);
 
   // Phase 5.3: Fetch insights when widget opens (with 60s cache)
   useEffect(() => {
@@ -145,7 +218,8 @@ export function GuideProvider({ children }: GuideProviderProps) {
         query,
         contextString,
         pageContextForApi,
-        sessionIdRef.current
+        sessionIdRef.current,
+        userId
       )) {
         if (chunk.type === 'metadata') {
           metadata = chunk;
@@ -216,7 +290,7 @@ export function GuideProvider({ children }: GuideProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, currentPage, pathname]);
+  }, [isLoading, currentPage, pathname, userId]);
 
   const clearConversation = useCallback(() => {
     setMessages([]);
@@ -348,6 +422,8 @@ export function GuideProvider({ children }: GuideProviderProps) {
     isExpanded,
     currentPage,
     suggestions,
+    suggestionsPersonalized,
+    suggestionsLoading,
     insights,  // Phase 5.3
     insightsLoading,  // Phase 5.3
     sendMessage,

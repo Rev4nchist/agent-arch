@@ -204,6 +204,24 @@ export interface InsightsResponse {
   generated_at: string;
 }
 
+export type SuggestionSource = 'static' | 'intent' | 'open_loop' | 'common_query' | 'topic_interest' | 'entity' | 'context';
+
+export interface PersonalizedSuggestion {
+  id: string;
+  text: string;
+  source: SuggestionSource;
+  priority: number;
+  confidence: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface PersonalizedSuggestionsResponse {
+  suggestions: PersonalizedSuggestion[];
+  is_personalized: boolean;
+  fallback_reason?: string;
+  page_type: string;
+}
+
 // Streaming response chunk types
 export interface StreamMetadataChunk {
   type: 'metadata';
@@ -598,7 +616,8 @@ export const api = {
       query: string,
       context?: string,
       pageContext?: PageContext,
-      sessionId?: string
+      sessionId?: string,
+      userId?: string
     ): AsyncGenerator<StreamChunk, void, unknown> {
       const response = await fetch(`${API_URL}/api/agent/query/stream`, {
         method: 'POST',
@@ -611,6 +630,7 @@ export const api = {
           context,
           page_context: pageContext,
           session_id: sessionId,
+          user_id: userId,
         }),
       });
 
@@ -671,6 +691,13 @@ export const api = {
     // Phase 5.3: Proactive insights
     getInsights: (page: string) =>
       apiFetch<InsightsResponse>(`/api/agent/insights?page=${encodeURIComponent(page)}`),
+    // HMLR Personalized suggestions
+    getSuggestions: (pageType: string, userId?: string, sessionId?: string) => {
+      const params = new URLSearchParams({ page_type: pageType });
+      if (userId) params.append('user_id', userId);
+      if (sessionId) params.append('session_id', sessionId);
+      return apiFetch<PersonalizedSuggestionsResponse>(`/api/guide/suggestions?${params.toString()}`);
+    },
   },
   audit: {
     list: (params?: AuditQueryParams) => {
