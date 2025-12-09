@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Filter, ExternalLink, Search, Download, Eye } from 'lucide-react';
+import { ArrowRight, Filter, ExternalLink, Search, Download, Eye, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ActionSuggestion } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -17,8 +17,9 @@ const actionIcons = {
   filter: Filter,
   navigate: ExternalLink,
   show_detail: Eye,
+  view: List,
   export: Download,
-  create: ArrowRight,  // Won't be shown but needed for type safety
+  create: ArrowRight,
 };
 
 const actionColors = {
@@ -26,6 +27,7 @@ const actionColors = {
   filter: 'hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400',
   navigate: 'hover:bg-[#00A693]/10 hover:text-[#00A693]',
   show_detail: 'hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400',
+  view: 'hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400',
   export: 'hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400',
   create: 'hover:bg-gray-500/10',
 };
@@ -35,14 +37,16 @@ export function GuideActionSuggestions({
   onExecute,
   compact = false,
 }: GuideActionSuggestionsProps) {
-  // Filter out create actions (read-only only)
-  const readOnlyActions = suggestions.filter((s) => s.action_type !== 'create');
+  // Filter out create and filter actions (read-only only, filter not useful in this context)
+  const readOnlyActions = suggestions.filter(
+    (s) => s.action_type !== 'create' && s.action_type !== 'filter'
+  );
 
   if (readOnlyActions.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap gap-1.5', compact ? 'mt-2' : 'mt-3')}>
-      {readOnlyActions.slice(0, compact ? 2 : 4).map((action, index) => {
+      {readOnlyActions.slice(0, compact ? 4 : 8).map((action, index) => {
         const Icon = actionIcons[action.action_type] || ArrowRight;
         const colorClass = actionColors[action.action_type] || '';
 

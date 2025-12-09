@@ -21,13 +21,20 @@ export default function GuidePage() {
     sendMessage,
     clearConversation,
     dismissError,
+    executeAction,
   } = useGuide();
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const prevMessageCount = useRef(0);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    // Only scroll when a NEW message appears, not during streaming
+    if (messages.length > prevMessageCount.current) {
+      // Scroll the new message into view at the top
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    prevMessageCount.current = messages.length;
+  }, [messages.length]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
@@ -102,11 +109,18 @@ export default function GuidePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <GuideChatMessage key={message.id} message={message} />
+                {messages.map((message, index) => (
+                  <div
+                    key={message.id}
+                    ref={index === messages.length - 1 ? lastMessageRef : null}
+                  >
+                    <GuideChatMessage
+                      message={message}
+                      onExecuteAction={executeAction}
+                    />
+                  </div>
                 ))}
                 {isLoading && <GuideTypingIndicator />}
-                <div ref={messagesEndRef} />
               </div>
             )}
           </CardContent>

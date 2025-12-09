@@ -1231,49 +1231,84 @@ def _generate_action_suggestions(
     if intent == QueryIntent.LIST:
         if result_count > 0:
             if 'tasks' in entities:
-                if params.get('status') == 'Blocked':
-                    suggestions.append(ActionSuggestion(
-                        label="Show blockers",
-                        action_type="query",
-                        params={"query": "what is blocking these tasks?"}
-                    ))
                 suggestions.append(ActionSuggestion(
-                    label="Filter by priority",
-                    action_type="filter",
-                    params={"entity": "tasks", "field": "priority"}
+                    label="Show high priority",
+                    action_type="query",
+                    params={"query": "show high priority tasks"}
                 ))
                 suggestions.append(ActionSuggestion(
-                    label="Create task",
-                    action_type="create",
-                    params={"entity": "task"}
+                    label="Show blocked",
+                    action_type="query",
+                    params={"query": "show blocked tasks"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="Tasks due soon",
+                    action_type="query",
+                    params={"query": "tasks due this week"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="Go to Tasks",
+                    action_type="navigate",
+                    params={"page": "tasks"}
                 ))
             elif 'meetings' in entities:
-                suggestions.append(ActionSuggestion(
-                    label="Schedule meeting",
-                    action_type="create",
-                    params={"entity": "meeting"}
-                ))
                 suggestions.append(ActionSuggestion(
                     label="Show upcoming",
                     action_type="query",
                     params={"query": "upcoming meetings this week"}
                 ))
-            elif 'agents' in entities:
                 suggestions.append(ActionSuggestion(
-                    label="View by status",
-                    action_type="filter",
-                    params={"entity": "agents", "field": "status"}
+                    label="Recent summaries",
+                    action_type="query",
+                    params={"query": "recent meeting summaries"}
                 ))
                 suggestions.append(ActionSuggestion(
-                    label="Add agent",
-                    action_type="create",
-                    params={"entity": "agent"}
+                    label="Go to Meetings",
+                    action_type="navigate",
+                    params={"page": "meetings"}
+                ))
+            elif 'agents' in entities:
+                suggestions.append(ActionSuggestion(
+                    label="Active agents",
+                    action_type="query",
+                    params={"query": "show active agents"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="Agents by tier",
+                    action_type="query",
+                    params={"query": "show agents by tier"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="Go to Agents",
+                    action_type="navigate",
+                    params={"page": "agents"}
                 ))
             elif 'proposals' in entities:
                 suggestions.append(ActionSuggestion(
-                    label="Filter by status",
-                    action_type="filter",
-                    params={"entity": "proposals", "field": "status"}
+                    label="Show pending",
+                    action_type="query",
+                    params={"query": "show pending proposals"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="Go to Proposals",
+                    action_type="navigate",
+                    params={"page": "proposals"}
+                ))
+            else:
+                suggestions.append(ActionSuggestion(
+                    label="List tasks",
+                    action_type="view",
+                    params={"entity": "tasks"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="List meetings",
+                    action_type="view",
+                    params={"entity": "meetings"}
+                ))
+                suggestions.append(ActionSuggestion(
+                    label="List agents",
+                    action_type="view",
+                    params={"entity": "agents"}
                 ))
         else:
             if 'tasks' in entities:
@@ -1307,9 +1342,9 @@ def _generate_action_suggestions(
     elif intent == QueryIntent.STATUS_CHECK:
         if 'tasks' in entities:
             suggestions.append(ActionSuggestion(
-                label="View all tasks",
-                action_type="navigate",
-                params={"page": "tasks"}
+                label="List all tasks",
+                action_type="view",
+                params={"entity": "tasks"}
             ))
             suggestions.append(ActionSuggestion(
                 label="Show blocked",
@@ -1335,19 +1370,19 @@ def _generate_action_suggestions(
 
     elif intent == QueryIntent.EXPLANATION:
         suggestions.append(ActionSuggestion(
-            label="View tasks",
-            action_type="navigate",
-            params={"page": "tasks"}
+            label="List tasks",
+            action_type="view",
+            params={"entity": "tasks"}
         ))
         suggestions.append(ActionSuggestion(
-            label="View meetings",
-            action_type="navigate",
-            params={"page": "meetings"}
+            label="List meetings",
+            action_type="view",
+            params={"entity": "meetings"}
         ))
         suggestions.append(ActionSuggestion(
-            label="View agents",
-            action_type="navigate",
-            params={"page": "agents"}
+            label="List agents",
+            action_type="view",
+            params={"entity": "agents"}
         ))
 
     elif intent == QueryIntent.AUDIT:

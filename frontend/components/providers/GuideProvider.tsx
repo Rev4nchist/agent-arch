@@ -378,9 +378,13 @@ export function GuideProvider({ children }: GuideProviderProps) {
         }
         break;
 
+      case 'view':
       case 'show_detail':
-        // Dispatch event to show detail modal
-        if (action.params.id) {
+        // For view actions without specific ID, send a query to list items
+        if (!action.params.id && action.params.entity) {
+          sendMessage(`List all ${action.params.entity}`);
+        } else if (action.params.id) {
+          // Dispatch event to show detail modal for specific item
           const detailEvent = new CustomEvent('guide-show-detail', {
             detail: {
               id: action.params.id,

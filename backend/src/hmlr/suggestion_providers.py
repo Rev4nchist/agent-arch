@@ -333,4 +333,4 @@ class IntentSuggestionProvider(SuggestionProvider):
                 ("Platform statistics", 65),
             ],
         }
-        return mappings.get(intent, [("What else would you like to know?", 60)])
+        return mappings.get(intent, [])
