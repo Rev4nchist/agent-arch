@@ -51,11 +51,16 @@ export function GuideWidgetPanel({
   onInsightAction,
   onExecuteAction,
 }: GuideWidgetPanelProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const prevMessageCount = useRef(0);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Only scroll when a NEW message appears, not during streaming
+    if (messages.length > prevMessageCount.current) {
+      lastMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    prevMessageCount.current = messages.length;
+  }, [messages.length]);
 
   if (!isOpen) return null;
 
@@ -172,20 +177,23 @@ export function GuideWidgetPanel({
           </div>
         ) : (
           <div className="px-4 py-2">
-            {messages.map((msg) => (
-              <GuideChatMessage
+            {messages.map((msg, index) => (
+              <div
                 key={msg.id}
-                message={msg}
-                compact={!isExpanded}
-                onExecuteAction={onExecuteAction}
-              />
+                ref={index === messages.length - 1 ? lastMessageRef : null}
+              >
+                <GuideChatMessage
+                  message={msg}
+                  compact={!isExpanded}
+                  onExecuteAction={onExecuteAction}
+                />
+              </div>
             ))}
             {isLoading && (
               <div className="py-3">
                 <GuideTypingIndicator compact={!isExpanded} />
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
         )}
       </div>

@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from src.config import settings
 from src.database import db
 from src.ai_client import ai_client
-from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs, access, budget
+from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs, access, budget, memories, feature_updates
 from src.context_service import context_service
 from src.audit_middleware import AuditMiddleware
 from src.search_service import initialize_search_index, get_search_service
@@ -184,6 +184,8 @@ app.include_router(submissions.router)
 app.include_router(platform_docs.router)
 app.include_router(access.router)
 app.include_router(budget.router)
+app.include_router(memories.router)
+app.include_router(feature_updates.router)
 
 
 # Health check

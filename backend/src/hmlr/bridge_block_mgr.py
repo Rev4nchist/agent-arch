@@ -218,6 +218,43 @@ class BridgeBlockManager:
             logger.error(f"Failed to get user blocks with open loops: {e}")
             return []
 
+    async def get_user_blocks(
+        self,
+        user_id: str,
+        limit: int = 50
+    ) -> List[BridgeBlock]:
+        """Get all blocks for a user across all sessions.
+
+        Used for the User Memories page to show all conversation topics.
+
+        Args:
+            user_id: User identifier
+            limit: Maximum blocks to return
+
+        Returns:
+            List of BridgeBlocks ordered by last_activity DESC
+        """
+        try:
+            query = """
+                SELECT * FROM c
+                WHERE c.user_id = @user_id
+                ORDER BY c.last_activity DESC
+                OFFSET 0 LIMIT @limit
+            """
+            items = list(self.container.query_items(
+                query=query,
+                parameters=[
+                    {"name": "@user_id", "value": user_id},
+                    {"name": "@limit", "value": limit}
+                ],
+                enable_cross_partition_query=True
+            ))
+            return [BridgeBlock(**item) for item in items]
+
+        except Exception as e:
+            logger.error(f"Failed to get user blocks: {e}")
+            return []
+
     # =========================================================================
     # UPDATE OPERATIONS
     # =========================================================================

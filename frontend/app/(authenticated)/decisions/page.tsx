@@ -463,24 +463,17 @@ export default function ProposalsDecisionsPage() {
                           <CardTitle className="text-xl mb-2">
                             {proposal.title}
                           </CardTitle>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <User className="h-4 w-4" />
-                              {proposal.proposer}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Building2 className="h-4 w-4" />
-                              {proposal.department}
-                            </div>
-                            {proposal.team_member && (
-                              <Badge variant="outline" className="text-xs">
-                                @{proposal.team_member}
-                              </Badge>
-                            )}
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                            <span className="flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5" />
+                              <span className="font-medium text-gray-700">{proposal.proposer}</span>
+                              <span className="text-gray-400">·</span>
+                              <span>{proposal.department}</span>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5" />
                               {formatDate(proposal.created_at)}
-                            </div>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -728,7 +721,7 @@ export default function ProposalsDecisionsPage() {
                   }
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Category</label>
                   <Select
@@ -760,7 +753,7 @@ export default function ProposalsDecisionsPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Department *</label>
                   <Input
@@ -849,7 +842,7 @@ export default function ProposalsDecisionsPage() {
                   }
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Category</label>
                   <Select
@@ -960,7 +953,7 @@ export default function ProposalsDecisionsPage() {
                         rows={4}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Category</label>
                         <Select
@@ -1041,7 +1034,7 @@ export default function ProposalsDecisionsPage() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>Decision Date: {new Date(selectedDecision.decision_date).toLocaleDateString()}</span>
@@ -1137,7 +1130,7 @@ export default function ProposalsDecisionsPage() {
                         rows={4}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Category</label>
                         <Select
@@ -1174,7 +1167,7 @@ export default function ProposalsDecisionsPage() {
                         </Select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Proposer</label>
                         <TeamMemberSelect
@@ -1239,7 +1232,7 @@ export default function ProposalsDecisionsPage() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <User className="h-4 w-4" />
                         <span>Proposer: {selectedProposal.proposer}</span>

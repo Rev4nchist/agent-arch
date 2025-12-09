@@ -858,3 +858,50 @@ class ResourceGroupCost(BaseModel):
     period_start: Optional[str] = None
     period_end: Optional[str] = None
     error: Optional[str] = None
+
+
+class FeatureUpdateCategory(str, Enum):
+    """Feature update category enum."""
+
+    NEW_FEATURE = "New Feature"
+    IMPROVEMENT = "Improvement"
+    BUG_FIX = "Bug Fix"
+    ANNOUNCEMENT = "Announcement"
+
+
+class FeatureUpdate(BaseModel):
+    """Feature update data model for What's New page."""
+
+    id: Optional[str] = None
+    title: str
+    description: str
+    category: FeatureUpdateCategory
+    version: Optional[str] = None
+    related_pages: List[str] = []
+    published_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class FeatureUpdateCreate(BaseModel):
+    """Request model for creating a feature update."""
+
+    title: str
+    description: str
+    category: FeatureUpdateCategory
+    version: Optional[str] = None
+    related_pages: List[str] = []
+    published_at: Optional[datetime] = None
+    created_by: str
+
+
+class FeatureUpdateUpdate(BaseModel):
+    """Request model for updating a feature update."""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[FeatureUpdateCategory] = None
+    version: Optional[str] = None
+    related_pages: Optional[List[str]] = None
+    published_at: Optional[datetime] = None

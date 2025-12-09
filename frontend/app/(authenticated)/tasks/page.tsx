@@ -80,6 +80,7 @@ export default function TasksPage() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<StatusColumn | null>(null);
   const [taskSource, setTaskSource] = useState<'architecture' | 'feedback'>('architecture');
+  const [mobileKanbanStatus, setMobileKanbanStatus] = useState<StatusColumn>('Pending');
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -516,7 +517,7 @@ export default function TasksPage() {
                     rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Priority</label>
                     <Select
@@ -562,7 +563,7 @@ export default function TasksPage() {
                     <span className="font-medium">{newTask.category}:</span> {CATEGORY_DESCRIPTIONS[newTask.category]}
                   </p>
                 )}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Status</label>
                     <Select
@@ -609,7 +610,7 @@ export default function TasksPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Complexity</label>
                     <Select
@@ -785,144 +786,216 @@ export default function TasksPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(['Pending', 'In-Progress', 'Done', 'Blocked'] as StatusColumn[]).map(
-              (status) => {
-                const isDropTarget = dragOverColumn === status && draggedTaskId !== null;
-                const draggedTask = draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) : null;
-                const canDrop = draggedTask && draggedTask.status !== status;
-
-                return (
-                  <div
-                    key={status}
-                    className="flex flex-col"
-                    onDragOver={(e) => handleDragOver(e, status)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, status)}
-                  >
+          <>
+            {/* Mobile Kanban: Tab switcher */}
+            <div className="block lg:hidden mb-4">
+              <Tabs value={mobileKanbanStatus} onValueChange={(v) => setMobileKanbanStatus(v as StatusColumn)}>
+                <TabsList className="grid grid-cols-4 w-full">
+                  <TabsTrigger value="Pending" className="text-xs px-2">
+                    Pending ({groupedTasks.Pending.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="In-Progress" className="text-xs px-2">
+                    Active ({groupedTasks['In-Progress'].length})
+                  </TabsTrigger>
+                  <TabsTrigger value="Done" className="text-xs px-2">
+                    Done ({groupedTasks.Done.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="Blocked" className="text-xs px-2">
+                    Blocked ({groupedTasks.Blocked.length})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="mt-4 space-y-3">
+                {groupedTasks[mobileKanbanStatus].length === 0 ? (
+                  <Card className="border-dashed border-2 border-gray-300 bg-gray-50/50">
+                    <CardContent className="p-6 text-center">
+                      <p className="text-sm text-gray-400 italic">No {mobileKanbanStatus.toLowerCase()} tasks</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  groupedTasks[mobileKanbanStatus].map((task) => (
                     <Card
-                      className={`bg-gray-100 transition-all duration-200 ${
-                        isDropTarget && canDrop ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                      key={task.id}
+                      className={`transition-all ${
+                        isOverdue(task)
+                          ? 'ring-1 ring-red-300'
+                          : task.priority === 'Critical'
+                          ? 'ring-1 ring-purple-300'
+                          : ''
                       }`}
+                      onClick={() => setSelectedTask(task)}
                     >
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-semibold uppercase text-gray-600 flex items-center justify-between">
-                          <span>{status}</span>
-                          <Badge variant="outline" className="ml-2">
-                            {groupedTasks[status].length}
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-sm text-gray-900 mb-2">{task.title}</h4>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <Badge className={getPriorityColor(task.priority)} variant="outline">
+                            {task.priority}
                           </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                    </Card>
-
-                    <div
-                      className={`flex-1 space-y-3 min-h-[200px] mt-4 p-3 rounded-lg transition-all duration-200 ${
-                        isDropTarget && canDrop
-                          ? 'bg-blue-50/70 border-2 border-dashed border-blue-400'
-                          : 'border-2 border-transparent'
-                      }`}
-                    >
-                      {isDropTarget && canDrop && (
-                        <div
-                          className="h-20 border-2 border-dashed border-blue-400 rounded-lg bg-blue-100/50 flex items-center justify-center animate-pulse"
-                          style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
-                        >
-                          <span className="text-blue-500 text-sm font-medium">
-                            Drop to move to {status}
-                          </span>
+                          {task.category && (
+                            <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
+                              {task.category}
+                            </Badge>
+                          )}
                         </div>
-                      )}
+                        {task.description && (
+                          <p className="text-xs text-gray-600 line-clamp-2 mb-2">{task.description}</p>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          {task.assigned_to && <span>{task.assigned_to}</span>}
+                          {task.due_date && (
+                            <span className={isOverdue(task) ? 'text-red-600 font-medium' : ''}>
+                              {new Date(task.due_date).toLocaleDateString()}
+                              {isOverdue(task) && ' (Overdue)'}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
 
-                      {groupedTasks[status].length === 0 && !isDropTarget ? (
-                        <Card className="border-dashed border-2 border-gray-300 bg-gray-50/50">
-                          <CardContent className="p-6 text-center">
-                            <p className="text-sm text-gray-400 italic">
-                              No tasks
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        groupedTasks[status].map((task) => (
-                          <Card
-                            key={task.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, task.id)}
-                            onDragEnd={handleDragEnd}
-                            className={`transition-all duration-200 cursor-grab active:cursor-grabbing ${
-                              draggedTaskId === task.id
-                                ? 'opacity-40 scale-95 rotate-1 shadow-xl'
-                                : 'hover:shadow-lg hover:-translate-y-0.5'
-                            } ${
-                              isOverdue(task)
-                                ? 'ring-2 ring-red-400'
-                                : task.priority === 'Critical'
-                                ? 'ring-2 ring-purple-400'
-                                : ''
-                            }`}
-                            style={
-                              isOverdue(task)
-                                ? { boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)' }
-                                : task.priority === 'Critical'
-                                ? { boxShadow: '0 0 12px rgba(147, 51, 234, 0.4)' }
-                                : undefined
-                            }
-                            onClick={() => !draggedTaskId && setSelectedTask(task)}
+            {/* Desktop Kanban: Full grid with drag-and-drop */}
+            <div className="hidden lg:grid lg:grid-cols-4 gap-6">
+              {(['Pending', 'In-Progress', 'Done', 'Blocked'] as StatusColumn[]).map(
+                (status) => {
+                  const isDropTarget = dragOverColumn === status && draggedTaskId !== null;
+                  const draggedTask = draggedTaskId ? tasks.find((t) => t.id === draggedTaskId) : null;
+                  const canDrop = draggedTask && draggedTask.status !== status;
+
+                  return (
+                    <div
+                      key={status}
+                      className="flex flex-col"
+                      onDragOver={(e) => handleDragOver(e, status)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, status)}
+                    >
+                      <Card
+                        className={`bg-gray-100 transition-all duration-200 ${
+                          isDropTarget && canDrop ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                        }`}
+                      >
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-semibold uppercase text-gray-600 flex items-center justify-between">
+                            <span>{status}</span>
+                            <Badge variant="outline" className="ml-2">
+                              {groupedTasks[status].length}
+                            </Badge>
+                          </CardTitle>
+                        </CardHeader>
+                      </Card>
+
+                      <div
+                        className={`flex-1 space-y-3 min-h-[200px] mt-4 p-3 rounded-lg transition-all duration-200 ${
+                          isDropTarget && canDrop
+                            ? 'bg-blue-50/70 border-2 border-dashed border-blue-400'
+                            : 'border-2 border-transparent'
+                        }`}
+                      >
+                        {isDropTarget && canDrop && (
+                          <div
+                            className="h-20 border-2 border-dashed border-blue-400 rounded-lg bg-blue-100/50 flex items-center justify-center animate-pulse"
+                            style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
                           >
-                            <CardContent className="p-3 flex flex-col h-full">
-                              <div>
-                                <h4 className="font-medium text-sm text-gray-900 mb-1">
-                                  {task.title}
-                                </h4>
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                  <Badge
-                                    className={getPriorityColor(task.priority)}
-                                    variant="outline"
-                                  >
-                                    {(task.priority === 'Critical' || task.priority === 'High') && (
-                                      <AlertCircle className="h-3 w-3 mr-1" />
-                                    )}
-                                    {task.priority}
-                                  </Badge>
-                                  {task.category && (
-                                    <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
-                                      {task.category}
-                                    </Badge>
-                                  )}
-                                </div>
-                                {task.description && (
-                                  <p className="text-xs text-gray-600 line-clamp-3">
-                                    {task.description}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="mt-auto pt-3">
-                                {task.assigned_to && (
-                                  <div className="mb-1.5">
-                                    <Badge variant="outline" className="text-xs">
-                                      {task.assigned_to}
-                                    </Badge>
-                                  </div>
-                                )}
-                                {task.due_date && (
-                                  <div className={`flex items-center gap-1 text-xs ${
-                                    isOverdue(task) ? 'text-red-600 font-medium' : 'text-gray-500'
-                                  }`}>
-                                    <Clock className="h-3 w-3" />
-                                    {new Date(task.due_date).toLocaleDateString()}
-                                    {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
-                                  </div>
-                                )}
-                              </div>
+                            <span className="text-blue-500 text-sm font-medium">
+                              Drop to move to {status}
+                            </span>
+                          </div>
+                        )}
+
+                        {groupedTasks[status].length === 0 && !isDropTarget ? (
+                          <Card className="border-dashed border-2 border-gray-300 bg-gray-50/50">
+                            <CardContent className="p-6 text-center">
+                              <p className="text-sm text-gray-400 italic">
+                                No tasks
+                              </p>
                             </CardContent>
                           </Card>
-                        ))
-                      )}
+                        ) : (
+                          groupedTasks[status].map((task) => (
+                            <Card
+                              key={task.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, task.id)}
+                              onDragEnd={handleDragEnd}
+                              className={`transition-all duration-200 cursor-grab active:cursor-grabbing ${
+                                draggedTaskId === task.id
+                                  ? 'opacity-40 scale-95 rotate-1 shadow-xl'
+                                  : 'hover:shadow-lg hover:-translate-y-0.5'
+                              } ${
+                                isOverdue(task)
+                                  ? 'ring-2 ring-red-400'
+                                  : task.priority === 'Critical'
+                                  ? 'ring-2 ring-purple-400'
+                                  : ''
+                              }`}
+                              style={
+                                isOverdue(task)
+                                  ? { boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)' }
+                                  : task.priority === 'Critical'
+                                  ? { boxShadow: '0 0 12px rgba(147, 51, 234, 0.4)' }
+                                  : undefined
+                              }
+                              onClick={() => !draggedTaskId && setSelectedTask(task)}
+                            >
+                              <CardContent className="p-3 flex flex-col h-full">
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-900 mb-1">
+                                    {task.title}
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    <Badge
+                                      className={getPriorityColor(task.priority)}
+                                      variant="outline"
+                                    >
+                                      {(task.priority === 'Critical' || task.priority === 'High') && (
+                                        <AlertCircle className="h-3 w-3 mr-1" />
+                                      )}
+                                      {task.priority}
+                                    </Badge>
+                                    {task.category && (
+                                      <Badge variant="outline" className={`text-xs ${getCategoryColor(task.category)}`}>
+                                        {task.category}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {task.description && (
+                                    <p className="text-xs text-gray-600 line-clamp-3">
+                                      {task.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="mt-auto pt-3">
+                                  {task.assigned_to && (
+                                    <div className="mb-1.5">
+                                      <Badge variant="outline" className="text-xs">
+                                        {task.assigned_to}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {task.due_date && (
+                                    <div className={`flex items-center gap-1 text-xs ${
+                                      isOverdue(task) ? 'text-red-600 font-medium' : 'text-gray-500'
+                                    }`}>
+                                      <Clock className="h-3 w-3" />
+                                      {new Date(task.due_date).toLocaleDateString()}
+                                      {isOverdue(task) && <span className="ml-1">(Overdue)</span>}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              }
-            )}
-          </div>
+                  );
+                }
+              )}
+            </div>
+          </>
         )}
 
         {selectedTask && (
@@ -975,7 +1048,7 @@ export default function TasksPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {selectedTask.assigned_to && (
                         <div>
                           <h3 className="text-sm font-semibold text-gray-900 mb-2">
@@ -1058,7 +1131,7 @@ export default function TasksPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Status</label>
                         <Select
@@ -1127,7 +1200,7 @@ export default function TasksPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Assigned To</label>
                         <TeamMemberSelect

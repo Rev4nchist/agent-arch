@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Fourth AI Architecture Hub",
-  description: "Microsoft Agent Framework Architecture & Governance Portal",
+  description: "Microsoft Agent Framework Architecture & Governance Portal - Retro Tech Edition",
 };
 
 export default function LandingLayout({

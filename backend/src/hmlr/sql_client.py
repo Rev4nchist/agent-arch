@@ -251,6 +251,54 @@ class HMLRSQLClient:
             logger.error(f"Failed to delete fact: {e}")
             return False
 
+    async def delete_fact_for_user(self, fact_id: int, user_id: str) -> bool:
+        """Delete a fact only if it belongs to the user.
+
+        Args:
+            fact_id: Fact identifier
+            user_id: User identifier for authorization
+
+        Returns:
+            True if deleted, False otherwise
+        """
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM fact_store WHERE fact_id = ? AND user_id = ?",
+                fact_id, user_id
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+        except Exception as e:
+            logger.error(f"Failed to delete fact: {e}")
+            return False
+
+    async def verify_fact(self, fact_id: int, user_id: str) -> bool:
+        """Mark a fact as verified.
+
+        Args:
+            fact_id: Fact identifier
+            user_id: User identifier for authorization
+
+        Returns:
+            True if updated, False otherwise
+        """
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE fact_store SET verified = 1 WHERE fact_id = ? AND user_id = ?",
+                fact_id, user_id
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+        except Exception as e:
+            logger.error(f"Failed to verify fact: {e}")
+            return False
+
     # =========================================================================
     # USER PROFILE OPERATIONS
     # =========================================================================

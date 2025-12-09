@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Director of AI Architecture - Full Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm 20mm;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #ffffff;
+            color: #2D3748;
+            line-height: 1.6;
+            font-size: 10pt;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm 20mm;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        /* Fourth Brand Colors */
+        :root {
+            --deep-blue: #0C4A7D;
+            --teal: #00B69F;
+            --light-teal: #F0FDF9;
+            --gray-100: #F7FAFC;
+            --gray-200: #EDF2F7;
+            --gray-500: #718096;
+            --gray-700: #4A5568;
+            --gray-900: #1A202C;
+        }
+
+        /* Cover Page */
+        .cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 260mm;
+            text-align: center;
+            page-break-after: always;
+        }
+
+        .cover-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 40px;
+        }
+
+        .cover h1 {
+            font-size: 36pt;
+            font-weight: 700;
+            color: var(--deep-blue);
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .cover .subtitle {
+            font-size: 16pt;
+            color: var(--teal);
+            font-weight: 500;
+            margin-bottom: 60px;
+        }
+
+        .cover-meta {
+            font-size: 11pt;
+            color: var(--gray-500);
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: var(--deep-blue);
+        }
+
+        .cover-divider {
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--deep-blue), var(--teal));
+            margin: 40px 0;
+            border-radius: 2px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--deep-blue);
+        }
+
+        .page-header h2 {
+            font-size: 14pt;
+            color: var(--deep-blue);
+            font-weight: 600;
+        }
+
+        .page-header .page-num {
+            font-size: 9pt;
+            color: var(--gray-500);
+        }
+
+        /* Section Styling */
+        h2.section-title {
+            font-size: 16pt;
+            color: var(--deep-blue);
+            font-weight: 700;
+            margin: 24px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--teal);
+            display: inline-block;
+        }
+
+        h3 {
+            font-size: 12pt;
+            color: var(--deep-blue);
+            font-weight: 600;
+            margin: 20px 0 12px 0;
+        }
+
+        h4 {
+            font-size: 10pt;
+            color: var(--gray-700);
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: var(--gray-700);
+        }
+
+        /* Blockquote / Mission */
+        blockquote {
+            background: linear-gradient(135deg, var(--deep-blue) 0%, #0A5C8F 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 11pt;
+            font-weight: 500;
+            line-height: 1.7;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 12px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        li {
+            padding: 6px 0 6px 24px;
+            position: relative;
+        }
+
+        li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        ol li {
+            counter-increment: item;
+        }
+
+        ol li::before {
+            content: counter(item) ".";
+            color: var(--deep-blue);
+            font-weight: 600;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 9pt;
+        }
+
+        th {
+            background: var(--deep-blue);
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        tr:nth-child(even) {
+            background: var(--gray-100);
+        }
+
+        /* Highlight Boxes */
+        .highlight {
+            background: var(--light-teal);
+            border-left: 4px solid var(--teal);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight h4 {
+            color: var(--deep-blue);
+            margin-top: 0;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        /* Org Chart */
+        .org-chart {
+            font-family: monospace;
+            background: var(--gray-100);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 9pt;
+            line-height: 1.8;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        /* Grid Layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* Page Break */
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid var(--gray-200);
+            font-size: 8pt;
+            color: var(--gray-500);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* RACI Legend */
+        .raci-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 8pt;
+            color: var(--gray-500);
+            margin-top: 8px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .page {
+                page-break-after: always;
+            }
+            .no-break {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Cover Page -->
+    <div class="page cover">
+        <!-- Fourth Logo -->
+        <img class="cover-logo" src="fourth-logo.png" alt="Fourth Logo">
+        <h1>Director of<br>AI Architecture</h1>
+        <div class="subtitle">Role Proposal</div>
+        <div class="cover-divider"></div>
+        <div class="cover-meta">
+            <strong>Prepared by:</strong> David Hayes<br>
+            <strong>Current Role:</strong> AI Enablement Lead<br>
+            <strong>Proposed Role:</strong> Director of AI Architecture<br>
+            <strong>Reports to:</strong> Carly, VP of BizOps<br>
+            <strong>Date:</strong> December 2025
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="page">
+        <div class="page-header">
+            <h2>Executive Summary</h2>
+            <span class="page-num">Page 2</span>
+        </div>
+
+        <p>This proposal outlines a transformation of the current AI Enablement Lead role into a strategic <strong>Director of AI Architecture</strong> position. This role would establish Fourth as a leader in enterprise AI adoption by creating a centralized architecture function that designs, governs, and enables AI solutions across internal business functions.</p>
+
+        <p>The role shifts from reactive AI exploration to proactive AI orchestration - providing the structure, tooling, and expertise needed to deploy AI solutions that deliver measurable business outcomes.</p>
+
+        <h2 class="section-title">Scope Definition</h2>
+
+        <div class="two-col">
+            <div>
+                <h3>In Scope</h3>
+                <ul>
+                    <li><strong>All internal business functions</strong> - BizOps, Finance, HR, Sales, Marketing, Support, Legal, etc.</li>
+                    <li><strong>Internal productivity AI</strong> - Microsoft 365 Copilot, custom agents, workflow automation</li>
+                    <li><strong>Business process AI</strong> - Department-specific AI tools and solutions</li>
+                    <li><strong>AI governance</strong> - Standards, policies, and oversight for internal AI adoption</li>
+                    <li><strong>Cross-departmental AI initiatives</strong> - Shared services and enterprise-wide solutions</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Out of Scope (Engineering Domain)</h3>
+                <ul>
+                    <li><strong>Customer-facing AI products</strong> - Engineering team owns product AI architecture</li>
+                    <li><strong>Engineering tooling</strong> - Development team AI tools (Copilot for developers, etc.)</li>
+                    <li><strong>Product roadmap AI features</strong> - Product/Engineering leadership decisions</li>
+                </ul>
+
+                <div class="highlight">
+                    <h4>Collaboration Points</h4>
+                    <p>Engineering may consult on shared infrastructure or enterprise patterns. Potential future expansion into customer-facing AI if organizational need arises.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">The Problem We're Solving</h2>
+
+        <div class="two-col">
+            <div>
+                <h3>Current State</h3>
+                <ul>
+                    <li>AI adoption at Fourth is fragmented across internal departments</li>
+                    <li>No unified architecture or governance for internal AI initiatives</li>
+                    <li>Duplication of effort as teams independently explore similar AI solutions</li>
+                    <li>Inconsistent evaluation criteria for AI tools and platforms</li>
+                    <li>No clear pathway from AI experimentation to production deployment</li>
+                    <li>Risk of shadow AI and ungoverned tool adoption</li>
+                </ul>
+            </div>
+            <div>
+                <h3>The Opportunity</h3>
+                <ul>
+                    <li>Microsoft is investing heavily in enterprise AI (Copilot, Azure AI Foundry, Agent Framework)</li>
+                    <li>Fourth can gain competitive advantage through coordinated internal AI adoption</li>
+                    <li>Internal departments have AI needs but lack technical architecture expertise</li>
+                    <li>A central function can accelerate deployment while managing risk</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Responsibilities -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>Proposed Role: Director of AI Architecture</h2>
+            <span class="page-num">Page 3</span>
+        </div>
+
+        <blockquote>
+            <strong>Mission Statement:</strong> Lead the design, governance, and enablement of AI architecture across Fourth, orchestrating the research, tooling, personnel, and cross-departmental collaboration needed to successfully deploy AI solutions that drive business value.
+        </blockquote>
+
+        <h2 class="section-title">Core Responsibilities</h2>
+
+        <div class="two-col">
+            <div>
+                <h3>1. AI Architecture Design & Standards</h3>
+                <ul>
+                    <li>Define Fourth's AI reference architecture and technology stack</li>
+                    <li>Establish architecture patterns for common AI use cases</li>
+                    <li>Create reusable components and accelerators for AI deployment</li>
+                    <li>Maintain technology radar for AI tools and platforms</li>
+                    <li>Evaluate and recommend AI technologies (build vs. buy decisions)</li>
+                </ul>
+
+                <h3>2. AI Governance & Oversight</h3>
+                <ul>
+                    <li>Chair or participate in AI Governance Council</li>
+                    <li>Define agent tiers and approval workflows (Tier 1/2/3 governance)</li>
+                    <li>Establish security, privacy, and compliance standards for AI</li>
+                    <li>Manage AI risk assessment and mitigation</li>
+                    <li>Ensure responsible AI practices across initiatives</li>
+                </ul>
+
+                <h3>3. Cross-Departmental AI Enablement</h3>
+                <ul>
+                    <li>Partner with department heads to identify AI opportunities</li>
+                    <li>Translate business requirements into AI architecture solutions</li>
+                    <li>Provide technical guidance and architecture reviews</li>
+                    <li>Enable departments with self-service AI capabilities where appropriate</li>
+                    <li>Track and report on AI initiative outcomes</li>
+                </ul>
+            </div>
+            <div>
+                <h3>4. Microsoft AI Ecosystem Leadership</h3>
+                <p>Serve as Fourth's technical authority on Microsoft AI stack:</p>
+                <ul>
+                    <li><strong>Microsoft 365 Copilot</strong> - Productivity AI across Office suite</li>
+                    <li><strong>Copilot Studio</strong> - Low-code custom copilot development</li>
+                    <li><strong>Azure AI Foundry</strong> - Enterprise AI model deployment</li>
+                    <li><strong>Microsoft Agent Framework</strong> - Multi-agent orchestration</li>
+                    <li><strong>Microsoft 365 Agents</strong> - Business process automation</li>
+                </ul>
+                <p>Maintain relationships with Microsoft AI technical contacts. Stay current on roadmap and preview features. Evaluate applicability of new capabilities to Fourth's needs.</p>
+
+                <h3>5. AI Operations & Platform Management</h3>
+                <ul>
+                    <li>Oversee the AI Architecture Guide platform (agent-arch)</li>
+                    <li>Manage centralized AI infrastructure and shared services</li>
+                    <li>Monitor AI system performance and costs</li>
+                    <li>Coordinate with IT on infrastructure requirements</li>
+                </ul>
+
+                <div class="info-box">
+                    <strong>Platform URL:</strong><br>
+                    <a href="https://witty-coast-0e5f72203.3.azurestaticapps.net/">https://witty-coast-0e5f72203.3.azurestaticapps.net/</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Organizational Model -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>Organizational Model</h2>
+            <span class="page-num">Page 4</span>
+        </div>
+
+        <h3>Proposed Structure</h3>
+
+        <div class="org-chart">
+VP of BizOps (Carly)                    CTO (Christian) ←── Possible future reporting path
+    │                                         │
+    └── Director of AI Architecture ──────────┘
+            (David Hayes)
+            │
+            ├── Peer Relationship: IT Department
+            │   └── Collaboration on implementation, governance, permissions
+            │
+            ├── AI Architecture Council (Cross-functional)
+            │   ├── Representatives from each internal department
+            │   ├── IT representative
+            │   ├── Security representative
+            │   └── Legal/Compliance representative
+            │
+            └── Future Team Growth (Based on scope/success/budget)
+                ├── AI Solutions Architect(s)
+                ├── AI Developer(s)
+                └── AI Operations Specialist
+        </div>
+
+        <h3>Relationship with IT</h3>
+
+        <table>
+            <tr>
+                <th>Area</th>
+                <th>Director of AI Architecture</th>
+                <th>IT Department</th>
+            </tr>
+            <tr>
+                <td><strong>AI Strategy & Design</strong></td>
+                <td>Owns</td>
+                <td>Consulted</td>
+            </tr>
+            <tr>
+                <td><strong>Architecture Patterns</strong></td>
+                <td>Owns</td>
+                <td>Informed</td>
+            </tr>
+            <tr>
+                <td><strong>Governance & Policies</strong></td>
+                <td>Owns</td>
+                <td>Collaborates</td>
+            </tr>
+            <tr>
+                <td><strong>Infrastructure/Hosting</strong></td>
+                <td>Consulted</td>
+                <td>Owns</td>
+            </tr>
+            <tr>
+                <td><strong>Permissions/Access</strong></td>
+                <td>Requests</td>
+                <td>Implements</td>
+            </tr>
+            <tr>
+                <td><strong>Security Standards</strong></td>
+                <td>Collaborates</td>
+                <td>Owns</td>
+            </tr>
+            <tr>
+                <td><strong>Vendor Management</strong></td>
+                <td>Collaborates</td>
+                <td>Collaborates</td>
+            </tr>
+        </table>
+
+        <p><strong>This is a peer relationship</strong> - AI Architecture designs and governs, IT implements and operates.</p>
+
+        <div class="two-col">
+            <div>
+                <h3>Phase 1 (Immediate - Individual Contributor)</h3>
+                <ul>
+                    <li>Director of AI Architecture as sole dedicated resource</li>
+                    <li>Leverage existing IT and department resources for implementation</li>
+                    <li>AI Architecture Council as governing/advisory body</li>
+                    <li>Work directly with IT on infrastructure and permissions</li>
+                    <li>Department AI Champions as part-time liaisons</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Phase 2+ (Future - Based on Success & Budget)</h3>
+                <p>Team growth contingent on:</p>
+                <ul>
+                    <li>Demonstrated successful project delivery</li>
+                    <li>Expanded scope and demand from departments</li>
+                    <li>Budget availability and approval</li>
+                    <li>Potential hires: AI Solutions Architect, AI Developer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deliverables & Metrics -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>Key Deliverables & Success Metrics</h2>
+            <span class="page-num">Page 5</span>
+        </div>
+
+        <h3>Year 1 Deliverables</h3>
+
+        <table>
+            <tr>
+                <th>Deliverable</th>
+                <th>Description</th>
+                <th>Timeline</th>
+            </tr>
+            <tr>
+                <td><strong>AI Reference Architecture</strong></td>
+                <td>Documented architecture patterns and standards</td>
+                <td>Q1</td>
+            </tr>
+            <tr>
+                <td><strong>AI Governance Framework</strong></td>
+                <td>Tier-based approval process, policies, and controls</td>
+                <td>Q1</td>
+            </tr>
+            <tr>
+                <td><strong>Agent Architecture Platform</strong></td>
+                <td>Production deployment of governance/tracking tool</td>
+                <td>Q1</td>
+            </tr>
+            <tr>
+                <td><strong>Technology Radar</strong></td>
+                <td>Evaluated and categorized AI tools/platforms</td>
+                <td>Q2</td>
+            </tr>
+            <tr>
+                <td><strong>Department AI Roadmaps</strong></td>
+                <td>AI opportunity assessments for 3+ departments</td>
+                <td>Q2</td>
+            </tr>
+            <tr>
+                <td><strong>First Production AI Agent</strong></td>
+                <td>Tier 2+ agent deployed to production</td>
+                <td>Q2-Q3</td>
+            </tr>
+            <tr>
+                <td><strong>AI Training Program</strong></td>
+                <td>Architecture and governance training for stakeholders</td>
+                <td>Q3</td>
+            </tr>
+            <tr>
+                <td><strong>AI Cost Optimization</strong></td>
+                <td>Consolidated AI spend with usage analytics</td>
+                <td>Q4</td>
+            </tr>
+        </table>
+
+        <h3>Success Metrics</h3>
+
+        <table>
+            <tr>
+                <th>Metric</th>
+                <th>Target</th>
+                <th>Measurement</th>
+            </tr>
+            <tr>
+                <td><strong>AI Initiatives Governed</strong></td>
+                <td>100%</td>
+                <td>All AI projects registered in platform</td>
+            </tr>
+            <tr>
+                <td><strong>Time to AI Deployment</strong></td>
+                <td>-50%</td>
+                <td>Baseline vs. post-architecture deployment time</td>
+            </tr>
+            <tr>
+                <td><strong>AI Architecture Reviews</strong></td>
+                <td>20+/year</td>
+                <td>Number of reviews conducted</td>
+            </tr>
+            <tr>
+                <td><strong>Department Engagement</strong></td>
+                <td>5+ depts</td>
+                <td>Departments with active AI roadmaps</td>
+            </tr>
+            <tr>
+                <td><strong>Cost per AI Transaction</strong></td>
+                <td>Tracked</td>
+                <td>Establish baseline and optimize</td>
+            </tr>
+            <tr>
+                <td><strong>User Satisfaction</strong></td>
+                <td>>4.0/5</td>
+                <td>Survey of AI solution end users</td>
+            </tr>
+            <tr>
+                <td><strong>Governance Compliance</strong></td>
+                <td>100%</td>
+                <td>All agents meet tier requirements</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Platform & Microsoft Ecosystem -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>The Agent Architecture Platform</h2>
+            <span class="page-num">Page 6</span>
+        </div>
+
+        <p>The platform we've built demonstrates this role in action:</p>
+
+        <div class="two-col">
+            <div>
+                <h3>What It Does</h3>
+                <ul>
+                    <li><strong>Agent Registry</strong> - Centralized inventory of all AI agents, performance, cost & feedback</li>
+                    <li><strong>Governance Tracking</strong> - Tier classification, approvals, compliance</li>
+                    <li><strong>Task Management</strong> - AI initiative project tracking</li>
+                    <li><strong>Decision Log</strong> - Architecture decisions with rationale</li>
+                    <li><strong>Meeting Management</strong> - AI council and review meeting tracking</li>
+                    <li><strong>Resource Library</strong> - Centralized AI knowledge and documentation</li>
+                    <li><strong>AI Guide</strong> - Natural language interface to platform data</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Platform as Proof of Concept</h3>
+                <p>This platform serves as:</p>
+                <ol>
+                    <li>A working example of what AI architecture governance looks like</li>
+                    <li>The operational tool for managing AI across Fourth</li>
+                    <li>Evidence of ability to design and deliver AI solutions</li>
+                    <li>A template for future department-specific AI tools</li>
+                </ol>
+            </div>
+        </div>
+
+        <h2 class="section-title">Microsoft AI Ecosystem Alignment</h2>
+
+        <h3>Strategic Technologies</h3>
+
+        <table>
+            <tr>
+                <th>Technology</th>
+                <th>Role at Fourth</th>
+                <th>Architecture Function</th>
+            </tr>
+            <tr>
+                <td><strong>Microsoft 365 Copilot</strong></td>
+                <td>Enterprise productivity AI</td>
+                <td>Adoption strategy, prompt engineering, usage optimization</td>
+            </tr>
+            <tr>
+                <td><strong>Copilot Studio</strong></td>
+                <td>Citizen developer AI</td>
+                <td>Governance, template library, quality standards</td>
+            </tr>
+            <tr>
+                <td><strong>Azure AI Foundry</strong></td>
+                <td>Custom AI models</td>
+                <td>Model selection, deployment patterns, cost management</td>
+            </tr>
+            <tr>
+                <td><strong>Agent Framework</strong></td>
+                <td>Multi-agent systems</td>
+                <td>Architecture design, orchestration patterns</td>
+            </tr>
+            <tr>
+                <td><strong>Microsoft 365 Agents</strong></td>
+                <td>Process automation</td>
+                <td>Use case identification, integration architecture</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <h4>Value of Unified Approach</h4>
+            <ul>
+                <li>Leverage Microsoft enterprise agreements and support</li>
+                <li>Consistent security and compliance posture</li>
+                <li>Interoperability across solutions</li>
+                <li>Simplified training and skill development</li>
+                <li>Clear upgrade and feature roadmap</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Investment & Risk -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>Investment Request</h2>
+            <span class="page-num">Page 7</span>
+        </div>
+
+        <h3>Phase 1 (Immediate - Individual Contributor)</h3>
+
+        <p><strong>No additional headcount requested.</strong> This role leverages existing resources:</p>
+
+        <table>
+            <tr>
+                <th>Item</th>
+                <th>Cost</th>
+                <th>Notes</th>
+            </tr>
+            <tr>
+                <td><strong>Salary adjustment</strong></td>
+                <td>TBD</td>
+                <td>Title and scope change reflecting director-level responsibilities</td>
+            </tr>
+            <tr>
+                <td><strong>Azure infrastructure</strong></td>
+                <td>~$5k/mo</td>
+                <td>Current platform hosting - projection for 10-15 agents up and running</td>
+            </tr>
+            <tr>
+                <td><strong>Microsoft AI licenses</strong></td>
+                <td>Existing</td>
+                <td>Leverage current enterprise agreements</td>
+            </tr>
+            <tr>
+                <td><strong>Training/Certification</strong></td>
+                <td>$3-5K/yr</td>
+                <td>AI architecture certifications (Microsoft, AWS, etc.)</td>
+            </tr>
+            <tr>
+                <td><strong>Conference/Events</strong></td>
+                <td>$2-3K/yr</td>
+                <td>Microsoft Ignite, Build, AI Summit, etc.</td>
+            </tr>
+        </table>
+
+        <div class="highlight">
+            <h4>Total incremental cost (excl. salary): ~$11-14K/year</h4>
+        </div>
+
+        <h3>Future Investment (Contingent on Success)</h3>
+
+        <p>Team expansion would be proposed separately based on:</p>
+        <ul>
+            <li>Demonstrated delivery of Year 1 objectives</li>
+            <li>Demand exceeding individual capacity</li>
+            <li>Clear ROI from AI initiatives</li>
+            <li>Budget availability</li>
+        </ul>
+
+        <table>
+            <tr>
+                <th>Potential Future Role</th>
+                <th>Estimated Cost</th>
+                <th>Trigger</th>
+            </tr>
+            <tr>
+                <td>AI Solutions Architect</td>
+                <td>$100-120K</td>
+                <td>10+ concurrent architecture reviews</td>
+            </tr>
+            <tr>
+                <td>AI Developer</td>
+                <td>$90-110K</td>
+                <td>Platform/tooling backlog exceeds capacity</td>
+            </tr>
+        </table>
+
+        <h2 class="section-title">Risk Mitigation</h2>
+
+        <table>
+            <tr>
+                <th>Risk</th>
+                <th>Mitigation</th>
+            </tr>
+            <tr>
+                <td><strong>Role overlap with IT</strong></td>
+                <td>Clear RACI, focus on architecture vs. infrastructure</td>
+            </tr>
+            <tr>
+                <td><strong>Department resistance</strong></td>
+                <td>Start with willing partners, demonstrate value (Engineering exempted - they have strong opinions on their approach)</td>
+            </tr>
+            <tr>
+                <td><strong>Technology changes rapidly</strong></td>
+                <td>Continuous learning, Microsoft partnership</td>
+            </tr>
+            <tr>
+                <td><strong>Scope creep</strong></td>
+                <td>Strict governance, clear tier boundaries</td>
+            </tr>
+            <tr>
+                <td><strong>Single point of failure</strong></td>
+                <td>Document everything, train AI Champions</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Competitive Positioning & Next Steps -->
+    <div class="page page-break">
+        <div class="page-header">
+            <h2>Competitive Positioning & Next Steps</h2>
+            <span class="page-num">Page 8</span>
+        </div>
+
+        <h3>What This Role Enables</h3>
+
+        <div class="two-col">
+            <div>
+                <ul>
+                    <li><strong>Speed:</strong> Faster AI deployment through reusable patterns</li>
+                    <li><strong>Quality:</strong> Consistent, well-architected AI solutions</li>
+                    <li><strong>Governance:</strong> Managed risk and compliance</li>
+                </ul>
+            </div>
+            <div>
+                <ul>
+                    <li><strong>Efficiency:</strong> Reduced duplication, optimized costs</li>
+                    <li><strong>Strategy:</strong> Proactive AI roadmap vs. reactive adoption</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <h4>Differentiation</h4>
+            <p>Fourth would have a dedicated AI architecture function that:</p>
+            <ul>
+                <li>Bridges business needs and technical implementation</li>
+                <li>Provides enterprise-grade governance without slowing innovation</li>
+                <li>Leverages Microsoft ecosystem investments strategically</li>
+                <li>Enables departments while maintaining standards</li>
+            </ul>
+        </div>
+
+        <h2 class="section-title">Next Steps</h2>
+
+        <ol>
+            <li><strong>Discussion</strong> - Review proposal with Carly, refine scope and title</li>
+            <li><strong>Stakeholder Alignment</strong> - Socialize with IT leadership and key departments</li>
+            <li><strong>Formal Approval</strong> - HR/executive approval of role change</li>
+            <li><strong>Transition Plan</strong> - 30/60/90 day plan for new responsibilities</li>
+            <li><strong>Platform Launch</strong> - Deploy agent-arch as first operational win</li>
+            <li><strong>Quick Wins</strong> - Identify 2-3 department AI opportunities</li>
+        </ol>
+
+        <h2 class="section-title">Sample Role Description</h2>
+
+        <div class="info-box">
+            <p><strong>Title:</strong> Director of AI Architecture<br>
+            <strong>Department:</strong> Business Operations<br>
+            <strong>Reports to:</strong> VP of Business Operations (Carly)<br>
+            <strong>FLSA Status:</strong> Exempt / Individual Contributor</p>
+
+            <p><strong>Summary:</strong> The Director of AI Architecture leads the design, governance, and enablement of AI solutions across Fourth's internal business functions. This role establishes architecture standards, provides technical leadership on AI initiatives, and orchestrates cross-departmental collaboration to deploy AI systems that drive business value. Works as a peer with IT to ensure proper implementation and security of AI solutions.</p>
+
+            <p><strong>Scope:</strong></p>
+            <ul>
+                <li>All internal business functions (BizOps, Finance, HR, Sales, Marketing, Support, Legal)</li>
+                <li>Internal productivity and business process AI</li>
+                <li>Excludes customer-facing AI products (Engineering domain)</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <div><em>Prepared December 2025 by David Hayes</em></div>
+            <div>Fourth Limited | Confidential</div>
+        </div>
+    </div>
+</body>
+</html>

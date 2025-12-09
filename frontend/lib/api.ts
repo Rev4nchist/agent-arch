@@ -174,7 +174,7 @@ export interface DataBasis {
 // Phase 5.4: Quick action suggestions
 export interface ActionSuggestion {
   label: string;
-  action_type: 'query' | 'filter' | 'navigate' | 'create' | 'export' | 'show_detail';
+  action_type: 'query' | 'filter' | 'navigate' | 'create' | 'export' | 'show_detail' | 'view' | 'open_loop';
   params: Record<string, string | number | undefined>;
 }
 
@@ -482,6 +482,117 @@ export interface BudgetDashboard {
   };
 }
 
+
+
+export type FeatureUpdateCategory = 'New Feature' | 'Improvement' | 'Bug Fix' | 'Announcement';
+
+export interface FeatureUpdate {
+  id: string;
+  title: string;
+  description: string;
+  category: FeatureUpdateCategory;
+  version?: string;
+  related_pages: string[];
+  published_at: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeatureUpdateCreate {
+  title: string;
+  description: string;
+  category: FeatureUpdateCategory;
+  version?: string;
+  related_pages?: string[];
+  published_at?: string;
+  created_by: string;
+}
+
+export interface FeatureUpdateUpdate {
+  title?: string;
+  description?: string;
+  category?: FeatureUpdateCategory;
+  version?: string;
+  related_pages?: string[];
+  published_at?: string;
+}
+
+export interface FeatureUpdateListResponse {
+  items: FeatureUpdate[];
+  total: number;
+}
+export interface MemorySummary {
+  total_facts: number;
+  verified_facts: number;
+  active_topics: number;
+  open_loops: number;
+}
+
+export interface MemoryFact {
+  fact_id: number;
+  key: string;
+  value: string;
+  category: string;
+  confidence: number;
+  verified: boolean;
+  evidence_snippet?: string;
+  created_at?: string;
+}
+
+export interface FactsListResponse {
+  facts: MemoryFact[];
+  total: number;
+}
+
+export interface MemoryProfile {
+  user_id: string;
+  preferences: Record<string, unknown>;
+  common_queries: string[];
+  known_entities: Array<{ name: string; type: string; context?: string }>;
+  interaction_patterns: Record<string, unknown>;
+  last_updated?: string;
+}
+
+export interface TopicSummary {
+  id: string;
+  session_id: string;
+  topic_label: string;
+  status: string;
+  turn_count: number;
+  open_loops: string[];
+  last_activity: string;
+}
+
+export interface TopicTurn {
+  index: number;
+  query: string;
+  response_summary: string;
+  intent?: string;
+  entities: string[];
+  timestamp?: string;
+}
+
+export interface TopicDetail {
+  id: string;
+  session_id: string;
+  topic_label: string;
+  summary: string;
+  status: string;
+  keywords: string[];
+  open_loops: string[];
+  decisions_made: string[];
+  turn_count: number;
+  turns: TopicTurn[];
+  created_at: string;
+  last_activity: string;
+}
+
+export interface TopicsListResponse {
+  topics: TopicSummary[];
+  total: number;
+}
+
 async function apiFetch<T>(
   endpoint: string,
   options?: RequestInit
@@ -775,6 +886,55 @@ export const api = {
     },
     getStats: () => apiFetch<SubmissionStats>('/api/submissions/stats'),
   },
+  memories: {
+    getSummary: (userId: string) =>
+      apiFetch<MemorySummary>(`/api/memories/summary?user_id=${encodeURIComponent(userId)}`),
+    getFacts: (userId: string, params?: { category?: string; search?: string; limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      queryParams.append('user_id', userId);
+      if (params?.category) queryParams.append('category', params.category);
+      if (params?.search) queryParams.append('search', params.search);
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      return apiFetch<FactsListResponse>(`/api/memories/facts?${queryParams.toString()}`);
+    },
+    verifyFact: (factId: number, userId: string) =>
+      apiFetch<{ success: boolean }>(`/api/memories/facts/${factId}/verify?user_id=${encodeURIComponent(userId)}`, {
+        method: 'PUT',
+      }),
+    deleteFact: (factId: number, userId: string) =>
+      apiFetch<{ success: boolean }>(`/api/memories/facts/${factId}?user_id=${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      }),
+    getProfile: (userId: string) =>
+      apiFetch<MemoryProfile>(`/api/memories/profile?user_id=${encodeURIComponent(userId)}`),
+    updatePreferences: (userId: string, preferences: Record<string, unknown>) =>
+      apiFetch<{ success: boolean }>(`/api/memories/profile/preferences?user_id=${encodeURIComponent(userId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ preferences }),
+      }),
+    deleteCommonQuery: (userId: string, idx: number) =>
+      apiFetch<{ success: boolean }>(`/api/memories/profile/common-queries/${idx}?user_id=${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      }),
+    deleteKnownEntity: (userId: string, idx: number) =>
+      apiFetch<{ success: boolean }>(`/api/memories/profile/known-entities/${idx}?user_id=${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+      }),
+    getTopics: (userId: string, params?: { limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      queryParams.append('user_id', userId);
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      return apiFetch<TopicsListResponse>(`/api/memories/topics?${queryParams.toString()}`);
+    },
+    getTopicDetail: (topicId: string, sessionId: string) =>
+      apiFetch<TopicDetail>(`/api/memories/topics/${topicId}?session_id=${encodeURIComponent(sessionId)}`),
+    deleteOpenLoop: (topicId: string, sessionId: string, idx: number) =>
+      apiFetch<{ success: boolean }>(`/api/memories/topics/${topicId}/open-loops/${idx}?session_id=${encodeURIComponent(sessionId)}`, {
+        method: 'DELETE',
+      }),
+  },
   budget: {
     getDashboard: () => apiFetch<BudgetDashboard>('/api/budget/dashboard'),
     getCostSummary: () => apiFetch<CostSummary>('/api/budget/costs/summary'),
@@ -825,6 +985,32 @@ export const api = {
       }),
     deleteLicense: (id: string) =>
       apiFetch<{ message: string }>(`/api/budget/licenses/${id}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  featureUpdates: {
+    list: (params?: { category?: FeatureUpdateCategory; limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.category) queryParams.append('category', params.category);
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      const queryString = queryParams.toString();
+      return apiFetch<FeatureUpdateListResponse>('/api/feature-updates' + (queryString ? '?' + queryString : ''));
+    },
+    get: (id: string) => apiFetch<FeatureUpdate>('/api/feature-updates/' + id),
+    create: (data: FeatureUpdateCreate) =>
+      apiFetch<FeatureUpdate>('/api/feature-updates', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: FeatureUpdateUpdate) =>
+      apiFetch<FeatureUpdate>('/api/feature-updates/' + id, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      apiFetch<{ message: string }>('/api/feature-updates/' + id, {
         method: 'DELETE',
       }),
   },

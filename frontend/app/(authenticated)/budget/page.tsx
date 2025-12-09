@@ -329,14 +329,14 @@ export default function BudgetPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Budget & Licensing</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Budget & Licensing</h1>
+            <p className="mt-1 lg:mt-2 text-sm lg:text-base text-gray-600">
               Track Azure spending across {resourceGroupCosts.length} resource groups
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 lg:gap-4">
             <Button
               variant="outline"
               size="sm"
@@ -364,7 +364,7 @@ export default function BudgetPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -708,7 +708,7 @@ export default function BudgetPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">License Name</Label>
                 <Input
@@ -729,7 +729,7 @@ export default function BudgetPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="seats">Number of Seats</Label>
                 <Input

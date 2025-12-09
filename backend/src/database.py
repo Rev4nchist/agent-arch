@@ -49,6 +49,8 @@ class Database:
                 # HMLR Memory System - User Profiles and Facts
                 ("user_profiles", "/user_id"),
                 ("user_facts", "/user_id"),
+                # Feature Updates (What's New page)
+                ("feature_updates", "/id"),
             ]
 
             # Create containers if not exists
