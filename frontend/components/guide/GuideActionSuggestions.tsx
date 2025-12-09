@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Filter, ExternalLink, Search, Download, Eye, List } from 'lucide-react';
+import { ArrowRight, Filter, ExternalLink, Search, Download, Eye, List, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ActionSuggestion } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const actionIcons = {
   view: List,
   export: Download,
   create: ArrowRight,
+  open_loop: Bell,
 };
 
 const actionColors = {
@@ -30,6 +31,7 @@ const actionColors = {
   view: 'hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400',
   export: 'hover:bg-green-500/10 hover:text-green-600 dark:hover:text-green-400',
   create: 'hover:bg-gray-500/10',
+  open_loop: 'hover:bg-orange-500/10 hover:text-orange-600 dark:hover:text-orange-400',
 };
 
 export function GuideActionSuggestions({
@@ -37,16 +39,26 @@ export function GuideActionSuggestions({
   onExecute,
   compact = false,
 }: GuideActionSuggestionsProps) {
-  // Filter out create and filter actions (read-only only, filter not useful in this context)
-  const readOnlyActions = suggestions.filter(
-    (s) => s.action_type !== 'create' && s.action_type !== 'filter'
+  // Split suggestions: open_loop chips first, then regular (exclude create/filter)
+  const openLoopActions = suggestions.filter((s) => s.action_type === 'open_loop');
+  const regularActions = suggestions.filter(
+    (s) => s.action_type !== 'create' && s.action_type !== 'filter' && s.action_type !== 'open_loop'
   );
 
-  if (readOnlyActions.length === 0) return null;
+  // Apply different limits: open_loop (2 page / 1 modal) + regular (6 page / 3 modal)
+  const openLoopLimit = compact ? 1 : 2;
+  const regularLimit = compact ? 3 : 6;
+
+  const displayActions = [
+    ...openLoopActions.slice(0, openLoopLimit),
+    ...regularActions.slice(0, regularLimit)
+  ];
+
+  if (displayActions.length === 0) return null;
 
   return (
     <div className={cn('flex flex-wrap gap-1.5', compact ? 'mt-2' : 'mt-3')}>
-      {readOnlyActions.slice(0, compact ? 4 : 8).map((action, index) => {
+      {displayActions.map((action, index) => {
         const Icon = actionIcons[action.action_type] || ArrowRight;
         const colorClass = actionColors[action.action_type] || '';
 

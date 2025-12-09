@@ -66,6 +66,7 @@ services:
       - AZURE_AI_FOUNDRY_API_KEY=${AZURE_AI_FOUNDRY_API_KEY}
       - MODEL_ROUTER_DEPLOYMENT=${MODEL_ROUTER_DEPLOYMENT}
       - API_ACCESS_KEY=${API_ACCESS_KEY}
+      - HMLR_SQL_CONNECTION_STRING=${HMLR_SQL_CONNECTION_STRING}
       # No CORS origins needed! Reverse proxy handles it
       - CORS_ORIGINS=http://localhost:8080
       - ENVIRONMENT=development

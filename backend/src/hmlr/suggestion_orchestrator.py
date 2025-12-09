@@ -96,7 +96,7 @@ class SuggestionOrchestrator:
                 data = await self.memory_accessor.get_suggestion_data(
                     user_id=user_id,
                     session_id=session_id,
-                    include_cross_session=False
+                    include_cross_session=True
                 )
             except Exception as e:
                 logger.warning(f"Error getting memory data for followup: {e}")
@@ -115,7 +115,7 @@ class SuggestionOrchestrator:
             open_loop_suggestions = [
                 s for s in memory_suggestions
                 if s.source == SuggestionSource.OPEN_LOOP
-            ][:1]
+            ][:2]
             all_suggestions = intent_suggestions + open_loop_suggestions
         else:
             all_suggestions = intent_suggestions

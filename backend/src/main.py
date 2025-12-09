@@ -1405,12 +1405,56 @@ def _generate_action_suggestions(
     return suggestions[:6]
 
 
+def _get_page_context_suggestions(page_type: str) -> List[ActionSuggestion]:
+    """Generate suggestions relevant to the current page."""
+    PAGE_SUGGESTIONS = {
+        'tasks': [
+            ActionSuggestion(label="High priority tasks", action_type="query",
+                           params={"query": "show high priority tasks"}),
+            ActionSuggestion(label="Blocked tasks", action_type="query",
+                           params={"query": "show blocked tasks"}),
+        ],
+        'meetings': [
+            ActionSuggestion(label="Upcoming meetings", action_type="query",
+                           params={"query": "upcoming meetings this week"}),
+            ActionSuggestion(label="Recent summaries", action_type="query",
+                           params={"query": "recent meeting summaries"}),
+        ],
+        'agents': [
+            ActionSuggestion(label="Active agents", action_type="query",
+                           params={"query": "show active agents"}),
+            ActionSuggestion(label="Development agents", action_type="query",
+                           params={"query": "agents in development"}),
+        ],
+        'decisions': [
+            ActionSuggestion(label="Pending proposals", action_type="query",
+                           params={"query": "show pending proposals"}),
+            ActionSuggestion(label="Recent decisions", action_type="query",
+                           params={"query": "recent architecture decisions"}),
+        ],
+        'governance': [
+            ActionSuggestion(label="Key policies", action_type="query",
+                           params={"query": "what are the key governance policies"}),
+            ActionSuggestion(label="Compliance status", action_type="query",
+                           params={"query": "show compliance requirements"}),
+        ],
+        'budget': [
+            ActionSuggestion(label="Budget overview", action_type="query",
+                           params={"query": "current budget allocation"}),
+            ActionSuggestion(label="Active licenses", action_type="query",
+                           params={"query": "show active licenses"}),
+        ],
+    }
+    return PAGE_SUGGESTIONS.get(page_type, [])
+
+
 async def _generate_action_suggestions_with_hmlr(
     classified: ClassifiedIntent,
     results: List[Dict[str, Any]],
     response_text: str,
     user_id: Optional[str] = None,
-    session_id: Optional[str] = None
+    session_id: Optional[str] = None,
+    page_type: Optional[str] = None
 ) -> List[ActionSuggestion]:
     """
     Generate follow-up suggestions with HMLR personalization.
@@ -1419,8 +1463,13 @@ async def _generate_action_suggestions_with_hmlr(
     """
     base_suggestions = _generate_action_suggestions(classified, results, response_text)
 
+    # Add page-context suggestions (max 2)
+    if page_type:
+        page_suggestions = _get_page_context_suggestions(page_type)
+        base_suggestions = base_suggestions + page_suggestions[:2]
+
     if not user_id or suggestion_orchestrator is None:
-        return base_suggestions
+        return base_suggestions[:6]
 
     try:
         hmlr_suggestions = await suggestion_orchestrator.get_followup_suggestions(
@@ -1430,15 +1479,25 @@ async def _generate_action_suggestions_with_hmlr(
             session_id=session_id
         )
 
+        logger.info(f"HMLR: user_id={user_id}, session_id={session_id}, page_type={page_type}")
+        logger.info(f"HMLR: Got {len(hmlr_suggestions)} suggestions from orchestrator")
+        for s in hmlr_suggestions:
+            source = s.source if isinstance(s.source, str) else s.source.value
+            logger.info(f"  HMLR suggestion: source={source}, text={s.text[:50]}...")
+
         if not hmlr_suggestions:
-            return base_suggestions
+            return base_suggestions[:6]
 
         converted = []
         for ps in hmlr_suggestions[:2]:
             source = ps.source if isinstance(ps.source, str) else ps.source.value
             if source == "open_loop":
-                action_type = "query"
-                params = {"query": ps.metadata.get("original_text", ps.text)}
+                action_type = "open_loop"
+                params = {
+                    "query": ps.metadata.get("original_text", ps.text),
+                    "topic": ps.metadata.get("topic", ""),
+                    "block_id": ps.metadata.get("block_id", "")
+                }
             elif source == "intent":
                 action_type = "query"
                 params = {"query": ps.text}
@@ -1461,11 +1520,11 @@ async def _generate_action_suggestions_with_hmlr(
                 seen.add(key)
                 unique.append(s)
 
-        return unique[:6]
+        return unique[:8]
 
     except Exception as e:
         logger.warning(f"HMLR followup suggestions failed, using base: {e}")
-        return base_suggestions
+        return base_suggestions[:6]
 
 
 # =============================================================================
@@ -2618,9 +2677,10 @@ async def query_agent(request: AgentQueryRequest):
         result['confidence'] = classified.confidence
 
         # Generate action suggestions based on query results (with HMLR personalization)
+        page_type = request.page_context.visible_entity_type if request.page_context else None
         suggestions = await _generate_action_suggestions_with_hmlr(
             classified, live_items, result.get('response', ''),
-            user_id=request.user_id, session_id=session_id
+            user_id=request.user_id, session_id=session_id, page_type=page_type
         )
         result['suggestions'] = [s.model_dump() for s in suggestions]
 
@@ -2776,9 +2836,10 @@ async def query_agent_stream(request: AgentQueryRequest):
             full_context = f"{full_context}\n{action_hints}"
 
         # Generate suggestions (with HMLR personalization)
+        page_type = request.page_context.visible_entity_type if request.page_context else None
         suggestions = await _generate_action_suggestions_with_hmlr(
             classified, live_items, "",
-            user_id=request.user_id, session_id=session_id
+            user_id=request.user_id, session_id=session_id, page_type=page_type
         )
         platform_docs_context = platform_context_result.context if platform_context_result else None
 

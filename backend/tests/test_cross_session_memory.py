@@ -132,8 +132,8 @@ class TestOpenLoopRetrieval:
             assert len(data.open_loops) <= 5
 
     @pytest.mark.asyncio
-    async def test_open_loops_exclude_168h_old(self, mock_hmlr_service):
-        """Open loops older than 168 hours should be excluded."""
+    async def test_open_loops_exclude_720h_old(self, mock_hmlr_service):
+        """Open loops older than 720 hours (30 days) should be excluded."""
         now = datetime.now(timezone.utc)
 
         old_block = MagicMock()
@@ -141,7 +141,7 @@ class TestOpenLoopRetrieval:
         old_block.session_id = "session-old"
         old_block.topic_label = "Very Old Topic"
         old_block.open_loops = ["Ancient pending item"]
-        old_block.last_activity = now - timedelta(hours=200)
+        old_block.last_activity = now - timedelta(hours=800)
 
         mock_hmlr_service.block_manager.get_user_blocks_with_open_loops = AsyncMock(
             return_value=[old_block]

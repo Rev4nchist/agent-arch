@@ -355,6 +355,13 @@ export function GuideProvider({ children }: GuideProviderProps) {
         }
         break;
 
+      case 'open_loop':
+        // Continue an open loop - send the original query
+        if (action.params.query) {
+          sendMessage(String(action.params.query));
+        }
+        break;
+
       case 'navigate':
         // Navigate to a page
         if (action.params.page) {
