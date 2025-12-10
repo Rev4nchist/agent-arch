@@ -1,0 +1,49 @@
+# Gitleaks configuration for agent-arch project
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "agent-arch gitleaks config"
+
+[extend]
+useDefault = true
+
+# Custom rules for Azure/ODBC patterns
+[[rules]]
+id = "odbc-connection-string"
+description = "ODBC Connection String with Password"
+regex = '''(?i)(Driver\s*=.*?;.*?Pwd\s*=\s*)([^;]+)'''
+secretGroup = 2
+keywords = ["pwd", "password", "odbc", "driver"]
+
+[[rules]]
+id = "azure-sql-connection"
+description = "Azure SQL Connection String"
+regex = '''(?i)(Server\s*=\s*tcp:.*?\.database\.windows\.net.*?Password\s*=\s*)([^;]+)'''
+secretGroup = 2
+keywords = ["database.windows.net", "password"]
+
+[[rules]]
+id = "azure-storage-key"
+description = "Azure Storage Account Key"
+regex = '''(?i)(AccountKey\s*=\s*)([A-Za-z0-9+/=]{86,88})'''
+secretGroup = 2
+keywords = ["accountkey", "storageaccount"]
+
+# Allowlist - files/paths to ignore
+[allowlist]
+description = "Global allowlist"
+paths = [
+    '''\.secrets\.baseline$''',
+    '''package-lock\.json$''',
+    '''\.taskmaster/.*''',
+    '''node_modules/.*''',
+    '''\.git/.*''',
+]
+
+# Patterns that are okay (example placeholders)
+regexes = [
+    '''YourPassword''',
+    '''your-password-here''',
+    '''<PASSWORD>''',
+    '''REPLACE_ME''',
+    '''\$\{.*\}''',  # Environment variable placeholders
+]

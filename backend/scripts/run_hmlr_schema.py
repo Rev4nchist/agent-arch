@@ -4,11 +4,14 @@ import pyodbc
 import os
 from pathlib import Path
 
-# Connection string from environment or hardcoded for setup
-CONNECTION_STRING = os.getenv(
-    "HMLR_SQL_CONNECTION_STRING",
-    "Driver={SQL Server};Server=tcp:agent-arch-sql.database.windows.net,1433;Database=hmlr-db;Uid=sqladmin;Pwd=***REMOVED***;Encrypt=yes;TrustServerCertificate=yes;Connection Timeout=30;"
-)
+# Connection string MUST be set via environment variable - no defaults for security
+CONNECTION_STRING = os.getenv("HMLR_SQL_CONNECTION_STRING")
+
+if not CONNECTION_STRING:
+    raise EnvironmentError(
+        "HMLR_SQL_CONNECTION_STRING environment variable is required. "
+        "Set it with your Azure SQL connection string."
+    )
 
 # SQL statements (separated by GO in original script)
 SCHEMA_STATEMENTS = [
