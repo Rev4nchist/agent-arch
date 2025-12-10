@@ -13,8 +13,21 @@ function SheetTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.
   return <DialogPrimitive.Trigger {...props} />;
 }
 
-function SheetClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close {...props} />;
+interface SheetCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
+
+function SheetClose({ onClick, className, children, ...props }: SheetCloseProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={className}
+      {...props}
+    >
+      {children}
+    </button>
+  );
 }
 
 interface SheetContentProps extends React.ComponentProps<typeof DialogPrimitive.Content> {

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { api, Agent } from '@/lib/api';
+import { responsiveDialogContent } from '@/lib/utils';
 import { TeamMemberSelect } from '@/components/ui/team-member-select';
 import {
   Bot,
@@ -394,7 +395,7 @@ export default function AgentsPage() {
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-2xl max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
+          <DialogContent className={responsiveDialogContent('lg:max-w-2xl')}>
             <DialogHeader>
               <DialogTitle>Create New Agent</DialogTitle>
             </DialogHeader>

@@ -52,6 +52,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { responsiveDialogContent } from '@/lib/utils';
 
 const CATEGORY_COLORS: Record<string, string> = {
   Definition: 'bg-blue-100 text-blue-800',
@@ -227,7 +228,7 @@ export default function MemoriesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#00A693] flex items-center justify-center">
             <Brain className="w-5 h-5 text-white" />
@@ -239,17 +240,17 @@ export default function MemoriesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setAboutDialogOpen(true)} variant="outline" size="sm">
-            <HelpCircle className="w-4 h-4 mr-2" />
-            About Memories
+            <HelpCircle className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">About Memories</span>
           </Button>
           <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-4 h-4 lg:mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden lg:inline">Refresh</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card
           className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:bg-blue-50/50"
           onClick={() => { setSortVerifiedFirst(false); setActiveTab('facts'); }}
@@ -317,42 +318,42 @@ export default function MemoriesPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="facts" className="flex items-center gap-2">
+        <TabsList className="mb-4 w-full overflow-x-auto flex lg:inline-flex">
+          <TabsTrigger value="facts" className="flex-shrink-0 flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Facts ({facts.length})
+            <span className="hidden sm:inline">Facts</span> ({facts.length})
           </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+          <TabsTrigger value="profile" className="flex-shrink-0 flex items-center gap-2">
             <User className="w-4 h-4" />
-            Profile
+            <span className="hidden sm:inline">Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="topics" className="flex items-center gap-2">
+          <TabsTrigger value="topics" className="flex-shrink-0 flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Topics ({topics.length})
+            <span className="hidden sm:inline">Topics</span> ({topics.length})
           </TabsTrigger>
-          <TabsTrigger value="open-loops" className="flex items-center gap-2">
+          <TabsTrigger value="open-loops" className="flex-shrink-0 flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Open Loops ({summary?.open_loops ?? 0})
+            <span className="hidden sm:inline">Open Loops</span> ({summary?.open_loops ?? 0})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="facts">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <CardTitle className="text-lg">Extracted Facts</CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       placeholder="Search facts..."
                       value={factSearch}
                       onChange={(e) => setFactSearch(e.target.value)}
-                      className="pl-9 w-64"
+                      className="pl-9 w-full"
                     />
                   </div>
                   <Select value={factCategory} onValueChange={setFactCategory}>
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-full sm:w-40">
                       <Filter className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
@@ -436,7 +437,7 @@ export default function MemoriesPage() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Common Queries</CardTitle>
@@ -502,7 +503,7 @@ export default function MemoriesPage() {
               </CardContent>
             </Card>
 
-            <Card className="col-span-2">
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">Preferences</CardTitle>
               </CardHeader>
@@ -510,7 +511,7 @@ export default function MemoriesPage() {
                 {!profile?.preferences || Object.keys(profile.preferences).length === 0 ? (
                   <p className="text-gray-500 text-sm">No preferences stored</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Object.entries(profile.preferences).map(([key, value]) => (
                       <div key={key} className="p-3 bg-gray-50 rounded-lg">
                         <p className="text-xs text-gray-500 mb-1">{key}</p>
@@ -656,7 +657,7 @@ export default function MemoriesPage() {
         setTopicDialogOpen(open);
         if (!open) setSelectedOpenLoopIdx(null);
       }}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" onCloseClick={() => {
+        <DialogContent className={responsiveDialogContent('lg:max-w-2xl')} onCloseClick={() => {
           setTopicDialogOpen(false);
           setSelectedOpenLoopIdx(null);
         }}>
@@ -759,7 +760,7 @@ export default function MemoriesPage() {
       </Dialog>
 
       <Dialog open={aboutDialogOpen} onOpenChange={setAboutDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto" onCloseClick={() => setAboutDialogOpen(false)}>
+        <DialogContent className={responsiveDialogContent('lg:max-w-4xl')} onCloseClick={() => setAboutDialogOpen(false)}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3 text-xl">
               <div className="w-10 h-10 rounded-full bg-[#00A693] flex items-center justify-center">

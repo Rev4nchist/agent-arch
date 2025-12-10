@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { api, Meeting } from '@/lib/api';
+import { responsiveDialogContent } from '@/lib/utils';
 import { TeamMemberSelect } from '@/components/ui/team-member-select';
 import { TeamMemberCheckboxList } from '@/components/ui/team-member-checkbox-list';
 import {
@@ -262,7 +263,7 @@ export default function MeetingsHub() {
                 Plan Meeting
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[500px] max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
+            <DialogContent className={responsiveDialogContent('lg:max-w-[500px]')}>
               <DialogHeader>
                 <DialogTitle>Plan New Meeting</DialogTitle>
                 <DialogDescription>
@@ -391,7 +392,7 @@ export default function MeetingsHub() {
                 Upload Transcript
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[500px] max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
+            <DialogContent className={responsiveDialogContent('lg:max-w-[500px]')}>
               <DialogHeader>
                 <DialogTitle>Upload Meeting Transcript</DialogTitle>
                 <DialogDescription>
@@ -648,7 +649,7 @@ export default function MeetingsHub() {
         {/* Meeting Details Modal */}
         {selectedMeeting && (
           <Dialog open={!!selectedMeeting} onOpenChange={() => setSelectedMeeting(null)}>
-            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[700px] max-h-[100vh] lg:max-h-[80vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
+            <DialogContent className={responsiveDialogContent('lg:max-w-[700px]')}>
               <DialogHeader>
                 <DialogTitle>{selectedMeeting.title}</DialogTitle>
                 <DialogDescription>
