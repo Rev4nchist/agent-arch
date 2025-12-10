@@ -51,6 +51,8 @@ jobs:
 
       - name: Deploy to Container Apps
         run: |
+          # Note: Secrets are managed via Azure Key Vault references (not in code)
+          # Managed identity and secret bindings persist across image updates
           echo "Deploying image: ${{ env.FULL_IMAGE }}"
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \

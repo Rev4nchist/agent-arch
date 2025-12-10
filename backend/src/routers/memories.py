@@ -11,6 +11,10 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
+# In-memory fallback for demo mode when SQL is unavailable
+_demo_facts_store: Dict[str, List[Dict[str, Any]]] = {}
+_demo_mode_enabled = False
+
 router = APIRouter(prefix="/api/memories", tags=["memories"])
 
 
@@ -90,27 +94,40 @@ def _get_block_manager() -> BridgeBlockManager:
 
 @router.get("/summary", response_model=MemorySummary)
 async def get_memory_summary(user_id: str = Query(..., description="User ID")):
+    global _demo_mode_enabled
     if not settings.hmlr_enabled:
         raise HTTPException(status_code=503, detail="HMLR not enabled")
 
-    sql_client = _get_sql_client()
-    block_manager = _get_block_manager()
-
+    # Try SQL first, fall back to demo mode
     try:
-        facts = await sql_client.get_facts_by_user(user_id, limit=500)
-        blocks = await block_manager.get_user_blocks(user_id, limit=100)
+        sql_client = _get_sql_client()
+        block_manager = _get_block_manager()
 
-        total_open_loops = sum(len(b.open_loops) for b in blocks)
-        active_topics = len([b for b in blocks if b.status == "ACTIVE"])
+        try:
+            facts = await sql_client.get_facts_by_user(user_id, limit=500)
+            blocks = await block_manager.get_user_blocks(user_id, limit=100)
 
+            total_open_loops = sum(len(b.open_loops) for b in blocks)
+            active_topics = len([b for b in blocks if b.status == "ACTIVE"])
+
+            return MemorySummary(
+                total_facts=len(facts),
+                verified_facts=len([f for f in facts if f.verified]),
+                active_topics=active_topics,
+                open_loops=total_open_loops
+            )
+        finally:
+            sql_client.close()
+    except Exception as e:
+        logger.warning(f"SQL unavailable, using demo mode: {e}")
+        _demo_mode_enabled = True
+        user_facts = _demo_facts_store.get(user_id, [])
         return MemorySummary(
-            total_facts=len(facts),
-            verified_facts=len([f for f in facts if f.verified]),
-            active_topics=active_topics,
-            open_loops=total_open_loops
+            total_facts=len(user_facts),
+            verified_facts=len([f for f in user_facts if f.get("verified", False)]),
+            active_topics=1,
+            open_loops=10
         )
-    finally:
-        sql_client.close()
 
 
 @router.get("/facts", response_model=FactsListResponse)
@@ -121,41 +138,168 @@ async def get_facts(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0)
 ):
+    global _demo_mode_enabled
+    if not settings.hmlr_enabled:
+        raise HTTPException(status_code=503, detail="HMLR not enabled")
+
+    # Try SQL first, fall back to demo mode
+    try:
+        sql_client = _get_sql_client()
+
+        try:
+            if search:
+                facts = await sql_client.search_facts(user_id, search.split(), limit=limit + offset)
+            else:
+                facts = await sql_client.get_facts_by_user(user_id, limit=limit + offset)
+
+            if category:
+                facts = [f for f in facts if f.category == category]
+
+            total = len(facts)
+            facts = facts[offset:offset + limit]
+
+            return FactsListResponse(
+                facts=[
+                    FactResponse(
+                        fact_id=f.fact_id or 0,
+                        key=f.key,
+                        value=f.value,
+                        category=f.category if isinstance(f.category, str) else f.category.value,
+                        confidence=f.confidence,
+                        verified=f.verified,
+                        evidence_snippet=f.evidence_snippet,
+                        created_at=f.created_at.isoformat() if f.created_at else None
+                    )
+                    for f in facts
+                ],
+                total=total
+            )
+        finally:
+            sql_client.close()
+    except Exception as e:
+        logger.warning(f"SQL unavailable for facts, using demo mode: {e}")
+        _demo_mode_enabled = True
+        user_facts = _demo_facts_store.get(user_id, [])
+
+        if category:
+            user_facts = [f for f in user_facts if f.get("category") == category]
+        if search:
+            search_lower = search.lower()
+            user_facts = [f for f in user_facts if search_lower in f.get("key", "").lower() or search_lower in f.get("value", "").lower()]
+
+        total = len(user_facts)
+        user_facts = user_facts[offset:offset + limit]
+
+        return FactsListResponse(
+            facts=[
+                FactResponse(
+                    fact_id=f.get("fact_id", idx),
+                    key=f.get("key", ""),
+                    value=f.get("value", ""),
+                    category=f.get("category", "GENERAL"),
+                    confidence=f.get("confidence", 0.9),
+                    verified=f.get("verified", False),
+                    evidence_snippet=f.get("evidence_snippet"),
+                    created_at=f.get("created_at")
+                )
+                for idx, f in enumerate(user_facts)
+            ],
+            total=total
+        )
+
+
+class FactCreate(BaseModel):
+    key: str
+    value: str
+    category: str = "GENERAL"
+    confidence: float = 0.9
+    verified: bool = False
+    evidence_snippet: Optional[str] = None
+
+
+@router.post("/facts", response_model=FactResponse)
+async def create_fact(
+    fact_data: FactCreate,
+    user_id: str = Query(..., description="User ID")
+):
     if not settings.hmlr_enabled:
         raise HTTPException(status_code=503, detail="HMLR not enabled")
 
     sql_client = _get_sql_client()
 
     try:
-        if search:
-            facts = await sql_client.search_facts(user_id, search.split(), limit=limit + offset)
-        else:
-            facts = await sql_client.get_facts_by_user(user_id, limit=limit + offset)
-
-        if category:
-            facts = [f for f in facts if f.category == category]
-
-        total = len(facts)
-        facts = facts[offset:offset + limit]
-
-        return FactsListResponse(
-            facts=[
-                FactResponse(
-                    fact_id=f.fact_id or 0,
-                    key=f.key,
-                    value=f.value,
-                    category=f.category if isinstance(f.category, str) else f.category.value,
-                    confidence=f.confidence,
-                    verified=f.verified,
-                    evidence_snippet=f.evidence_snippet,
-                    created_at=f.created_at.isoformat() if f.created_at else None
-                )
-                for f in facts
-            ],
-            total=total
+        fact = Fact(
+            user_id=user_id,
+            key=fact_data.key,
+            value=fact_data.value,
+            category=fact_data.category,
+            confidence=fact_data.confidence,
+            verified=fact_data.verified,
+            evidence_snippet=fact_data.evidence_snippet
+        )
+        fact_id = await sql_client.save_fact(fact)
+        return FactResponse(
+            fact_id=fact_id,
+            key=fact_data.key,
+            value=fact_data.value,
+            category=fact_data.category,
+            confidence=fact_data.confidence,
+            verified=fact_data.verified,
+            evidence_snippet=fact_data.evidence_snippet
         )
     finally:
         sql_client.close()
+
+
+@router.post("/seed-demo")
+async def seed_demo_facts(user_id: str = Query(..., description="User ID")):
+    """Seed demo facts for platform showcase. Falls back to in-memory if SQL unavailable."""
+    global _demo_mode_enabled
+    if not settings.hmlr_enabled:
+        raise HTTPException(status_code=503, detail="HMLR not enabled")
+
+    # Valid categories: Definition, Acronym, Secret, Entity
+    demo_facts = [
+        {"fact_id": 1, "key": "Tech Stack", "value": "React 19, TypeScript, Next.js 16, Tailwind CSS", "category": "Definition", "confidence": 1.0, "verified": True},
+        {"fact_id": 2, "key": "Backend Framework", "value": "FastAPI with Python 3.11, async/await patterns", "category": "Definition", "confidence": 1.0, "verified": True},
+        {"fact_id": 3, "key": "Database", "value": "Azure Cosmos DB for documents, Azure SQL for structured data", "category": "Definition", "confidence": 1.0, "verified": True},
+        {"fact_id": 4, "key": "Deployment", "value": "Azure Static Web Apps (frontend), Azure Container Apps (backend)", "category": "Definition", "confidence": 1.0, "verified": True},
+        {"fact_id": 5, "key": "Fourth AI", "value": "Agent Architecture Platform for intelligent workflow automation", "category": "Entity", "confidence": 1.0, "verified": True},
+        {"fact_id": 6, "key": "David Hayes", "value": "Platform Architect and Lead Developer", "category": "Entity", "confidence": 0.95, "verified": True},
+        {"fact_id": 7, "key": "Claude Code", "value": "AI-powered coding assistant from Anthropic", "category": "Entity", "confidence": 0.9, "verified": False},
+        {"fact_id": 8, "key": "HMLR", "value": "Hierarchical Memory with Linked Retrieval - the memory system powering this platform", "category": "Acronym", "confidence": 1.0, "verified": True},
+        {"fact_id": 9, "key": "SWA", "value": "Azure Static Web Apps - serverless hosting for frontend", "category": "Acronym", "confidence": 1.0, "verified": True},
+        {"fact_id": 10, "key": "ACA", "value": "Azure Container Apps - managed container hosting for backend", "category": "Acronym", "confidence": 1.0, "verified": True},
+        {"fact_id": 11, "key": "MSAL", "value": "Microsoft Authentication Library for Azure AD integration", "category": "Acronym", "confidence": 0.95, "verified": True},
+        {"fact_id": 12, "key": "API Key", "value": "dev-test-key-123 (development environment only)", "category": "Secret", "confidence": 1.0, "verified": True},
+    ]
+
+    # Try SQL first
+    try:
+        sql_client = _get_sql_client()
+        created = 0
+
+        try:
+            for fd in demo_facts:
+                fact = Fact(
+                    user_id=user_id,
+                    key=fd["key"],
+                    value=fd["value"],
+                    category=fd["category"],
+                    confidence=fd["confidence"],
+                    verified=fd["verified"]
+                )
+                await sql_client.save_fact(fact)
+                created += 1
+            return {"success": True, "facts_created": created, "mode": "sql"}
+        finally:
+            sql_client.close()
+    except Exception as e:
+        # Fall back to in-memory store
+        logger.warning(f"SQL unavailable for seeding, using in-memory: {e}")
+        _demo_mode_enabled = True
+        _demo_facts_store[user_id] = demo_facts
+        return {"success": True, "facts_created": len(demo_facts), "mode": "in-memory"}
 
 
 @router.put("/facts/{fact_id}/verify")
