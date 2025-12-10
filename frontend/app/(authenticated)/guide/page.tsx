@@ -59,7 +59,7 @@ export default function GuidePage() {
           )}
         </div>
 
-        <Card className="h-[calc(100vh-220px)] flex flex-col">
+        <Card className="h-[calc(100vh-280px)] lg:h-[calc(100vh-220px)] flex flex-col">
           <CardHeader className="border-b py-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -125,7 +125,7 @@ export default function GuidePage() {
             )}
           </CardContent>
 
-          <div className="border-t p-4">
+          <div className="border-t p-4 pb-safe">
             {error && (
               <div className="mb-3 p-2 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center justify-between">
                 <p className="text-sm text-destructive">{error}</p>

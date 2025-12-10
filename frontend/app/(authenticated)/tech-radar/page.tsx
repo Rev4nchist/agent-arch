@@ -53,7 +53,7 @@ export default function TechRadarPage() {
       {/* Glowing orb in background */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
 
-      <div className="relative z-20 p-8 max-w-6xl mx-auto">
+      <div className="relative z-20 p-4 lg:p-8 max-w-6xl mx-auto">
         {/* Header with retro styling */}
         <div className="text-center mb-16 pt-8">
           <div className="inline-flex items-center gap-4 mb-6">
@@ -84,7 +84,7 @@ export default function TechRadarPage() {
         </div>
 
         {/* Feature preview cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
           {categories.map((cat, i) => {
             const Icon = cat.icon;
             return (

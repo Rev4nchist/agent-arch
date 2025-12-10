@@ -120,3 +120,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* iOS safe area support */
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: calc(var(--safe-area-inset-bottom) + 0.5rem);
+}
+
+.pt-safe {
+  padding-top: calc(var(--safe-area-inset-top) + 0.5rem);
+}

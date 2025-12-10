@@ -18,6 +18,14 @@ import {
   Code,
   Users,
   Terminal,
+  Sparkles,
+  Bell,
+  BookOpen,
+  Brain,
+  Presentation,
+  Radar,
+  MessageSquare,
+  Library,
 } from 'lucide-react';
 
 interface OrientationCard {
@@ -650,13 +658,18 @@ const orientationCards: OrientationCard[] = [
 ];
 
 const platformCapabilities = [
-  { name: 'Meetings Hub', icon: Users, desc: 'Schedule sessions, upload transcripts, extract action items', badge: 'CORE', color: 'purple' },
+  { name: 'AI Guide', icon: Sparkles, desc: 'Intelligent assistant with HMLR memory system for personalized help', badge: 'AI', color: 'cyan' },
+  { name: 'Meetings Hub', icon: Calendar, desc: 'Schedule sessions, upload transcripts, extract action items', badge: 'CORE', color: 'purple' },
   { name: 'Task Management', icon: ClipboardList, desc: 'Kanban board with priority, dependencies, and tracking', badge: 'CORE', color: 'emerald' },
   { name: 'Agent Portfolio', icon: Bot, desc: 'Track agents by tier from Idea to Production', badge: 'CORE', color: 'orange' },
   { name: 'Governance', icon: Shield, desc: '6-week framework with policy repository and compliance', badge: 'CRITICAL', color: 'red' },
   { name: 'Decisions', icon: FileText, desc: 'Decision log with rationale and audit trail', badge: 'AUDIT', color: 'yellow' },
   { name: 'Budget', icon: DollarSign, desc: 'License inventory and spend tracking with forecasting', badge: 'FINANCE', color: 'green' },
-  { name: 'Architecture Lab', icon: Code, desc: 'Technology radar and code pattern repository', badge: 'DEV', color: 'indigo' },
+  { name: 'Tech Radar', icon: Radar, desc: 'Technology assessment with adoption recommendations', badge: 'DEV', color: 'indigo' },
+  { name: 'Resources', icon: Library, desc: 'Document library with categorized guides and templates', badge: 'DOCS', color: 'blue' },
+  { name: 'Showcase', icon: Presentation, desc: 'Agent demos and success stories from across the org', badge: 'DEMOS', color: 'amber' },
+  { name: 'What\'s New', icon: Bell, desc: 'Platform updates, feature releases, and announcements', badge: 'NEWS', color: 'teal' },
+  { name: 'Feedback', icon: MessageSquare, desc: 'Submit ideas, report issues, and track feature requests', badge: 'INPUT', color: 'sky' },
 ];
 
 const techStack = [
@@ -1018,16 +1031,16 @@ export default function LandingPageV2() {
                 return (
                   <div
                     key={cap.name}
-                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-xl p-6 ${colors.hoverBorder} transition-all group hover:shadow-lg ${colors.glow}`}
+                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-xl p-6 ${colors.hoverBorder} transition-all duration-300 group hover:shadow-xl ${colors.glow} hover:scale-[1.02] hover:-translate-y-1 hover:bg-slate-900/70`}
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <div className={`w-10 h-10 ${colors.bg} rounded-lg flex items-center justify-center border ${colors.border}`}>
-                        <Icon className={`h-5 w-5 ${colors.text}`} />
+                      <div className={`w-10 h-10 ${colors.bg} rounded-lg flex items-center justify-center border ${colors.border} group-hover:scale-110 transition-transform duration-300`}>
+                        <Icon className={`h-5 w-5 ${colors.text} group-hover:animate-pulse`} />
                       </div>
-                      <span className={`px-2 py-1 rounded text-xs font-mono font-semibold ${colors.bg} ${colors.text}`}>[{cap.badge}]</span>
+                      <span className={`px-2 py-1 rounded text-xs font-mono font-semibold ${colors.bg} ${colors.text} border ${colors.border} group-hover:border-opacity-100 transition-all duration-300`}>[{cap.badge}]</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2 font-mono">{cap.name}</h3>
-                    <p className="text-slate-400 text-sm font-mono">{cap.desc}</p>
+                    <h3 className="text-lg font-bold text-white mb-2 font-mono transition-colors duration-300">{cap.name}</h3>
+                    <p className="text-slate-400 text-sm font-mono group-hover:text-slate-300 transition-colors duration-300">{cap.desc}</p>
                   </div>
                 );
               })}
@@ -1053,14 +1066,14 @@ export default function LandingPageV2() {
                 return (
                   <div
                     key={tech.name}
-                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-lg p-4 flex items-center gap-3 ${colors.hoverBorder} transition-all group hover:shadow-lg ${colors.glow}`}
+                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-lg p-4 flex items-center gap-3 ${colors.hoverBorder} transition-all duration-300 group hover:shadow-xl ${colors.glow} hover:scale-[1.03] hover:-translate-y-0.5 hover:bg-slate-900/70`}
                   >
-                    <div className={`w-10 h-10 ${colors.bg} rounded flex items-center justify-center font-mono font-bold ${colors.text} text-xs group-hover:scale-110 transition-transform border ${colors.border}`}>
+                    <div className={`w-10 h-10 ${colors.bg} rounded flex items-center justify-center font-mono font-bold ${colors.text} text-xs group-hover:scale-110 transition-transform duration-300 border ${colors.border}`}>
                       {tech.letter}
                     </div>
                     <div>
-                      <div className="font-mono font-semibold text-white text-sm">{tech.name}</div>
-                      <div className="font-mono text-xs text-slate-500">{tech.sub}</div>
+                      <div className="font-mono font-semibold text-white text-sm group-hover:text-emerald-300 transition-colors duration-300">{tech.name}</div>
+                      <div className="font-mono text-xs text-slate-500 group-hover:text-slate-400 transition-colors duration-300">{tech.sub}</div>
                     </div>
                   </div>
                 );
@@ -1085,15 +1098,15 @@ export default function LandingPageV2() {
                 return (
                   <div
                     key={card.title}
-                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-xl p-6 ${colors.hoverBorder} transition-all group hover:shadow-lg ${colors.glow}`}
+                    className={`bg-slate-900/50 backdrop-blur border border-slate-700/50 rounded-xl p-6 ${colors.hoverBorder} transition-all duration-300 group hover:shadow-xl ${colors.glow} hover:scale-[1.01] hover:-translate-y-1 hover:bg-slate-900/70`}
                   >
-                    <h4 className="text-lg font-bold text-white mb-3 flex items-center font-mono">
-                      <span className={`${colors.text} mr-2`}>[*]</span>
+                    <h4 className="text-lg font-bold text-white mb-3 flex items-center font-mono group-hover:text-emerald-300 transition-colors duration-300">
+                      <span className={`${colors.text} mr-2 group-hover:scale-125 transition-transform duration-300`}>[*]</span>
                       {card.title}
                     </h4>
                     <ul className="text-slate-400 text-sm space-y-2 font-mono">
                       {card.items.map((item, i) => (
-                        <li key={i} className="flex items-start">
+                        <li key={i} className="flex items-start group-hover:text-slate-300 transition-colors duration-300">
                           <span className={`${colors.text} mr-2`}>-</span>
                           {item}
                         </li>

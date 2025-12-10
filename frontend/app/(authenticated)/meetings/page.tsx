@@ -233,7 +233,7 @@ export default function MeetingsHub() {
           </p>
         </div>
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="mb-6 flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -262,7 +262,7 @@ export default function MeetingsHub() {
                 Plan Meeting
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[500px] max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
               <DialogHeader>
                 <DialogTitle>Plan New Meeting</DialogTitle>
                 <DialogDescription>
@@ -391,7 +391,7 @@ export default function MeetingsHub() {
                 Upload Transcript
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[500px] max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
               <DialogHeader>
                 <DialogTitle>Upload Meeting Transcript</DialogTitle>
                 <DialogDescription>
@@ -648,7 +648,7 @@ export default function MeetingsHub() {
         {/* Meeting Details Modal */}
         {selectedMeeting && (
           <Dialog open={!!selectedMeeting} onOpenChange={() => setSelectedMeeting(null)}>
-            <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+            <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-[700px] max-h-[100vh] lg:max-h-[80vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
               <DialogHeader>
                 <DialogTitle>{selectedMeeting.title}</DialogTitle>
                 <DialogDescription>

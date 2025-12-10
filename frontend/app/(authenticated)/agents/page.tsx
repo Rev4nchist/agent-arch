@@ -212,7 +212,7 @@ export default function AgentsPage() {
           </p>
         </div>
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="mb-6 flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -394,7 +394,7 @@ export default function AgentsPage() {
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full h-full lg:w-auto lg:h-auto lg:max-w-2xl max-h-[100vh] lg:max-h-[90vh] overflow-y-auto fixed inset-0 lg:inset-auto lg:top-[50%] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[-50%] rounded-none lg:rounded-lg">
             <DialogHeader>
               <DialogTitle>Create New Agent</DialogTitle>
             </DialogHeader>

@@ -25,8 +25,8 @@ export function BottomNavBar({ onMenuClick }: BottomNavBarProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 lg:hidden z-40 pb-safe pb-4">
-      <div className="flex items-center justify-around h-full max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-40">
+      <div className="flex items-stretch justify-around h-16 max-w-lg mx-auto pb-safe">
         {navItems.map((item) => {
           const isActive = item.href === '/'
             ? pathname === '/'
@@ -38,7 +38,7 @@ export function BottomNavBar({ onMenuClick }: BottomNavBarProps) {
               key={item.name}
               href={item.href}
               className={`
-                flex flex-col items-center justify-center min-w-[64px] h-full px-2
+                flex flex-col items-center justify-center min-w-[64px] py-2 px-2
                 ${isActive ? 'text-blue-600' : 'text-gray-500'}
               `}
             >
@@ -52,7 +52,7 @@ export function BottomNavBar({ onMenuClick }: BottomNavBarProps) {
 
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center min-w-[64px] h-full px-2 text-gray-500"
+          className="flex flex-col items-center justify-center min-w-[64px] py-2 px-2 text-gray-500"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />
