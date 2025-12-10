@@ -450,7 +450,8 @@ export default function ProposalsDecisionsPage() {
               filteredProposals.map((proposal) => (
                 <Card key={proposal.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    {/* Desktop layout */}
+                    <div className="hidden lg:flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
                         <div
                           className={`rounded-lg p-3 ${getCategoryColor(
@@ -465,13 +466,13 @@ export default function ProposalsDecisionsPage() {
                           </CardTitle>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                             <span className="flex items-center gap-1.5">
-                              <User className="h-3.5 w-3.5" />
+                              <User className="h-3.5 w-3.5 shrink-0" />
                               <span className="font-medium text-gray-700">{proposal.proposer}</span>
                               <span className="text-gray-400">·</span>
                               <span>{proposal.department}</span>
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5" />
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />
                               {formatDate(proposal.created_at)}
                             </span>
                           </div>
@@ -486,6 +487,47 @@ export default function ProposalsDecisionsPage() {
                         <Badge variant="outline" className="text-xs">
                           {proposal.category}
                         </Badge>
+                      </div>
+                    </div>
+
+                    {/* Mobile layout */}
+                    <div className="lg:hidden space-y-3">
+                      {/* Row 1: Icon + Title */}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`rounded-lg p-2.5 shrink-0 ${getCategoryColor(
+                            proposal.category
+                          )}`}
+                        >
+                          {getCategoryIcon(proposal.category)}
+                        </div>
+                        <CardTitle className="text-lg leading-tight">
+                          {proposal.title}
+                        </CardTitle>
+                      </div>
+
+                      {/* Row 2: Status + Category badges */}
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={`text-xs ${getStatusColor(proposal.status)}`}
+                        >
+                          {proposal.status}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {proposal.category}
+                        </Badge>
+                      </div>
+
+                      {/* Row 3: Proposer + Date on same line */}
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 shrink-0" />
+                          <span className="font-medium text-gray-700">{proposal.proposer}</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />
+                          {formatDate(proposal.created_at)}
+                        </span>
                       </div>
                     </div>
                   </CardHeader>
@@ -605,7 +647,8 @@ export default function ProposalsDecisionsPage() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    {/* Desktop layout */}
+                    <div className="hidden lg:flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
                         <div
                           className={`rounded-lg p-3 ${getCategoryColor(
@@ -633,6 +676,42 @@ export default function ProposalsDecisionsPage() {
                       <Badge variant="outline" className="text-xs">
                         {decision.category}
                       </Badge>
+                    </div>
+
+                    {/* Mobile layout */}
+                    <div className="lg:hidden space-y-3">
+                      {/* Row 1: Icon + Title */}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`rounded-lg p-2.5 shrink-0 ${getCategoryColor(
+                            decision.category
+                          )}`}
+                        >
+                          {getCategoryIcon(decision.category)}
+                        </div>
+                        <CardTitle className="text-lg leading-tight">
+                          {decision.title}
+                        </CardTitle>
+                      </div>
+
+                      {/* Row 2: Category badge */}
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {decision.category}
+                        </Badge>
+                      </div>
+
+                      {/* Row 3: Date + Decision maker on same line */}
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />
+                          {formatDate(decision.decision_date)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 shrink-0" />
+                          {decision.decision_maker}
+                        </span>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>

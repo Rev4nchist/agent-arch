@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, ThumbsUp, MessageCircle, Filter, ArrowUpDown, Bug, Lightbulb, Sparkles, HelpCircle, Settings } from 'lucide-react';
+import { Plus, ThumbsUp, MessageCircle, ArrowUpDown, Bug, Lightbulb, Sparkles, HelpCircle, Settings } from 'lucide-react';
 import { api, Submission, SubmissionCategory, SubmissionStatus, SubmissionPriority } from '@/lib/api';
+import { MobileFilterBar } from '@/components/MobileFilterBar';
 
 const categoryIcons: Record<SubmissionCategory, typeof Bug> = {
   'Bug Report': Bug,
@@ -100,49 +101,49 @@ export default function FeedbackPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 rounded-lg bg-white p-4 border border-gray-200">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-700">Filters:</span>
-        </div>
-
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as SubmissionStatus | '')}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      <div className="flex items-center gap-3 rounded-lg bg-white p-4 border border-gray-200">
+        <MobileFilterBar
+          activeCount={(statusFilter ? 1 : 0) + (categoryFilter ? 1 : 0)}
+          title="Filters"
         >
-          <option value="">All Status</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Under Review">Under Review</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-          <option value="Declined">Declined</option>
-        </select>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as SubmissionCategory | '')}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="">All Categories</option>
-          <option value="Bug Report">Bug Report</option>
-          <option value="Feature Request">Feature Request</option>
-          <option value="Improvement Idea">Improvement Idea</option>
-          <option value="Question">Question</option>
-        </select>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <ArrowUpDown className="h-4 w-4 text-gray-400" />
           <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'upvotes' | 'date' | 'priority')}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as SubmissionStatus | '')}
+            className="w-full lg:w-auto rounded-md border border-gray-300 px-3 py-2 lg:py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="date">Most Recent</option>
-            <option value="upvotes">Most Upvoted</option>
-            <option value="priority">Priority</option>
+            <option value="">All Status</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Under Review">Under Review</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Declined">Declined</option>
           </select>
-        </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as SubmissionCategory | '')}
+            className="w-full lg:w-auto rounded-md border border-gray-300 px-3 py-2 lg:py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">All Categories</option>
+            <option value="Bug Report">Bug Report</option>
+            <option value="Feature Request">Feature Request</option>
+            <option value="Improvement Idea">Improvement Idea</option>
+            <option value="Question">Question</option>
+          </select>
+
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-gray-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'upvotes' | 'date' | 'priority')}
+              className="w-full lg:w-auto rounded-md border border-gray-300 px-3 py-2 lg:py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="date">Most Recent</option>
+              <option value="upvotes">Most Upvoted</option>
+              <option value="priority">Priority</option>
+            </select>
+          </div>
+        </MobileFilterBar>
       </div>
 
       {loading ? (
@@ -182,8 +183,10 @@ export default function FeedbackPage() {
                 href={`/feedback/view?id=${submission.id}`}
                 className="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                {/* Mobile: Stack layout, Desktop: Row layout */}
+                <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-4">
+                  {/* Upvote - hidden on mobile, shown on desktop */}
+                  <div className="hidden lg:flex flex-col items-center gap-1 min-w-[60px]">
                     <button
                       onClick={(e) => e.preventDefault()}
                       className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -194,7 +197,8 @@ export default function FeedbackPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    {/* Badges row */}
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[submission.category]}`}>
                         <CategoryIcon className="h-3 w-3" />
                         {submission.category}
@@ -207,7 +211,7 @@ export default function FeedbackPage() {
                       </span>
                     </div>
 
-                    <h3 className="text-base font-medium text-gray-900 truncate">
+                    <h3 className="text-base font-medium text-gray-900 line-clamp-2 lg:truncate">
                       {submission.title}
                     </h3>
 
@@ -215,23 +219,41 @@ export default function FeedbackPage() {
                       {submission.description}
                     </p>
 
-                    <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                    {/* Meta info - stack on mobile */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 lg:gap-4 text-xs text-gray-500">
                       <span>By {submission.submitted_by}</span>
                       <span>{formatDate(submission.submitted_at)}</span>
                       {submission.comments.length > 0 && (
                         <span className="flex items-center gap-1">
                           <MessageCircle className="h-3 w-3" />
-                          {submission.comments.length} comments
+                          {submission.comments.length}
                         </span>
                       )}
                       {submission.assigned_to && (
-                        <span className="text-blue-600">Assigned: {submission.assigned_to}</span>
+                        <span className="text-blue-600 hidden lg:inline">Assigned: {submission.assigned_to}</span>
+                      )}
+                    </div>
+
+                    {/* Mobile: Upvote row at bottom */}
+                    <div className="flex lg:hidden items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={(e) => e.preventDefault()}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
+                      >
+                        <ThumbsUp className="h-5 w-5 text-gray-400" />
+                        <span className="text-sm font-semibold text-gray-700">{submission.upvote_count}</span>
+                      </button>
+                      {submission.comments.length > 0 && (
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <MessageCircle className="h-4 w-4" />
+                          {submission.comments.length} comments
+                        </span>
                       )}
                     </div>
 
                     {submission.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {submission.tags.map((tag) => (
+                        {submission.tags.slice(0, 3).map((tag) => (
                           <span
                             key={tag}
                             className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs"
@@ -239,6 +261,11 @@ export default function FeedbackPage() {
                             {tag}
                           </span>
                         ))}
+                        {submission.tags.length > 3 && (
+                          <span className="px-2 py-0.5 text-gray-500 text-xs">
+                            +{submission.tags.length - 3} more
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

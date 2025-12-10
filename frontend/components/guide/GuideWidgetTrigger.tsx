@@ -21,7 +21,7 @@ export function GuideWidgetTrigger({
       onClick={onClick}
       size="icon-lg"
       className={cn(
-        'fixed bottom-6 right-6 z-40 rounded-full shadow-lg',
+        'fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40 rounded-full shadow-lg',
         'w-14 h-14 transition-all duration-300',
         'bg-gradient-to-br from-[#00A693] to-[#008577] hover:from-[#008577] hover:to-[#006B5A]',
         'text-white border-0',
