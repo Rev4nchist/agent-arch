@@ -36,10 +36,11 @@ function AccessRequestsContent() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const loadRequests = async () => {
+    if (!user?.username) return;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await accessApi.listRequests();
+      const data = await accessApi.listRequests(user.username);
       setRequests(data.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load requests');
@@ -49,8 +50,10 @@ function AccessRequestsContent() {
   };
 
   useEffect(() => {
-    loadRequests();
-  }, []);
+    if (user?.username) {
+      loadRequests();
+    }
+  }, [user?.username]);
 
   const handleApprove = async (requestId: string, role: 'user' | 'admin') => {
     if (!user?.username) return;

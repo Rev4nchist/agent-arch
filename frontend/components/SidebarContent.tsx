@@ -60,19 +60,20 @@ const adminNavigation: NavItem[] = [
 
 interface SidebarContentProps {
   onNavigate?: () => void;
+  hideHeader?: boolean;
 }
 
-export function SidebarContent({ onNavigate }: SidebarContentProps) {
+export function SidebarContent({ onNavigate, hideHeader }: SidebarContentProps) {
   const pathname = usePathname();
-  const { userRole, isAuthorized } = useAuth();
+  const { userRole, isAuthorized, user } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   const isAdmin = userRole === 'admin';
 
   useEffect(() => {
-    if (isAdmin && isAuthorized) {
-      accessApi.getPendingCount().then(res => setPendingCount(res.count)).catch(() => {});
+    if (isAdmin && isAuthorized && user?.username) {
+      accessApi.getPendingCount(user.username).then(res => setPendingCount(res.count)).catch(() => {});
     }
-  }, [isAdmin, isAuthorized]);
+  }, [isAdmin, isAuthorized, user?.username]);
 
   const navigation = allNavigation.filter(item => !item.adminOnly || isAdmin);
 
@@ -113,18 +114,20 @@ export function SidebarContent({ onNavigate }: SidebarContentProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 shrink-0 items-center gap-3 px-6 border-b border-gray-200">
-        <Image
-          src="/Fourth_icon.png"
-          alt="Fourth Logo"
-          width={32}
-          height={32}
-          className="flex-shrink-0"
-        />
-        <h1 className="text-xl font-bold text-gray-900">
-          Fourth AI Architecture
-        </h1>
-      </div>
+      {!hideHeader && (
+        <div className="flex h-16 shrink-0 items-center gap-3 px-6 border-b border-gray-200">
+          <Image
+            src="/Fourth_icon.png"
+            alt="Fourth Logo"
+            width={32}
+            height={32}
+            className="flex-shrink-0"
+          />
+          <h1 className="text-xl font-bold text-gray-900">
+            Fourth AI Architecture
+          </h1>
+        </div>
+      )}
 
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
         {navigation.map(renderNavItem)}

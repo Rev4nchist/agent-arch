@@ -28,7 +28,7 @@ export default function AuthenticatedLayout({
       <GuideProvider>
         <MobileHeader onMenuClick={() => setMobileNavOpen(true)} />
         <MobileNavDrawer isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)}>
-          <SidebarContent onNavigate={() => setMobileNavOpen(false)} />
+          <SidebarContent onNavigate={() => setMobileNavOpen(false)} hideHeader />
         </MobileNavDrawer>
         <Sidebar />
         <main className="pt-14 pb-16 lg:pt-0 lg:pb-0 lg:pl-64">

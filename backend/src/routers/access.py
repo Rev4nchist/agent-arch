@@ -1,9 +1,10 @@
 """Access control router for user authorization and management."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from typing import Optional, List
 from datetime import datetime
 from src.database import db
+from src.auth import verify_admin_role
 from src.models import (
     AllowedUser,
     AllowedUserCreate,
@@ -144,6 +145,7 @@ async def list_access_requests(
     status: Optional[str] = Query(None, description="Filter by status"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    admin_email: str = Depends(verify_admin_role),
 ):
     """List all access requests (admin only)."""
     try:
@@ -185,7 +187,7 @@ async def list_access_requests(
 async def approve_access_request(
     request_id: str,
     role: UserRole = Query(UserRole.USER, description="Role to assign"),
-    reviewer_email: str = Query(..., description="Email of the admin approving"),
+    admin_email: str = Depends(verify_admin_role),
 ):
     """Approve an access request and create allowed user (admin only)."""
     try:
@@ -209,7 +211,7 @@ async def approve_access_request(
             name=request.get("name"),
             role=role,
             status=UserStatus.ACTIVE,
-            approved_by=reviewer_email,
+            approved_by=admin_email,
             approved_at=now,
             created_at=now,
         )
@@ -218,7 +220,7 @@ async def approve_access_request(
         users_container.create_item(body=user_item)
 
         request["status"] = AccessRequestStatus.APPROVED.value
-        request["reviewed_by"] = reviewer_email
+        request["reviewed_by"] = admin_email
         request["reviewed_at"] = now.isoformat()
         requests_container.replace_item(item=request_id, body=request)
 
@@ -234,7 +236,7 @@ async def approve_access_request(
 @router.post("/requests/{request_id}/deny")
 async def deny_access_request(
     request_id: str,
-    reviewer_email: str = Query(..., description="Email of the admin denying"),
+    admin_email: str = Depends(verify_admin_role),
 ):
     """Deny an access request (admin only)."""
     try:
@@ -250,7 +252,7 @@ async def deny_access_request(
 
         now = datetime.utcnow()
         request["status"] = AccessRequestStatus.DENIED.value
-        request["reviewed_by"] = reviewer_email
+        request["reviewed_by"] = admin_email
         request["reviewed_at"] = now.isoformat()
 
         container.replace_item(item=request_id, body=request)
@@ -270,6 +272,7 @@ async def list_allowed_users(
     status: Optional[str] = Query(None, description="Filter by status"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    admin_email: str = Depends(verify_admin_role),
 ):
     """List all allowed users (admin only)."""
     try:
@@ -311,7 +314,7 @@ async def list_allowed_users(
 
 
 @router.post("/users")
-async def create_allowed_user(user: AllowedUserCreate, approver_email: str = Query(...)):
+async def create_allowed_user(user: AllowedUserCreate, admin_email: str = Depends(verify_admin_role)):
     """Add a new allowed user directly (admin only)."""
     try:
         container = get_allowed_users_container()
@@ -336,7 +339,7 @@ async def create_allowed_user(user: AllowedUserCreate, approver_email: str = Que
             name=user.name,
             role=user.role,
             status=UserStatus.ACTIVE,
-            approved_by=approver_email,
+            approved_by=admin_email,
             approved_at=now,
             created_at=now,
         )
@@ -354,7 +357,7 @@ async def create_allowed_user(user: AllowedUserCreate, approver_email: str = Que
 
 
 @router.patch("/users/{user_id}")
-async def update_allowed_user(user_id: str, update: AllowedUserUpdate):
+async def update_allowed_user(user_id: str, update: AllowedUserUpdate, admin_email: str = Depends(verify_admin_role)):
     """Update an allowed user (admin only)."""
     try:
         container = get_allowed_users_container()
@@ -385,7 +388,7 @@ async def update_allowed_user(user_id: str, update: AllowedUserUpdate):
 
 
 @router.delete("/users/{user_id}")
-async def delete_allowed_user(user_id: str):
+async def delete_allowed_user(user_id: str, admin_email: str = Depends(verify_admin_role)):
     """Remove an allowed user (admin only)."""
     try:
         container = get_allowed_users_container()
@@ -404,8 +407,8 @@ async def delete_allowed_user(user_id: str):
 
 
 @router.post("/seed-admins")
-async def seed_initial_admins():
-    """Seed initial admin users. Only works if no users exist."""
+async def seed_initial_admins(admin_email: str = Depends(verify_admin_role)):
+    """Seed initial admin users. Only works if no users exist. Requires admin role."""
     try:
         container = get_allowed_users_container()
 
@@ -445,8 +448,8 @@ async def seed_initial_admins():
 
 
 @router.get("/pending-count")
-async def get_pending_request_count():
-    """Get count of pending access requests (for sidebar badge)."""
+async def get_pending_request_count(admin_email: str = Depends(verify_admin_role)):
+    """Get count of pending access requests (for admin sidebar badge)."""
     try:
         container = get_access_requests_container()
 

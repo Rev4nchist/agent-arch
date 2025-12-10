@@ -25,7 +25,7 @@ export function BottomNavBar({ onMenuClick }: BottomNavBarProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 lg:hidden z-40 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 lg:hidden z-40 pb-safe pb-4">
       <div className="flex items-center justify-around h-full max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = item.href === '/'

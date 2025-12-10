@@ -36,10 +36,11 @@ function UserManagementContent() {
   const [isAdding, setIsAdding] = useState(false);
 
   const loadUsers = async () => {
+    if (!currentUser?.username) return;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await accessApi.listUsers();
+      const data = await accessApi.listUsers(currentUser.username);
       setUsers(data.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
@@ -49,8 +50,10 @@ function UserManagementContent() {
   };
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (currentUser?.username) {
+      loadUsers();
+    }
+  }, [currentUser?.username]);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,8 +73,9 @@ function UserManagementContent() {
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    if (!currentUser?.username) return;
     try {
-      await accessApi.updateUser(userId, { role: newRole });
+      await accessApi.updateUser(userId, { role: newRole }, currentUser.username);
       loadUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update role');
@@ -79,9 +83,10 @@ function UserManagementContent() {
   };
 
   const handleRemoveUser = async (userId: string) => {
+    if (!currentUser?.username) return;
     if (!confirm('Are you sure you want to remove this user?')) return;
     try {
-      await accessApi.deleteUser(userId);
+      await accessApi.deleteUser(userId, currentUser.username);
       loadUsers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove user');

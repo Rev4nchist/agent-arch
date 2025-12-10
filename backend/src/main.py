@@ -1,6 +1,6 @@
 """Main FastAPI application."""
 from fastapi.encoders import jsonable_encoder
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
@@ -10,6 +10,7 @@ from src.ai_client import ai_client
 from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs, access, budget, memories, feature_updates
 from src.context_service import context_service
 from src.audit_middleware import AuditMiddleware
+from src.auth import verify_api_key
 from src.search_service import initialize_search_index, get_search_service
 from src.hmlr import HMLRService, SuggestionOrchestrator, SuggestionResponse
 from src.models import (
@@ -38,9 +39,15 @@ import re
 from datetime import datetime, timedelta
 from enum import Enum
 from dataclasses import dataclass
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from starlette.requests import Request
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 
 def index_document_async(doc_id: str, doc_type: str, obj: any):
@@ -162,6 +169,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Configure CORS
 logger.info(f"Configuring CORS with origins: {settings.cors_origins_list}")
 app.add_middleware(
@@ -175,17 +185,19 @@ app.add_middleware(
 # Add audit middleware (logs all API actions)
 app.add_middleware(AuditMiddleware)
 
-# Register routers
-app.include_router(transcripts.router)
-app.include_router(azure_resources.router)
-app.include_router(resources.router)
-app.include_router(audit.router)
-app.include_router(submissions.router)
-app.include_router(platform_docs.router)
-app.include_router(access.router)
-app.include_router(budget.router)
-app.include_router(memories.router)
-app.include_router(feature_updates.router)
+# Register routers with API key authentication
+# All API endpoints require valid Bearer token except /health
+api_auth = [Depends(verify_api_key)]
+app.include_router(transcripts.router, dependencies=api_auth)
+app.include_router(azure_resources.router, dependencies=api_auth)
+app.include_router(resources.router, dependencies=api_auth)
+app.include_router(audit.router, dependencies=api_auth)
+app.include_router(submissions.router, dependencies=api_auth)
+app.include_router(platform_docs.router, dependencies=api_auth)
+app.include_router(access.router, dependencies=api_auth)
+app.include_router(budget.router, dependencies=api_auth)
+app.include_router(memories.router, dependencies=api_auth)
+app.include_router(feature_updates.router, dependencies=api_auth)
 
 
 # Health check
@@ -195,8 +207,8 @@ async def health_check():
     return {"status": "healthy", "environment": settings.environment}
 
 
-# Meetings endpoints
-@app.get("/api/meetings", response_model=List[Meeting])
+# Meetings endpoints - all require API key authentication
+@app.get("/api/meetings", response_model=List[Meeting], dependencies=api_auth)
 async def get_meetings():
     """Get all meetings."""
     try:
@@ -208,7 +220,7 @@ async def get_meetings():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/meetings/{meeting_id}", response_model=Meeting)
+@app.get("/api/meetings/{meeting_id}", response_model=Meeting, dependencies=api_auth)
 async def get_meeting(meeting_id: str):
     """Get meeting by ID."""
     try:
@@ -219,7 +231,7 @@ async def get_meeting(meeting_id: str):
         raise HTTPException(status_code=404, detail="Meeting not found")
 
 
-@app.post("/api/meetings", response_model=Meeting)
+@app.post("/api/meetings", response_model=Meeting, dependencies=api_auth)
 async def create_meeting(meeting: Meeting):
     """Create new meeting."""
     try:
@@ -240,7 +252,7 @@ async def create_meeting(meeting: Meeting):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/api/meetings/{meeting_id}", response_model=Meeting)
+@app.put("/api/meetings/{meeting_id}", response_model=Meeting, dependencies=api_auth)
 async def update_meeting(meeting_id: str, meeting: Meeting):
     """Update meeting. Auto-sets status to Completed when transcript is added."""
     try:
@@ -266,7 +278,7 @@ async def update_meeting(meeting_id: str, meeting: Meeting):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/meetings/{meeting_id}")
+@app.delete("/api/meetings/{meeting_id}", dependencies=api_auth)
 async def delete_meeting(meeting_id: str):
     """Delete meeting."""
     try:
@@ -277,8 +289,8 @@ async def delete_meeting(meeting_id: str):
         raise HTTPException(status_code=404, detail="Meeting not found")
 
 
-# Tasks endpoints
-@app.get("/api/tasks", response_model=List[Task])
+# Tasks endpoints - all require API key authentication
+@app.get("/api/tasks", response_model=List[Task], dependencies=api_auth)
 async def get_tasks():
     """Get all tasks."""
     try:
@@ -290,7 +302,7 @@ async def get_tasks():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/tasks/{task_id}", response_model=Task)
+@app.get("/api/tasks/{task_id}", response_model=Task, dependencies=api_auth)
 async def get_task(task_id: str):
     """Get task by ID."""
     try:
@@ -301,7 +313,7 @@ async def get_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
 
-@app.post("/api/tasks", response_model=Task)
+@app.post("/api/tasks", response_model=Task, dependencies=api_auth)
 async def create_task(task: Task):
     """Create new task."""
     try:
@@ -322,7 +334,7 @@ async def create_task(task: Task):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/api/tasks/{task_id}", response_model=Task)
+@app.put("/api/tasks/{task_id}", response_model=Task, dependencies=api_auth)
 async def update_task(task_id: str, task: Task):
     """Update task."""
     try:
@@ -341,7 +353,7 @@ async def update_task(task_id: str, task: Task):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/tasks/{task_id}")
+@app.delete("/api/tasks/{task_id}", dependencies=api_auth)
 async def delete_task(task_id: str):
     """Delete task."""
     try:
@@ -352,8 +364,8 @@ async def delete_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
 
-# Agents endpoints
-@app.get("/api/agents", response_model=List[Agent])
+# Agents endpoints - all require API key authentication
+@app.get("/api/agents", response_model=List[Agent], dependencies=api_auth)
 async def get_agents():
     """Get all agents."""
     try:
@@ -365,7 +377,7 @@ async def get_agents():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/agents/{agent_id}", response_model=Agent)
+@app.get("/api/agents/{agent_id}", response_model=Agent, dependencies=api_auth)
 async def get_agent(agent_id: str):
     """Get agent by ID."""
     try:
@@ -376,7 +388,7 @@ async def get_agent(agent_id: str):
         raise HTTPException(status_code=404, detail="Agent not found")
 
 
-@app.post("/api/agents", response_model=Agent)
+@app.post("/api/agents", response_model=Agent, dependencies=api_auth)
 async def create_agent(agent: Agent):
     """Create new agent."""
     try:
@@ -397,7 +409,7 @@ async def create_agent(agent: Agent):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/api/agents/{agent_id}", response_model=Agent)
+@app.put("/api/agents/{agent_id}", response_model=Agent, dependencies=api_auth)
 async def update_agent(agent_id: str, agent: Agent):
     """Update agent."""
     try:
@@ -416,7 +428,7 @@ async def update_agent(agent_id: str, agent: Agent):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/agents/{agent_id}")
+@app.delete("/api/agents/{agent_id}", dependencies=api_auth)
 async def delete_agent(agent_id: str):
     """Delete agent."""
     try:
@@ -429,8 +441,8 @@ async def delete_agent(agent_id: str):
 
 
 
-# Proposals endpoints
-@app.get("/api/proposals", response_model=List[Proposal])
+# Proposals endpoints - all require API key authentication
+@app.get("/api/proposals", response_model=List[Proposal], dependencies=api_auth)
 async def get_proposals():
     """Get all proposals."""
     try:
@@ -442,7 +454,7 @@ async def get_proposals():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/proposals/{proposal_id}", response_model=Proposal)
+@app.get("/api/proposals/{proposal_id}", response_model=Proposal, dependencies=api_auth)
 async def get_proposal(proposal_id: str):
     """Get proposal by ID."""
     try:
@@ -453,7 +465,7 @@ async def get_proposal(proposal_id: str):
         raise HTTPException(status_code=404, detail="Proposal not found")
 
 
-@app.post("/api/proposals", response_model=Proposal)
+@app.post("/api/proposals", response_model=Proposal, dependencies=api_auth)
 async def create_proposal(proposal: Proposal):
     """Create new proposal."""
     try:
@@ -474,7 +486,7 @@ async def create_proposal(proposal: Proposal):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.patch("/api/proposals/{proposal_id}", response_model=Proposal)
+@app.patch("/api/proposals/{proposal_id}", response_model=Proposal, dependencies=api_auth)
 async def update_proposal(proposal_id: str, update_data: ProposalUpdate):
     """Update proposal (partial update)."""
     try:
@@ -498,7 +510,7 @@ async def update_proposal(proposal_id: str, update_data: ProposalUpdate):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/proposals/{proposal_id}")
+@app.delete("/api/proposals/{proposal_id}", dependencies=api_auth)
 async def delete_proposal(proposal_id: str):
     """Delete proposal."""
     try:
@@ -510,7 +522,7 @@ async def delete_proposal(proposal_id: str):
 
 
 # Decisions endpoints
-@app.get("/api/decisions", response_model=List[Decision])
+@app.get("/api/decisions", response_model=List[Decision], dependencies=api_auth)
 async def get_decisions():
     """Get all decisions."""
     try:
@@ -522,7 +534,7 @@ async def get_decisions():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/decisions", response_model=Decision)
+@app.post("/api/decisions", response_model=Decision, dependencies=api_auth)
 async def create_decision(decision: Decision):
     """Create new decision."""
     try:
@@ -546,7 +558,7 @@ async def create_decision(decision: Decision):
 
 
 
-@app.get("/api/decisions/{decision_id}", response_model=Decision)
+@app.get("/api/decisions/{decision_id}", response_model=Decision, dependencies=api_auth)
 async def get_decision(decision_id: str):
     """Get a single decision by ID."""
     try:
@@ -560,7 +572,7 @@ async def get_decision(decision_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/api/decisions/{decision_id}", response_model=Decision)
+@app.put("/api/decisions/{decision_id}", response_model=Decision, dependencies=api_auth)
 async def update_decision(decision_id: str, data: dict):
     """Update an existing decision."""
     try:
@@ -582,7 +594,7 @@ async def update_decision(decision_id: str, data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/decisions/{decision_id}")
+@app.delete("/api/decisions/{decision_id}", dependencies=api_auth)
 async def delete_decision(decision_id: str):
     """Delete a decision."""
     try:
@@ -595,7 +607,7 @@ async def delete_decision(decision_id: str):
         logger.error(f"Error deleting decision {decision_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/decisions/from-proposal", response_model=Decision)
+@app.post("/api/decisions/from-proposal", response_model=Decision, dependencies=api_auth)
 async def create_decision_from_proposal(data: dict):
     """Create decision from approved proposal."""
     try:
@@ -640,7 +652,7 @@ async def create_decision_from_proposal(data: dict):
 
 
 # Tech Radar endpoints
-@app.get("/api/tech-radar", response_model=List[TechRadarItem])
+@app.get("/api/tech-radar", response_model=List[TechRadarItem], dependencies=api_auth)
 async def get_tech_radar_items():
     """Get all tech radar items."""
     try:
@@ -652,7 +664,7 @@ async def get_tech_radar_items():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/tech-radar", response_model=TechRadarItem)
+@app.post("/api/tech-radar", response_model=TechRadarItem, dependencies=api_auth)
 async def create_tech_radar_item(item: TechRadarItem):
     """Create new tech radar item."""
     try:
@@ -668,7 +680,7 @@ async def create_tech_radar_item(item: TechRadarItem):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/api/tech-radar/{item_id}", response_model=TechRadarItem)
+@app.put("/api/tech-radar/{item_id}", response_model=TechRadarItem, dependencies=api_auth)
 async def update_tech_radar_item(item_id: str, item: TechRadarItem):
     """Update tech radar item."""
     try:
@@ -684,7 +696,7 @@ async def update_tech_radar_item(item_id: str, item: TechRadarItem):
 
 
 # Code Patterns endpoints
-@app.get("/api/code-patterns", response_model=List[CodePattern])
+@app.get("/api/code-patterns", response_model=List[CodePattern], dependencies=api_auth)
 async def get_code_patterns():
     """Get all code patterns."""
     try:
@@ -696,7 +708,7 @@ async def get_code_patterns():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/code-patterns", response_model=CodePattern)
+@app.post("/api/code-patterns", response_model=CodePattern, dependencies=api_auth)
 async def create_code_pattern(pattern: CodePattern):
     """Create new code pattern."""
     try:
@@ -713,7 +725,7 @@ async def create_code_pattern(pattern: CodePattern):
 
 
 # AI endpoints
-@app.post("/api/transcripts/process", response_model=TranscriptProcessResponse)
+@app.post("/api/transcripts/process", response_model=TranscriptProcessResponse, dependencies=api_auth)
 async def process_transcript(request: TranscriptProcessRequest):
     """Process transcript to extract action items and decisions."""
     try:
@@ -2479,7 +2491,7 @@ def _get_live_context(entities: list[str], limit: int = 10) -> tuple[str, list[s
     return "\n".join(context_parts), sources
 
 
-@app.post("/api/agent/query", response_model=AgentQueryResponse)
+@app.post("/api/agent/query", response_model=AgentQueryResponse, dependencies=api_auth)
 async def query_agent(request: AgentQueryRequest):
     """Query the Fourth AI Guide agent with intent classification, targeted queries, and RAG context."""
     try:
@@ -2734,7 +2746,7 @@ async def query_agent(request: AgentQueryRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/agent/query/stream")
+@app.post("/api/agent/query/stream", dependencies=api_auth)
 async def query_agent_stream(request: AgentQueryRequest):
     """Stream query responses from the Fourth AI Guide agent with SSE."""
     import json as json_module
@@ -2937,7 +2949,7 @@ class InsightsResponse(PydanticBaseModel):
     generated_at: str
 
 
-@app.get("/api/agent/insights")
+@app.get("/api/agent/insights", dependencies=api_auth)
 async def get_proactive_insights(page: str = "dashboard"):
     """
     Get page-specific proactive insights for the AI Guide.
@@ -3132,7 +3144,7 @@ async def get_proactive_insights(page: str = "dashboard"):
         return InsightsResponse(page=page, insights=[], generated_at=datetime.utcnow().isoformat())
 
 
-@app.get("/api/guide/suggestions")
+@app.get("/api/guide/suggestions", dependencies=api_auth)
 async def get_personalized_suggestions(
     page_type: str = "dashboard",
     user_id: Optional[str] = None,
@@ -3185,7 +3197,7 @@ class SearchRequest(PydanticBaseModel):
     top: int = 5
 
 
-@app.post("/api/search")
+@app.post("/api/search", dependencies=api_auth)
 async def search_documents(request: SearchRequest):
     """Search the knowledge base using semantic search."""
     try:
@@ -3206,7 +3218,7 @@ async def search_documents(request: SearchRequest):
 # Snapshot Endpoints (Phase 3.3)
 # =============================================================================
 
-@app.post("/api/snapshots/capture")
+@app.post("/api/snapshots/capture", dependencies=api_auth)
 async def capture_snapshot():
     """Manually trigger a daily snapshot capture."""
     try:
@@ -3218,7 +3230,7 @@ async def capture_snapshot():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/snapshots/{snapshot_id}")
+@app.get("/api/snapshots/{snapshot_id}", dependencies=api_auth)
 async def get_snapshot(snapshot_id: str):
     """Get a specific snapshot by ID."""
     try:
@@ -3234,7 +3246,7 @@ async def get_snapshot(snapshot_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/snapshots/compare/{days_ago}")
+@app.get("/api/snapshots/compare/{days_ago}", dependencies=api_auth)
 async def compare_snapshots(days_ago: int = 7):
     """Compare current state with snapshot from N days ago."""
     try:
@@ -3266,7 +3278,7 @@ async def compare_snapshots(days_ago: int = 7):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/snapshots")
+@app.get("/api/snapshots", dependencies=api_auth)
 async def list_snapshots(limit: int = 30):
     """List recent snapshots."""
     try:
@@ -3283,7 +3295,7 @@ async def list_snapshots(limit: int = 30):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/api/snapshots")
+@app.delete("/api/snapshots", dependencies=api_auth)
 async def clear_snapshots():
     """Clear all snapshots (for resetting test data)."""
     try:

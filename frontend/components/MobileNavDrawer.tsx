@@ -3,7 +3,8 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
-import { X } from 'lucide-react';
+import Image from 'next/image';
+import { PanelLeftClose } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MobileNavDrawerProps {
@@ -35,13 +36,25 @@ export function MobileNavDrawer({ isOpen, onClose, children }: MobileNavDrawerPr
             <DialogPrimitive.Title>Navigation Menu</DialogPrimitive.Title>
           </VisuallyHidden.Root>
           <div className="flex h-full flex-col">
-            <div className="flex items-center justify-end p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/Fourth_icon.png"
+                  alt="Fourth Logo"
+                  width={24}
+                  height={24}
+                  className="flex-shrink-0"
+                />
+                <span className="text-base font-bold text-gray-900">
+                  Fourth AI Architecture
+                </span>
+              </div>
               <button
                 onClick={onClose}
-                className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                className="flex items-center justify-center w-11 h-11 -mr-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
                 aria-label="Close menu"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <PanelLeftClose className="h-5 w-5 text-gray-500" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">

@@ -73,6 +73,25 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   return res.json();
 }
 
+async function adminApiFetch<T>(endpoint: string, userEmail: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`,
+      'X-User-Email': userEmail,
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => res.statusText);
+    throw new Error(`API error: ${errorText}`);
+  }
+
+  return res.json();
+}
+
 export const accessApi = {
   verify: (email: string) =>
     apiFetch<AccessVerifyResponse>(`/api/access/verify?email=${encodeURIComponent(email)}`),
@@ -83,53 +102,55 @@ export const accessApi = {
       body: JSON.stringify(data),
     }),
 
-  listRequests: (status?: AccessRequestStatus) => {
+  listRequests: (adminEmail: string, status?: AccessRequestStatus) => {
     const qs = status ? `?status=${status}` : '';
-    return apiFetch<AccessRequestListResponse>(`/api/access/requests${qs}`);
+    return adminApiFetch<AccessRequestListResponse>(`/api/access/requests${qs}`, adminEmail);
   },
 
-  approveRequest: (requestId: string, reviewerEmail: string, role: UserRole = 'user') =>
-    apiFetch<{ request: AccessRequest; user: AllowedUser }>(
-      `/api/access/requests/${requestId}/approve?reviewer_email=${encodeURIComponent(reviewerEmail)}&role=${role}`,
+  approveRequest: (requestId: string, adminEmail: string, role: UserRole = 'user') =>
+    adminApiFetch<{ request: AccessRequest; user: AllowedUser }>(
+      `/api/access/requests/${requestId}/approve?role=${role}`,
+      adminEmail,
       { method: 'POST' }
     ),
 
-  denyRequest: (requestId: string, reviewerEmail: string) =>
-    apiFetch<AccessRequest>(
-      `/api/access/requests/${requestId}/deny?reviewer_email=${encodeURIComponent(reviewerEmail)}`,
+  denyRequest: (requestId: string, adminEmail: string) =>
+    adminApiFetch<AccessRequest>(
+      `/api/access/requests/${requestId}/deny`,
+      adminEmail,
       { method: 'POST' }
     ),
 
-  listUsers: (role?: UserRole, status?: UserStatus) => {
+  listUsers: (adminEmail: string, role?: UserRole, status?: UserStatus) => {
     const params = new URLSearchParams();
     if (role) params.append('role', role);
     if (status) params.append('status', status);
     const qs = params.toString();
-    return apiFetch<AllowedUserListResponse>(`/api/access/users${qs ? `?${qs}` : ''}`);
+    return adminApiFetch<AllowedUserListResponse>(`/api/access/users${qs ? `?${qs}` : ''}`, adminEmail);
   },
 
-  createUser: (data: AllowedUserCreate, approverEmail: string) =>
-    apiFetch<AllowedUser>(`/api/access/users?approver_email=${encodeURIComponent(approverEmail)}`, {
+  createUser: (data: AllowedUserCreate, adminEmail: string) =>
+    adminApiFetch<AllowedUser>('/api/access/users', adminEmail, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  updateUser: (userId: string, data: Partial<AllowedUserCreate & { status?: UserStatus }>) =>
-    apiFetch<AllowedUser>(`/api/access/users/${userId}`, {
+  updateUser: (userId: string, data: Partial<AllowedUserCreate & { status?: UserStatus }>, adminEmail: string) =>
+    adminApiFetch<AllowedUser>(`/api/access/users/${userId}`, adminEmail, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
 
-  deleteUser: (userId: string) =>
-    apiFetch<{ message: string }>(`/api/access/users/${userId}`, {
+  deleteUser: (userId: string, adminEmail: string) =>
+    adminApiFetch<{ message: string }>(`/api/access/users/${userId}`, adminEmail, {
       method: 'DELETE',
     }),
 
-  getPendingCount: () =>
-    apiFetch<{ count: number }>('/api/access/pending-count'),
+  getPendingCount: (adminEmail: string) =>
+    adminApiFetch<{ count: number }>('/api/access/pending-count', adminEmail),
 
-  seedAdmins: () =>
-    apiFetch<{ message: string; users?: string[] }>('/api/access/seed-admins', {
+  seedAdmins: (adminEmail: string) =>
+    adminApiFetch<{ message: string; users?: string[] }>('/api/access/seed-admins', adminEmail, {
       method: 'POST',
     }),
 };
