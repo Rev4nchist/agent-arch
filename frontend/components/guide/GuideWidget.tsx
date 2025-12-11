@@ -70,12 +70,13 @@ export function GuideWidget() {
         onMinimize={minimizeWidget}
         onExpand={expandWidget}
         onToggleExpanded={toggleExpanded}
+        onClose={toggleWidget}
         onClear={clearConversation}
         onDismissInsight={dismissInsight}
         onInsightAction={runInsightAction}
         onExecuteAction={executeAction}
       />
-      {!isExpanded && (
+      {!isExpanded && !isWidgetOpen && (
         <GuideWidgetTrigger
           isOpen={isWidgetOpen}
           onClick={toggleWidget}

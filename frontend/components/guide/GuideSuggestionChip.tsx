@@ -8,12 +8,14 @@ interface GuideSuggestionChipProps {
   suggestion: Suggestion;
   onClick: (text: string) => void;
   compact?: boolean;
+  isMobile?: boolean;
 }
 
 export function GuideSuggestionChip({
   suggestion,
   onClick,
   compact = false,
+  isMobile = false,
 }: GuideSuggestionChipProps) {
   return (
     <button
@@ -23,7 +25,11 @@ export function GuideSuggestionChip({
         'bg-background hover:bg-accent hover:border-accent',
         'text-muted-foreground hover:text-foreground',
         'transition-colors cursor-pointer',
-        compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
+        isMobile
+          ? 'px-4 py-2.5 text-sm'
+          : compact
+            ? 'px-2.5 py-1 text-xs'
+            : 'px-3 py-1.5 text-sm'
       )}
     >
       {suggestion.text}
