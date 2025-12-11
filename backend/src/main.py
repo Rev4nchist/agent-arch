@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from src.config import settings
 from src.database import db
 from src.ai_client import ai_client
-from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs, access, budget, memories, feature_updates
+from src.routers import transcripts, azure_resources, resources, audit, submissions, platform_docs, access, budget, memories, feature_updates, agent_factory
 from src.context_service import context_service
 from src.audit_middleware import AuditMiddleware
 from src.auth import verify_api_key
@@ -198,6 +198,7 @@ app.include_router(access.router, dependencies=api_auth)
 app.include_router(budget.router, dependencies=api_auth)
 app.include_router(memories.router, dependencies=api_auth)
 app.include_router(feature_updates.router, dependencies=api_auth)
+app.include_router(agent_factory.router, dependencies=api_auth)
 
 
 # Health check

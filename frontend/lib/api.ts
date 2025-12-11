@@ -649,6 +649,67 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    factory: {
+      provision: (data: {
+        name: string;
+        description: string;
+        department: string;
+        owner: string;
+        instructions: string;
+        tools: string[];
+        connectors: string[];
+        knowledge_file_ids: string[];
+        governance: {
+          classification: 'Public' | 'Internal' | 'Confidential' | 'Restricted';
+          cost_center?: string;
+          requires_approval: boolean;
+        };
+      }) =>
+        apiFetch<{ agent_id: string; status: string; message?: string }>(
+          '/api/agents/factory/provision',
+          {
+            method: 'POST',
+            body: JSON.stringify(data),
+          }
+        ),
+      getStatus: (agentId: string) =>
+        apiFetch<{ status: string; progress: number; message?: string }>(
+          `/api/agents/factory/${agentId}/status`
+        ),
+      attachKnowledge: async (agentId: string, files: File[]) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+        const response = await fetch(`${API_URL}/api/agents/factory/${agentId}/knowledge`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${API_KEY}`,
+          },
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json() as Promise<{
+          files_received: number;
+          file_ids: string[];
+          vector_store_id: string;
+          status: string;
+        }>;
+      },
+      createThread: (agentId: string) =>
+        apiFetch<{ thread_id: string; agent_id: string; created_at: string }>(
+          `/api/agents/factory/${agentId}/threads`,
+          { method: 'POST' }
+        ),
+      executeRun: (agentId: string, threadId: string, message: string) =>
+        apiFetch<{ run_id: string; thread_id: string; status: string; response: string }>(
+          `/api/agents/factory/${agentId}/threads/${threadId}/runs`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ message }),
+          }
+        ),
+    },
   },
   proposals: {
     list: () => apiFetch<Proposal[]>('/api/proposals'),
