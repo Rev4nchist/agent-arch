@@ -9,23 +9,34 @@ The Governor is the "brain" of HMLR routing, implementing 4 scenarios:
 The Governor runs 3 parallel tasks for each routing decision:
 1. Get session blocks from Cosmos DB
 2. Lookup relevant facts from Azure SQL
-3. Retrieve memories (future: semantic search)
+3. Retrieve memories via LatticeCrawler (semantic vector search)
+
+Key 1: LatticeCrawler performs vector search to find raw candidates
+Key 2: Governor applies contextual filtering on returned candidates
 """
 
 import asyncio
 import logging
-from typing import List, Optional, Tuple, Dict, Any
+import numpy as np
+from typing import List, Optional, Tuple, Dict, Any, TYPE_CHECKING
+from datetime import datetime, timedelta
 
 from src.hmlr.models import (
     BridgeBlock,
     Fact,
     GovernorDecision,
     RoutingScenario,
-    Turn
+    Turn,
+    CandidateMemory,
+    MemoryType,
 )
 from src.hmlr.bridge_block_mgr import BridgeBlockManager
 from src.hmlr.sql_client import HMLRSQLClient
+from src.hmlr.cache import TTLLRUCache
 from src.config import settings
+
+if TYPE_CHECKING:
+    from src.hmlr.lattice_crawler import LatticeCrawler
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +49,16 @@ class Governor:
     - SCENARIO 2: Topic Resumption (paused block matches)
     - SCENARIO 3: New Topic (no active blocks)
     - SCENARIO 4: Topic Shift (new topic, pause current)
+
+    Uses LatticeCrawler for semantic memory retrieval (Key 1)
+    and applies contextual filtering (Key 2) on candidates.
     """
 
     def __init__(
         self,
         block_manager: BridgeBlockManager,
         sql_client: HMLRSQLClient,
+        lattice_crawler: Optional["LatticeCrawler"] = None,
         ai_client: Any = None
     ):
         """Initialize Governor.
@@ -51,12 +66,18 @@ class Governor:
         Args:
             block_manager: Bridge Block manager instance
             sql_client: SQL client for fact lookup
+            lattice_crawler: LatticeCrawler for semantic memory retrieval
             ai_client: AI client for topic similarity (optional)
         """
         self.block_manager = block_manager
         self.sql_client = sql_client
+        self.lattice_crawler = lattice_crawler
         self.ai_client = ai_client
         self.similarity_threshold = settings.hmlr_topic_similarity_threshold
+        self._embedding_cache = TTLLRUCache(
+            maxsize=settings.hmlr_embedding_cache_size,
+            ttl_minutes=settings.hmlr_embedding_cache_ttl_minutes
+        )
 
     async def route(
         self,
@@ -243,10 +264,112 @@ class Governor:
         query: str,
         block: BridgeBlock
     ) -> float:
-        """Compute similarity between query and block topic.
+        """Compute semantic similarity between query and block.
 
-        Uses keyword overlap as a simple heuristic.
-        Future: Use embeddings for semantic similarity.
+        Uses embedding-based cosine similarity when LatticeCrawler is available,
+        falls back to keyword overlap otherwise.
+
+        Args:
+            query: User's query
+            block: Bridge Block to compare
+
+        Returns:
+            Similarity score (0.0 - 1.0)
+        """
+        if self.lattice_crawler and settings.hmlr_vector_search_enabled:
+            try:
+                return await self._compute_embedding_similarity(query, block)
+            except Exception as e:
+                logger.warning(f"Embedding similarity failed, using keyword fallback: {e}")
+
+        return self._compute_keyword_similarity(query, block)
+
+    async def _compute_embedding_similarity(
+        self,
+        query: str,
+        block: BridgeBlock
+    ) -> float:
+        """Compute cosine similarity using embeddings.
+
+        Args:
+            query: User's query
+            block: Bridge Block to compare
+
+        Returns:
+            Cosine similarity score (0.0 - 1.0)
+        """
+        query_embedding = self.lattice_crawler.generate_embedding(query)
+
+        block_content = self._get_block_content_for_embedding(block)
+        cache_key = f"block_{block.id}"
+
+        cached_embedding = self._embedding_cache.get(cache_key)
+        if cached_embedding is not None:
+            block_embedding = cached_embedding
+            logger.debug(f"Embedding cache HIT for block {block.id}")
+        else:
+            block_embedding = self.lattice_crawler.generate_embedding(block_content)
+            self._embedding_cache.set(cache_key, block_embedding)
+            logger.debug(f"Embedding cache MISS for block {block.id}")
+
+        similarity = self._cosine_similarity(query_embedding, block_embedding)
+        return max(0.0, min(1.0, similarity))
+
+    def _get_block_content_for_embedding(self, block: BridgeBlock) -> str:
+        """Generate content string for block embedding.
+
+        Args:
+            block: Bridge Block
+
+        Returns:
+            Content string for embedding
+        """
+        parts = [f"Topic: {block.topic_label}"]
+
+        if block.keywords:
+            parts.append(f"Keywords: {', '.join(block.keywords)}")
+
+        if block.summary:
+            parts.append(f"Summary: {block.summary}")
+
+        if block.turns:
+            recent_queries = [t.query for t in block.turns[-3:]]
+            parts.append(f"Recent queries: {' | '.join(recent_queries)}")
+
+        return ". ".join(parts)
+
+    def _cosine_similarity(
+        self,
+        vec1: List[float],
+        vec2: List[float]
+    ) -> float:
+        """Compute cosine similarity between two vectors.
+
+        Args:
+            vec1: First vector
+            vec2: Second vector
+
+        Returns:
+            Cosine similarity (-1.0 to 1.0, typically 0.0 to 1.0 for embeddings)
+        """
+        a = np.array(vec1)
+        b = np.array(vec2)
+
+        dot_product = np.dot(a, b)
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+
+        return dot_product / (norm_a * norm_b)
+
+    def _compute_keyword_similarity(
+        self,
+        query: str,
+        block: BridgeBlock
+    ) -> float:
+        """Compute similarity using keyword overlap (fallback).
 
         Args:
             query: User's query
@@ -256,20 +379,17 @@ class Governor:
             Similarity score (0.0 - 1.0)
         """
         if not block.keywords:
-            return 0.3  # Default low similarity for empty keywords
+            return 0.3
 
         query_lower = query.lower()
         query_words = set(query_lower.split())
 
-        # Count keyword matches
         block_keywords = set(k.lower() for k in block.keywords)
         matches = query_words.intersection(block_keywords)
 
-        # Check topic label match
         if block.topic_label.lower() in query_lower:
             matches.add("_topic_match_")
 
-        # Check recent turn context
         if block.turns:
             last_turn = block.turns[-1]
             if any(word in last_turn.query.lower() for word in query_words):
@@ -279,7 +399,7 @@ class Governor:
             return 0.3
 
         similarity = len(matches) / max(len(block_keywords), len(query_words))
-        return min(similarity * 1.5, 1.0)  # Boost and cap at 1.0
+        return min(similarity * 1.5, 1.0)
 
     async def _find_matching_paused(
         self,
@@ -337,19 +457,94 @@ class Governor:
         user_id: str,
         query: str
     ) -> List[Dict]:
-        """Retrieve relevant memories (future: semantic search).
+        """Retrieve relevant memories via LatticeCrawler (Key 1).
 
-        Placeholder for semantic memory retrieval via Azure AI Search.
+        Performs semantic vector search and applies Key 2 contextual filtering.
 
         Args:
             user_id: User identifier
             query: Query for semantic search
 
         Returns:
-            List of memory dictionaries
+            List of filtered memory dictionaries
         """
-        # TODO: Implement semantic search via Azure AI Search
-        return []
+        if not self.lattice_crawler or not settings.hmlr_vector_search_enabled:
+            logger.debug("LatticeCrawler not available, skipping memory retrieval")
+            return []
+
+        try:
+            candidates = await self.lattice_crawler.crawl(
+                user_id=user_id,
+                query=query,
+                top_k=settings.hmlr_max_candidates,
+                min_score=settings.hmlr_min_similarity_score,
+            )
+
+            filtered = self._filter_candidates(candidates)
+
+            memories = [
+                {
+                    "id": c.id,
+                    "content": c.content,
+                    "type": c.memory_type,
+                    "source_id": c.source_id,
+                    "score": c.score,
+                    "category": c.category,
+                    "topic_label": c.topic_label,
+                }
+                for c in filtered
+            ]
+
+            logger.info(
+                f"Retrieved {len(memories)} memories for user {user_id} "
+                f"(from {len(candidates)} candidates)"
+            )
+            return memories
+
+        except Exception as e:
+            logger.error(f"Memory retrieval failed: {e}")
+            return []
+
+    def _filter_candidates(
+        self,
+        candidates: List[CandidateMemory]
+    ) -> List[CandidateMemory]:
+        """Apply Key 2 contextual filtering on raw candidates.
+
+        Filters candidates based on:
+        - Recency (prefer recent memories)
+        - Confidence (for facts)
+        - Topic isolation (avoid cross-topic leakage)
+
+        Args:
+            candidates: Raw candidates from LatticeCrawler
+
+        Returns:
+            Filtered list of candidates
+        """
+        if not candidates:
+            return []
+
+        filtered = []
+        seen_topics = set()
+
+        for candidate in candidates:
+            if candidate.memory_type == MemoryType.FACT:
+                if candidate.confidence and candidate.confidence < 0.5:
+                    continue
+
+            if candidate.memory_type == MemoryType.BLOCK_SUMMARY:
+                if candidate.topic_label:
+                    topic_key = candidate.topic_label.lower()[:20]
+                    if topic_key in seen_topics:
+                        continue
+                    seen_topics.add(topic_key)
+
+            filtered.append(candidate)
+
+        filtered.sort(key=lambda c: c.score, reverse=True)
+
+        return filtered[:settings.hmlr_max_candidates]
 
     def _extract_keywords(
         self,

@@ -9,12 +9,14 @@ Components:
 - FactScrubber: Extracts hard facts from conversations (Azure SQL)
 - Hydrator: Assembles context for LLM prompts
 - Scribe: Async user profile updates
+- LatticeCrawler: Vector search for semantic memory retrieval (Azure AI Search)
 - HMLRService: Main orchestrator
 
 Memory Scope:
 - Bridge Blocks: Per-Session (conversation flow resets each session)
 - Facts: Per-User (entities/relationships persist forever)
 - User Profiles: Per-User (preferences build over time)
+- Lattice Index: Per-User (semantic search over facts + block summaries)
 """
 
 from src.hmlr.models import (
@@ -23,9 +25,12 @@ from src.hmlr.models import (
     UserProfile,
     GovernorDecision,
     HydratedContext,
-    Turn
+    Turn,
+    CandidateMemory,
+    MemoryType,
 )
 from src.hmlr.service import HMLRService
+from src.hmlr.lattice_crawler import LatticeCrawler, get_lattice_crawler, initialize_lattice
 from src.hmlr.suggestion_models import (
     SuggestionSource,
     PersonalizedSuggestion,
@@ -43,6 +48,11 @@ __all__ = [
     "GovernorDecision",
     "HydratedContext",
     "Turn",
+    "CandidateMemory",
+    "MemoryType",
+    "LatticeCrawler",
+    "get_lattice_crawler",
+    "initialize_lattice",
     "SuggestionSource",
     "PersonalizedSuggestion",
     "SuggestionData",

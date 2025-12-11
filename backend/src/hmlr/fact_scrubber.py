@@ -5,16 +5,23 @@ Extracts hard facts from conversations using AI:
 - Acronyms: "X stands for Y", "X (Y)"
 - Entities: "David owns X", "Contact Y"
 - Secrets: API keys, passwords, user preferences
+
+Extracted facts are saved to both:
+1. Azure SQL (structured storage)
+2. LatticeCrawler vector index (semantic search)
 """
 
 import json
 import logging
 import time
-from typing import List, Optional, Any
+from typing import List, Optional, Any, TYPE_CHECKING
 
 from src.hmlr.models import Fact, FactCategory, FactExtractionResult
 from src.hmlr.sql_client import HMLRSQLClient
 from src.config import settings
+
+if TYPE_CHECKING:
+    from src.hmlr.lattice_crawler import LatticeCrawler
 
 logger = logging.getLogger(__name__)
 
@@ -54,20 +61,28 @@ TEXT TO ANALYZE:
 
 
 class FactScrubber:
-    """Extracts and persists facts from conversation turns."""
+    """Extracts and persists facts from conversation turns.
+
+    Facts are stored in both:
+    - Azure SQL for structured queries
+    - LatticeCrawler vector index for semantic search
+    """
 
     def __init__(
         self,
         sql_client: HMLRSQLClient,
+        lattice_crawler: Optional["LatticeCrawler"] = None,
         ai_client: Any = None
     ):
         """Initialize FactScrubber.
 
         Args:
             sql_client: SQL client for fact persistence
+            lattice_crawler: LatticeCrawler for vector indexing
             ai_client: AI client for LLM extraction (optional)
         """
         self.sql_client = sql_client
+        self.lattice_crawler = lattice_crawler
         self.ai_client = ai_client
 
     async def extract_facts(
@@ -122,7 +137,7 @@ class FactScrubber:
         block_id: str,
         text: str
     ) -> List[Fact]:
-        """Extract facts from text and save to database.
+        """Extract facts from text and save to database + vector index.
 
         Main entry point for background fact extraction.
 
@@ -140,17 +155,29 @@ class FactScrubber:
         result = await self.extract_facts(text, user_id, block_id)
 
         saved_facts = []
+        indexed_count = 0
+
         for fact in result.facts:
             try:
                 fact_id = await self.sql_client.save_fact(fact)
                 fact.fact_id = fact_id
                 saved_facts.append(fact)
                 logger.info(f"Saved fact: {fact.key} ({fact.category})")
+
+                if self.lattice_crawler and settings.hmlr_vector_search_enabled:
+                    try:
+                        indexed = await self.lattice_crawler.index_fact(fact)
+                        if indexed:
+                            indexed_count += 1
+                    except Exception as e:
+                        logger.warning(f"Failed to index fact {fact.key} in lattice: {e}")
+
             except Exception as e:
                 logger.error(f"Failed to save fact {fact.key}: {e}")
 
         logger.info(
-            f"Fact extraction complete: {len(saved_facts)} facts saved "
+            f"Fact extraction complete: {len(saved_facts)} facts saved, "
+            f"{indexed_count} indexed in lattice "
             f"({result.extraction_method}, {result.processing_time_ms}ms)"
         )
 

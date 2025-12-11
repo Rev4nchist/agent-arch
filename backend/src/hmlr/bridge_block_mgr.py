@@ -2,27 +2,43 @@
 
 Manages Bridge Blocks stored in Cosmos DB. Bridge Blocks are
 topic-based conversation units that organize turns within a session.
+
+Bridge block summaries are also indexed in the LatticeCrawler
+vector store for semantic search.
 """
 
 import uuid
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
+
 from datetime import datetime
 
 from src.hmlr.models import BridgeBlock, Turn, BlockStatus
 from src.database import db
+from src.config import settings
+
+if TYPE_CHECKING:
+    from src.hmlr.lattice_crawler import LatticeCrawler
 
 logger = logging.getLogger(__name__)
 
 
 class BridgeBlockManager:
-    """Manages Bridge Block CRUD operations in Cosmos DB."""
+    """Manages Bridge Block CRUD operations in Cosmos DB.
+
+    Also handles vector indexing of block summaries in LatticeCrawler.
+    """
 
     CONTAINER_NAME = "bridge_blocks"
 
-    def __init__(self):
-        """Initialize manager with Cosmos DB container."""
+    def __init__(self, lattice_crawler: Optional["LatticeCrawler"] = None):
+        """Initialize manager with Cosmos DB container.
+
+        Args:
+            lattice_crawler: Optional LatticeCrawler for vector indexing
+        """
         self._container = None
+        self.lattice_crawler = lattice_crawler
 
     @property
     def container(self):
@@ -71,11 +87,35 @@ class BridgeBlockManager:
         try:
             self.container.create_item(body=block.model_dump(mode='json'))
             logger.info(f"Created Bridge Block: {block_id} for session {session_id}")
+
+            await self._index_block_in_lattice(block)
+
             return block
 
         except Exception as e:
             logger.error(f"Failed to create Bridge Block: {e}")
             raise
+
+    async def _index_block_in_lattice(self, block: BridgeBlock) -> bool:
+        """Index a block summary in the LatticeCrawler vector store.
+
+        Args:
+            block: Block to index
+
+        Returns:
+            True if indexed successfully
+        """
+        if not self.lattice_crawler or not settings.hmlr_vector_search_enabled:
+            return False
+
+        try:
+            indexed = await self.lattice_crawler.index_block_summary(block)
+            if indexed:
+                logger.debug(f"Indexed block {block.id} in lattice")
+            return indexed
+        except Exception as e:
+            logger.warning(f"Failed to index block {block.id} in lattice: {e}")
+            return False
 
     # =========================================================================
     # READ OPERATIONS
@@ -267,6 +307,8 @@ class BridgeBlockManager:
     ) -> Optional[BridgeBlock]:
         """Add a turn to a Bridge Block.
 
+        Also re-indexes the block in the lattice to update the embedding.
+
         Args:
             block_id: Block identifier
             session_id: Session identifier
@@ -287,6 +329,10 @@ class BridgeBlockManager:
         try:
             self.container.replace_item(item=block_id, body=block.model_dump(mode='json'))
             logger.info(f"Added turn {turn.index} to block {block_id}")
+
+            if len(block.turns) % 3 == 0:
+                await self._index_block_in_lattice(block)
+
             return block
 
         except Exception as e:

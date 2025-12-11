@@ -15,6 +15,12 @@ class BlockStatus(str, Enum):
     PAUSED = "PAUSED"
 
 
+class MemoryType(str, Enum):
+    """Memory types for vector index."""
+    FACT = "fact"
+    BLOCK_SUMMARY = "block_summary"
+
+
 class FactCategory(str, Enum):
     """Fact classification categories."""
     DEFINITION = "Definition"
@@ -148,3 +154,24 @@ class ScribeUpdate(BaseModel):
     updates: Dict[str, Any]
     source_block_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CandidateMemory(BaseModel):
+    """Candidate memory from LatticeCrawler vector search.
+
+    Represents a raw candidate retrieved via semantic search (Key 1),
+    before Governor applies contextual filtering (Key 2).
+    """
+    id: str
+    user_id: str
+    content: str
+    memory_type: MemoryType
+    source_id: str
+    score: float
+    category: Optional[str] = None
+    topic_label: Optional[str] = None
+    confidence: Optional[float] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        use_enum_values = True

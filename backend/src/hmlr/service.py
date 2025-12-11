@@ -7,6 +7,7 @@ It orchestrates all components:
 - FactScrubber: Fact extraction
 - Hydrator: Context assembly
 - Scribe: Profile updates
+- LatticeCrawler: Vector search for semantic memory retrieval
 """
 
 import asyncio
@@ -28,6 +29,7 @@ from src.hmlr.fact_scrubber import FactScrubber
 from src.hmlr.hydrator import ContextHydrator
 from src.hmlr.scribe import Scribe
 from src.hmlr.sql_client import HMLRSQLClient
+from src.hmlr.lattice_crawler import LatticeCrawler
 from src.config import settings
 
 logger = logging.getLogger(__name__)
@@ -56,14 +58,29 @@ class HMLRService:
         self.sql_client = HMLRSQLClient(
             sql_connection_string or settings.hmlr_sql_connection_string
         )
-        self.block_manager = BridgeBlockManager()
+
+        self.lattice_crawler = None
+        if settings.hmlr_vector_search_enabled:
+            try:
+                self.lattice_crawler = LatticeCrawler()
+                self.lattice_crawler.ensure_index_exists()
+                logger.info("LatticeCrawler initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize LatticeCrawler: {e}. Vector search disabled.")
+                self.lattice_crawler = None
+
+        self.block_manager = BridgeBlockManager(
+            lattice_crawler=self.lattice_crawler
+        )
         self.governor = Governor(
             block_manager=self.block_manager,
             sql_client=self.sql_client,
+            lattice_crawler=self.lattice_crawler,
             ai_client=ai_client
         )
         self.fact_scrubber = FactScrubber(
             sql_client=self.sql_client,
+            lattice_crawler=self.lattice_crawler,
             ai_client=ai_client
         )
         self.hydrator = ContextHydrator()

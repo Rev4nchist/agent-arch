@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     hmlr_fact_extraction_enabled: bool = True
     hmlr_profile_update_enabled: bool = True
     hmlr_topic_similarity_threshold: float = 0.7
+    hmlr_search_index_name: str = "hmlr-memories"
+    hmlr_vector_search_enabled: bool = True
+    hmlr_min_similarity_score: float = 0.5
+    hmlr_max_candidates: int = 10
+    hmlr_embedding_cache_size: int = 1000
+    hmlr_embedding_cache_ttl_minutes: int = 5
 
     @property
     def cors_origins_list(self) -> List[str]:
