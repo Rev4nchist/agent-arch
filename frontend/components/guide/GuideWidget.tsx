@@ -75,10 +75,12 @@ export function GuideWidget() {
         onInsightAction={runInsightAction}
         onExecuteAction={executeAction}
       />
-      <GuideWidgetTrigger
-        isOpen={isWidgetOpen}
-        onClick={toggleWidget}
-      />
+      {!isExpanded && (
+        <GuideWidgetTrigger
+          isOpen={isWidgetOpen}
+          onClick={toggleWidget}
+        />
+      )}
     </>
   );
 }

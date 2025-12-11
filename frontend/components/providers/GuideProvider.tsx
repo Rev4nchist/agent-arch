@@ -105,17 +105,21 @@ export function GuideProvider({ children }: GuideProviderProps) {
         );
 
         // Convert PersonalizedSuggestion to Suggestion format
-        const converted: Suggestion[] = response.suggestions.map((s) => ({
+        const personalizedSuggestions: Suggestion[] = response.suggestions.map((s) => ({
           id: s.id,
           text: s.text,
           pageType: pageType,
         }));
 
-        setSuggestions(converted);
+        // Merge: page-oriented suggestions first, then HMLR personalized after
+        const pageSuggestions = getSuggestionsForPage(pathname);
+        const merged = [...pageSuggestions, ...personalizedSuggestions];
+
+        setSuggestions(merged);
         setSuggestionsPersonalized(response.is_personalized);
         suggestionsCacheRef.current = {
           page: pageType,
-          data: converted,
+          data: merged,
           personalized: response.is_personalized,
           timestamp: now
         };
@@ -132,12 +136,15 @@ export function GuideProvider({ children }: GuideProviderProps) {
     fetchSuggestions();
   }, [isWidgetOpen, isMinimized, currentPage.pageType, staticSuggestions, userId]);
 
-  // Initialize with static suggestions
+  // Sync suggestions when page changes - always update to ensure page-specific suggestions
   useEffect(() => {
-    if (suggestions.length === 0) {
-      setSuggestions(staticSuggestions);
+    const newSuggestions = getSuggestionsForPage(pathname);
+    setSuggestions(newSuggestions);
+    setSuggestionsPersonalized(false);
+    if (suggestionsCacheRef.current?.page !== currentPage.pageType) {
+      suggestionsCacheRef.current = null;
     }
-  }, [staticSuggestions]);
+  }, [currentPage.pageType, pathname]);
 
   // Phase 5.3: Fetch insights when widget opens (with 60s cache)
   useEffect(() => {
