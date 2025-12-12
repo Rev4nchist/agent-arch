@@ -3,7 +3,7 @@
 // In production: uses NEXT_PUBLIC_API_URL from .env.production
 // In local dev: set NEXT_PUBLIC_API_URL in .env.local to your local API
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'dev-test-key-123';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
 
 export interface Meeting {
   id: string;
